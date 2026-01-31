@@ -1,0 +1,58 @@
+# ------------------------------
+# OS / system junk
+# ------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ------------------------------
+# Editor / IDE files
+# ------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+
+# ------------------------------
+# LÖVE specific
+# ------------------------------
+*.love          # packaged games
+save/           # if you store saves locally
+*.log
+
+# ------------------------------
+# Lua
+# ------------------------------
+luac.out
+
+# ------------------------------
+# Build / export folders
+# ------------------------------
+dist/
+build/
+bin/
+release/
+
+# ------------------------------
+# Temporary / cache
+# ------------------------------
+tmp/
+cache/
+*.tmp
+
+# ------------------------------
+# Third-party libs (optional)
+# Uncomment ONLY if you vendor deps elsewhere
+# ------------------------------
+# libs/
+# vendor/
+
+# ------------------------------
+# Godot (if you ever mix projects)
+# ------------------------------
+.godot/
+.import/
+export.cfg
+export_presets.cfg
