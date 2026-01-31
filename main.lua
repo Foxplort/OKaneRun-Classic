@@ -125,15 +125,16 @@ function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear(0.06, 0.08, 0.11)
 
-    Fx.r.circ(player.x.pos-5, player.y.pos+17, 30, 6, {100, 100, 100})
-    Fx.r.rect(player.x.pos, player.y.pos - player.z.pos, 20, 20, {200, 200, 200})
+    Fx.r.circ(player.x.pos-5, player.y.pos+17, 30, 6, {100, 100, 100}) -- player shadow
+    Fx.r.rect(player.x.pos, player.y.pos - player.z.pos, 20, 20, {200, 200, 200}) -- player
 
     -- UI
 
     if debug then
-        Fx.r.text("test", 10, 10, 1, 1)
+        Fx.r.text("test", 10, 10, 1)
     end
 
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setCanvas()
 
     -- Calculate scale to fill the window while keeping aspect ratio
