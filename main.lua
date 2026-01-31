@@ -11,6 +11,8 @@ local canvas
 
 -- GAME LOGIC
 
+local debug = false
+
 local player = {
     x = {
         pos = 20,
@@ -39,7 +41,7 @@ local player = {
             fri = 800,
         },
         jump = {
-            vel = 220,
+            vel = 260,
             g = 900,
             cd = 200,
         },
@@ -69,6 +71,8 @@ function love.keypressed(k)
     if k == "space" then
         player.z.vel = player.meta.jump.vel
         player.jump.timer = player.meta.jump.cd
+    elseif k == "k" then
+        debug = not debug
     end
 end
 
@@ -121,8 +125,14 @@ function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear(0.06, 0.08, 0.11)
 
-    Fx.r.rect(player.x.pos, player.y.pos+18, 20, 4, {100, 100, 100})
+    Fx.r.circ(player.x.pos-5, player.y.pos+17, 30, 6, {100, 100, 100})
     Fx.r.rect(player.x.pos, player.y.pos - player.z.pos, 20, 20, {200, 200, 200})
+
+    -- UI
+
+    if debug then
+        Fx.r.text("test", 10, 10, 1, 1)
+    end
 
     love.graphics.setCanvas()
 
