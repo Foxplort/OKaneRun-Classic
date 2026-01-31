@@ -8,6 +8,9 @@ local config = {
 }
 
 local canvas
+local scale
+local screenX
+local screenY
 
 -- GAME LOGIC
 
@@ -128,6 +131,15 @@ local function getWallHitbox(w)
     }
 end
 
+local function getPitHitbox(p)
+    return {
+        x = p.x + player.meta.player.hitbox.w,
+        y = p.y + player.meta.player.hitbox.h,
+        w = p.w - player.meta.player.hitbox.w*2,
+        h = p.h - player.meta.player.hitbox.h*2,
+    }
+end
+
 local function aabb(a, b)
     return a.x < b.x + b.w and
            a.x + a.w > b.x and
@@ -169,6 +181,29 @@ local function updateParticles(dt)
     end
 end
 
+local function canMoveTo(tx, ty)
+    local testHb = getPlayerHitbox()
+    testHb.x, testHb.y = tx + player.meta.player.hitbox.xt, ty + player.meta.player.hitbox.yt
+    
+    local inPit = false
+    for _, p in ipairs(area.pits) do
+        if aabb(testHb, getPitHitbox(p)) then inPit = true break end
+    end
+
+    if isSubmerged then
+        -- If submerged, you MUST stay inside a pit. 
+        -- If the movement takes you out of the pit, it's a collision.
+        return inPit
+    else
+        -- If on ground, you can move anywhere (pits just make you fall)
+        -- Standard wall collision still applies
+        for _, w in ipairs(area.walls) do
+            if aabb(testHb, getWallHitbox(w)) then return false end
+        end
+        return true
+    end
+end
+
 
 -------------------
 -- BASE LUA LOVE --
@@ -197,6 +232,7 @@ function love.keypressed(k)
 end
 
 function love.update(dt)
+    local isSubmerged = player.z.pos < 0
     local mx, my = 0, 0
 
     if Fx.i.i("d") then mx = mx + 1 end
@@ -265,14 +301,14 @@ function love.update(dt)
 
     local overPit = false
     for _, p in ipairs(area.pits) do
-        if aabb(getPlayerHitbox(), p) then
+        if aabb(getPlayerHitbox(), getPitHitbox(p)) then
             overPit = true
             break
         end
     end
 
     -- Ground collision
-    if player.z.pos < 0 then
+    if player.z.pos < 0 and not overPit then
         -- Detect landing
         if player.z.vel < -50 then 
             player.visual.sx = 1.5 -- Wide
@@ -319,7 +355,7 @@ function love.draw()
     -- ## BASE DRAW PART ##
 
     -- shadow
-    submitDraw(player.y.pos - 9999, function()
+    submitDraw(-9999, function()
         local z = player.z.pos
         local pm = player.meta.player
 
@@ -328,7 +364,8 @@ function love.draw()
         local baseH = pm.h * 0.35
 
         -- shrink with jump
-        local shrink = math.max(0.45, 1 - z / 80)
+        local shadowZ = math.max(0, player.z.pos) -- Don't go below floor
+        local shrink = math.max(0.45, 1 - shadowZ / 80)
 
         local w = baseW * shrink
         local h = baseH * shrink
@@ -359,6 +396,26 @@ function love.draw()
         -- Calculate visual dimensions
         local vw = pm.w * vs.sx
         local vh = pm.h * vs.sy
+
+        local sortY = player.y.pos
+        if player.z.pos < -5 then 
+            sortY = -998
+        end
+
+        if player.z.pos < 0 then
+            -- Find which pit we are in
+            for _, p in ipairs(area.pits) do
+                if aabb(getPlayerHitbox(), getPitHitbox(p)) then
+                    -- Only draw the part of the player inside this rectangle
+                    love.graphics.setScissor(
+                        (p.x - camX) * scale + screenX,
+                        (p.y - camY) * scale + screenY,
+                        p.w * scale, 
+                        p.h * scale
+                    )
+                end
+            end
+        end
         
         -- Draw centered horizontally, anchored to the "feet" (y - z)
         Fx.r.rect(
@@ -367,6 +424,8 @@ function love.draw()
             vw, vh,
             {200, 200, 200}
         )
+
+        love.graphics.setScissor()
     end)
 
     -- walls
@@ -428,8 +487,13 @@ function love.draw()
 
     -- Pits
     for _, p in ipairs(area.pits) do
-        submitDraw(-99999, function()
-            Fx.r.rect(p.x, p.y, p.w, p.h, {10, 5, 20})
+        submitDraw(-999, function()
+            -- The Floor
+            Fx.r.rect(p.x, p.y, p.w, p.h, {5, 2, 10})
+            
+            -- The "Inner Wall"
+            Fx.r.rect(p.x, p.y, p.w, 4, {0, 0, 0, 100}) -- Top lip shadow
+            Fx.r.rect(p.x, p.y, 4, p.h, {0, 0, 0, 100}) -- Left lip shadow
         end)
     end
 
@@ -490,7 +554,7 @@ function love.draw()
 
     -- Calculate scale to fill the window while keeping aspect ratio
     local screenW, screenH = love.graphics.getDimensions()
-    local scale = math.min(screenW / 640, screenH / 360)
+    scale = math.min(screenW / 640, screenH / 360)
 
     -- If integer scaling is ON, we floor the scale (e.g., 2.7x becomes 2.0x)
     if config.integerScaling then
@@ -498,8 +562,8 @@ function love.draw()
     end
 
     -- Calculate shift to the center
-    local screenX = math.floor((screenW - 640 * scale) / 2)
-    local screenY = math.floor((screenH - 360 * scale) / 2)
+    screenX = math.floor((screenW - 640 * scale) / 2)
+    screenY = math.floor((screenH - 360 * scale) / 2)
 
     love.graphics.draw(canvas, screenX, screenY, 0, scale, scale)
 end
