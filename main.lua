@@ -14,6 +14,12 @@ local canvas
 local debug = false
 local drawQueue = {}
 
+local mapWidth, mapHeight = 1200, 800
+local camX, camY = 0, 0
+local shakeAmount = 0
+
+local particles = {}
+
 local player = {
     x = {
         pos = 20,
@@ -28,13 +34,17 @@ local player = {
         vel = 0,
     },
     jump = {
-        timer = 0,
+        cons = 0,
     },
     hp = {
         count = 3,
         max = 3,
     },
     coins = 0,
+    visual = {
+        sx = 1,
+        sy = 1,
+    },
     meta = {
         move = {
             accel = 600,
@@ -44,7 +54,7 @@ local player = {
         jump = {
             vel = 260,
             g = 900,
-            cd = 200,
+            lim = 2,
         },
         player = {
             w = 20,
@@ -75,6 +85,9 @@ local area = {
             h = 20,
             t = 40,
         },
+    },
+    pits = {
+        { x = 500, y = 400, w = 100, h = 100 }
     },
     coins = {},
 }
@@ -122,6 +135,40 @@ local function aabb(a, b)
            a.y + a.h > b.y
 end
 
+local function spawnDust(x, y, z)
+    for i = 1, 4 do -- Spawn a small cluster
+        table.insert(particles, {
+            x = x + math.random(-5, 5),
+            y = y,
+            z = z,
+            vx = math.random(-40, 40) + player.x.vel/2,
+            vy = math.random(-20, 20) + player.y.vel/3, -- movement on the ground plane
+            vz = math.random(10, 30),  -- initial "puff" upward
+            life = 1.0,
+            size = math.random(2, 4)
+        })
+    end
+end
+
+local function updateParticles(dt)
+    for i = #particles, 1, -1 do
+        local p = particles[i]
+        
+        -- Air resistance (drag)
+        p.vx = approach(p.vx, 0, 100 * dt)
+        p.vy = approach(p.vy, 0, 100 * dt)
+        p.vz = p.vz - 20 * dt -- very light gravity for dust
+        
+        -- Move
+        p.x = p.x + p.vx * dt
+        p.y = p.y + p.vy * dt
+        p.z = p.z + p.vz * dt
+        
+        p.life = p.life - dt
+        if p.life <= 0 then table.remove(particles, i) end
+    end
+end
+
 
 -------------------
 -- BASE LUA LOVE --
@@ -134,8 +181,16 @@ end
 
 function love.keypressed(k)
     if k == "space" then
-        player.z.vel = player.meta.jump.vel
-        player.jump.timer = player.meta.jump.cd
+        if player.jump.cons < player.meta.jump.lim then
+            player.jump.cons = player.jump.cons + 1
+            player.z.vel = player.meta.jump.vel
+            player.jump.timer = player.meta.jump.cd
+            player.visual.sx = 0.7 -- Thin
+            player.visual.sy = 1.4 -- Tall
+            if player.z.pos == 0 then
+                spawnDust(player.x.pos + 10, player.y.pos, 0)
+            end
+        end
     elseif k == "k" then
         debug = not debug
     end
@@ -208,17 +263,58 @@ function love.update(dt)
     player.z.vel = player.z.vel - player.meta.jump.g * dt
     player.z.pos = player.z.pos + player.z.vel * dt
 
+    local overPit = false
+    for _, p in ipairs(area.pits) do
+        if aabb(getPlayerHitbox(), p) then
+            overPit = true
+            break
+        end
+    end
+
     -- Ground collision
     if player.z.pos < 0 then
+        -- Detect landing
+        if player.z.vel < -50 then 
+            player.visual.sx = 1.5 -- Wide
+            player.visual.sy = 0.5 -- Short
+            spawnDust(player.x.pos + 10, player.y.pos, 0)
+            -- shakeAmount = 2 -- too violent, lol
+        end
         player.z.pos = 0
         player.z.vel = 0
+        player.jump.cons = 0
     end
+
+    -- Visual recovery (bring scale back to 1)
+    player.visual.sx = approach(player.visual.sx, 1, 2 * dt)
+    player.visual.sy = approach(player.visual.sy, 1, 2 * dt)
+
+    -- Camera target (center of screen)
+    local targetX = player.x.pos + player.meta.player.w / 2 - 320 -- 320 is half-width
+    local targetY = player.y.pos + player.meta.player.h / 2 - 180 -- 180 is half-height
+
+    -- Smooth follow (Lerp)
+    camX = camX + (targetX - camX) * 5 * dt
+    camY = camY + (targetY - camY) * 5 * dt
+
+    -- Constrain to map bounds
+    camX = math.max(0, math.min(camX, mapWidth - 640))
+    camY = math.max(0, math.min(camY, mapHeight - 360))
+
+    shakeAmount = approach(shakeAmount, 0, 40 * dt)
+
+    updateParticles(dt)
 end
 
 
 function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear(0.06, 0.08, 0.11)
+
+    love.graphics.push()
+    local s = shakeAmount
+    love.graphics.translate(math.random(-s, s), math.random(-s, s))
+    love.graphics.translate(-math.floor(camX), -math.floor(camY))
 
     -- ## BASE DRAW PART ##
 
@@ -257,16 +353,25 @@ function love.draw()
 
     -- player
     submitDraw(player.y.pos, function()
+        local pm = player.meta.player
+        local vs = player.visual
+        
+        -- Calculate visual dimensions
+        local vw = pm.w * vs.sx
+        local vh = pm.h * vs.sy
+        
+        -- Draw centered horizontally, anchored to the "feet" (y - z)
         Fx.r.rect(
-            player.x.pos,
-            player.y.pos - player.z.pos - player.meta.player.h,
-            player.meta.player.w, player.meta.player.h,
-            {200,200,200}
+            player.x.pos + (pm.w - vw) / 2, -- Keeps it centered
+            player.y.pos - player.z.pos - vh, -- Anchors it to the ground
+            vw, vh,
+            {200, 200, 200}
         )
     end)
 
     -- walls
     for _, i in pairs(area.walls) do
+        -- I don't want them to flood anything outside of this loop
         local px = player.x.pos + player.meta.player.w * 0.5
         local py = player.y.pos
 
@@ -284,9 +389,13 @@ function love.draw()
                 dy = dy / len
             end
 
-            local shadowLen = 8
+            local jumpFactor = math.max(0.2, 1 - player.z.pos / 80)
+
+            local shadowLen = 8 * jumpFactor
             local sx = dx * shadowLen
             local sy = dy * shadowLen
+
+            local alpha = 80 * jumpFactor
 
             -- shadow
             Fx.r.rect(
@@ -294,7 +403,7 @@ function love.draw()
                 i.y - i.h - i.t + sy,
                 i.w,
                 i.h + i.t,
-                {0, 0, 0, 80}
+                {0, 0, 0, alpha}
             )
 
             -- wall
@@ -313,6 +422,29 @@ function love.draw()
                 i.w,
                 i.h,
                 {0,50,100}
+            )
+        end)
+    end
+
+    -- Pits
+    for _, p in ipairs(area.pits) do
+        submitDraw(-99999, function()
+            Fx.r.rect(p.x, p.y, p.w, p.h, {10, 5, 20})
+        end)
+    end
+
+    -- Dust
+    for _, p in ipairs(particles) do
+        submitDraw(p.y, function()
+            local alpha = p.life * 180
+            local s = p.size * (0.5 + p.life * 0.5) -- Shrink over time
+            
+            -- Draw the dust puff
+            Fx.r.rect(
+                p.x - s/2, 
+                p.y - p.z - s,
+                s, s, 
+                {255, 255, 255, alpha}
             )
         end)
     end
@@ -340,10 +472,15 @@ function love.draw()
         end
     end
 
+    love.graphics.pop()
+
     -- ## USER INERTFACE ##
 
     if debug then
-        Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 10, 1)
+        Fx.r.text("OkaneRun [" .. GameVersion .. "]", 10, 10, 1)
+        Fx.r.text("---", 10, 20, 1)
+        Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 30, 1)
+        Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 40, 1)
     end
 
     -- ## END OF UI ##
