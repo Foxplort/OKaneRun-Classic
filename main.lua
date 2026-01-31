@@ -12,6 +12,23 @@ local scale
 local screenX
 local screenY
 
+local shader_code = [[
+    extern number time;
+    vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+        vec4 texcolor = Texel(texture, texture_coords);
+        
+        vec2 uv = texture_coords - 0.5;
+        float dist = length(uv);
+        float vignette = smoothstep(0.95, 0.4, dist);
+        
+        texcolor.rgb *= vignette;
+        texcolor.rgb *= 1.1;
+        
+        return texcolor * color;
+    }
+]]
+local myShader
+
 -- GAME LOGIC
 
 local debug = false
@@ -198,6 +215,7 @@ end
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
     canvas:setFilter("nearest", "nearest")
+    myShader = love.graphics.newShader(shader_code)
 end
 
 function love.keypressed(k)
@@ -497,6 +515,11 @@ function love.draw()
                 i.h,
                 {0,50,100}
             )
+
+            -- Inner Highlight (Top Edge)
+            Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) 
+            -- Inner Shadow (Right Edge)
+            Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50})
         end)
     end
 
@@ -505,6 +528,13 @@ function love.draw()
         submitDraw(-999, function()
             -- The Floor
             Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
+
+            for gx = g.x, g.x + g.w, 40 do
+                for gy = g.y, g.y + g.h, 40 do
+                    -- Draw a tiny 1x1 dot or a subtle cross
+                    Fx.r.rect(gx, gy, 1, 1, {150, 200, 255, 20})
+                end
+            end
         end)
         submitDraw(-1000, function()
             -- The Floor
@@ -545,6 +575,11 @@ function love.draw()
     drawQueue = {}
 
     if debug then
+        for _, g in ipairs(area.ground) do
+            local gh = getGroundHitbox(g)
+            Fx.r.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
+        end
+
         local hb = getPlayerHitbox()
         Fx.r.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
 
@@ -583,5 +618,7 @@ function love.draw()
     screenX = math.floor((screenW - 640 * scale) / 2)
     screenY = math.floor((screenH - 360 * scale) / 2)
 
+    love.graphics.setShader(myShader)
     love.graphics.draw(canvas, screenX, screenY, 0, scale, scale)
+    love.graphics.setShader()
 end
