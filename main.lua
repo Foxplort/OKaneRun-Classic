@@ -25,11 +25,11 @@ local particles = {}
 
 local player = {
     x = {
-        pos = 20,
+        pos = 80,
         vel = 0,
     },
     y = {
-        pos = 20,
+        pos = 80,
         vel = 0,
     },
     z = {
@@ -89,8 +89,8 @@ local area = {
             t = 40,
         },
     },
-    pits = {
-        { x = 500, y = 400, w = 100, h = 100 }
+    ground = {
+        { x = 50, y = 50, w = mapWidth-100, h = mapHeight-100 }
     },
     coins = {},
 }
@@ -131,12 +131,12 @@ local function getWallHitbox(w)
     }
 end
 
-local function getPitHitbox(p)
+local function getGroundHitbox(g)
     return {
-        x = p.x + player.meta.player.hitbox.w,
-        y = p.y + player.meta.player.hitbox.h,
-        w = p.w - player.meta.player.hitbox.w*2,
-        h = p.h - player.meta.player.hitbox.h*2,
+        x = g.x,
+        y = g.y,
+        w = g.w,
+        h = g.h,
     }
 end
 
@@ -181,27 +181,13 @@ local function updateParticles(dt)
     end
 end
 
-local function canMoveTo(tx, ty)
-    local testHb = getPlayerHitbox()
-    testHb.x, testHb.y = tx + player.meta.player.hitbox.xt, ty + player.meta.player.hitbox.yt
-    
-    local inPit = false
-    for _, p in ipairs(area.pits) do
-        if aabb(testHb, getPitHitbox(p)) then inPit = true break end
+local function checkOnGround(tx, ty)
+    local hb = getPlayerHitbox()
+    hb.x, hb.y = tx + player.meta.player.hitbox.xt, ty + player.meta.player.hitbox.yt
+    for _, g in ipairs(area.ground) do
+        if aabb(hb, getGroundHitbox(g)) then return true end
     end
-
-    if isSubmerged then
-        -- If submerged, you MUST stay inside a pit. 
-        -- If the movement takes you out of the pit, it's a collision.
-        return inPit
-    else
-        -- If on ground, you can move anywhere (pits just make you fall)
-        -- Standard wall collision still applies
-        for _, w in ipairs(area.walls) do
-            if aabb(testHb, getWallHitbox(w)) then return false end
-        end
-        return true
-    end
+    return false
 end
 
 
@@ -232,6 +218,9 @@ function love.keypressed(k)
 end
 
 function love.update(dt)
+    local lastX = player.x.pos
+    local lastY = player.y.pos
+    
     local isSubmerged = player.z.pos < 0
     local mx, my = 0, 0
 
@@ -294,16 +283,38 @@ function love.update(dt)
 
     player.y.pos = nextY
 
+    -- PIT COLLISION LOGIC
+    if player.z.pos < 0 then
+        local hb = getPlayerHitbox()
+        local touchingGround = false
+        
+        for _, g in ipairs(area.ground) do
+            if aabb(hb, getGroundHitbox(g)) then
+                touchingGround = true
+                break
+            end
+        end
+
+        -- If we are below ground level and touching the ground area,
+        -- that means we just walked into a "wall" of the pit.
+        if touchingGround then
+            player.x.pos = lastX
+            player.y.pos = lastY
+            -- Kill velocity so they don't keep sliding into the wall
+            player.x.vel = 0
+            player.y.vel = 0
+        end
+    end
+
 
     -- Z physics (jump)
     player.z.vel = player.z.vel - player.meta.jump.g * dt
     player.z.pos = player.z.pos + player.z.vel * dt
 
-    local overPit = false
-    for _, p in ipairs(area.pits) do
-        if aabb(getPlayerHitbox(), getPitHitbox(p)) then
-            overPit = true
-            break
+    local overPit = true
+    for _, g in ipairs(area.ground) do
+        if aabb(getPlayerHitbox(), getGroundHitbox(g)) then
+            overPit = false
         end
     end
 
@@ -344,8 +355,8 @@ end
 
 
 function love.draw()
-    love.graphics.setCanvas(canvas)
-    love.graphics.clear(0.06, 0.08, 0.11)
+    love.graphics.setCanvas({canvas, stencil = true})
+    love.graphics.clear(0.01, 0.01, 0.02)
 
     love.graphics.push()
     local s = shakeAmount
@@ -355,7 +366,15 @@ function love.draw()
     -- ## BASE DRAW PART ##
 
     -- shadow
-    submitDraw(-9999, function()
+    submitDraw(-99, function()
+        love.graphics.stencil(function()
+            for _, g in ipairs(area.ground) do
+                love.graphics.rectangle("fill", g.x, g.y, g.w, g.h)
+            end
+        end, "replace", 1)
+        love.graphics.setStencilTest("equal", 1) -- "Only draw where ground IS"
+
+
         local z = player.z.pos
         local pm = player.meta.player
 
@@ -384,6 +403,8 @@ function love.draw()
             h,
             {0, 0, 0, alpha}
         )
+
+        love.graphics.setStencilTest()
     end)
 
 
@@ -401,31 +422,25 @@ function love.draw()
         if player.z.pos < -5 then 
             sortY = -998
         end
-
-        if player.z.pos < 0 then
-            -- Find which pit we are in
-            for _, p in ipairs(area.pits) do
-                if aabb(getPlayerHitbox(), getPitHitbox(p)) then
-                    -- Only draw the part of the player inside this rectangle
-                    love.graphics.setScissor(
-                        (p.x - camX) * scale + screenX,
-                        (p.y - camY) * scale + screenY,
-                        p.w * scale, 
-                        p.h * scale
-                    )
-                end
-            end
-        end
         
-        -- Draw centered horizontally, anchored to the "feet" (y - z)
+        if player.z.pos < 0 then
+            love.graphics.stencil(function()
+                for _, g in ipairs(area.ground) do
+                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-player.meta.player.h)
+                end
+            end, "replace", 1)
+            -- "notequal 1" means: Only draw where the stencil (ground) is NOT
+            love.graphics.setStencilTest("notequal", 1)
+        end
+
         Fx.r.rect(
-            player.x.pos + (pm.w - vw) / 2, -- Keeps it centered
-            player.y.pos - player.z.pos - vh, -- Anchors it to the ground
+            player.x.pos + (pm.w - vw) / 2,
+            player.y.pos - player.z.pos - vh,
             vw, vh,
-            {200, 200, 200}
+            {200, 200, 200, 255-math.abs(math.min(0, player.z.pos*6))}
         )
 
-        love.graphics.setScissor()
+        love.graphics.setStencilTest() -- Reset stencil
     end)
 
     -- walls
@@ -448,7 +463,7 @@ function love.draw()
                 dy = dy / len
             end
 
-            local jumpFactor = math.max(0.2, 1 - player.z.pos / 80)
+            local jumpFactor = math.max(0.2, 1 - math.max(player.z.pos, 0) / 80)
 
             local shadowLen = 8 * jumpFactor
             local sx = dx * shadowLen
@@ -485,15 +500,18 @@ function love.draw()
         end)
     end
 
-    -- Pits
-    for _, p in ipairs(area.pits) do
+    -- Ground
+    for _, g in ipairs(area.ground) do
         submitDraw(-999, function()
             -- The Floor
-            Fx.r.rect(p.x, p.y, p.w, p.h, {5, 2, 10})
-            
-            -- The "Inner Wall"
-            Fx.r.rect(p.x, p.y, p.w, 4, {0, 0, 0, 100}) -- Top lip shadow
-            Fx.r.rect(p.x, p.y, 4, p.h, {0, 0, 0, 100}) -- Left lip shadow
+            Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
+        end)
+        submitDraw(-1000, function()
+            -- The Floor
+            Fx.r.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
         end)
     end
 
