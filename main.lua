@@ -12,16 +12,53 @@ local canvas
 -- GAME LOGIC
 
 local player = {
-    x = 20,
-    y = 20,
-    z = 0,
-    j = {
-        t = 0,
-        cd = 200,
+    x = {
+        pos = 20,
+        vel = 0,
     },
-    hp = 3,
-    c = 0,
+    y = {
+        pos = 20,
+        vel = 0,
+    },
+    z = {
+        pos = 0,
+        vel = 0,
+    },
+    jump = {
+        timer = 0,
+    },
+    hp = {
+        count = 3,
+        max = 3,
+    },
+    coins = 0,
+    meta = {
+        move = {
+            accel = 600,
+            maxVel = 120,
+            fri = 800,
+        },
+        jump = {
+            vel = 220,
+            g = 900,
+            cd = 200,
+        },
+    },
 }
+
+local function approach(v, target, amount)
+    if v < target then
+        return math.min(v + amount, target)
+    elseif v > target then
+        return math.max(v - amount, target)
+    end
+    return target
+end
+
+
+-------------------
+-- BASE LUA LOVE --
+-------------------
 
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
@@ -30,37 +67,62 @@ end
 
 function love.keypressed(k)
     if k == "space" then
-        player.z = 20
-        player.j.t = player.j.cd
+        player.z.vel = player.meta.jump.vel
+        player.jump.timer = player.meta.jump.cd
     end
 end
 
 function love.update(dt)
-    if Fx.i.i("d") then
-        player.x = player.x + 20 * dt
-    end
-    if Fx.i.i("a") then
-        player.x = player.x - 20 * dt
-    end
-    if Fx.i.i("w") then
-        player.y = player.y - 20 * dt
-    end
-    if Fx.i.i("s") then
-        player.y = player.y + 20 * dt
+    local mx, my = 0, 0
+
+    if Fx.i.i("d") then mx = mx + 1 end
+    if Fx.i.i("a") then mx = mx - 1 end
+    if Fx.i.i("w") then my = my - 1 end
+    if Fx.i.i("s") then my = my + 1 end
+
+    -- Normalize diagonal movement
+    if mx ~= 0 or my ~= 0 then
+        local len = math.sqrt(mx*mx + my*my)
+        mx, my = mx / len, my / len
+
+        player.x.vel = player.x.vel + mx * player.meta.move.accel * dt
+        player.y.vel = player.y.vel + my * player.meta.move.accel * dt
+    else
+        -- Apply friction when no input
+        player.x.vel = approach(player.x.vel, 0, player.meta.move.fri * dt)
+        player.y.vel = approach(player.y.vel, 0, player.meta.move.fri * dt)
     end
 
-    if player.z > 0 then
-        player.z = player.z - 1 * dt
-    elseif player.z < 0 then
-        player.z = 0
+    -- Clamp max speed
+    local speed = math.sqrt(player.x.vel^2 + player.y.vel^2)
+    if speed > player.meta.move.maxVel then
+        local s = player.meta.move.maxVel / speed
+        player.x.vel = player.x.vel * s
+        player.y.vel = player.y.vel * s
+    end
+
+    -- Apply movement
+    player.x.pos = player.x.pos + player.x.vel * dt
+    player.y.pos = player.y.pos + player.y.vel * dt
+
+    -- Z physics (jump)
+    player.z.vel = player.z.vel - player.meta.jump.g * dt
+    player.z.pos = player.z.pos + player.z.vel * dt
+
+    -- Ground collision
+    if player.z.pos < 0 then
+        player.z.pos = 0
+        player.z.vel = 0
     end
 end
+
 
 function love.draw()
     love.graphics.setCanvas(canvas)
     love.graphics.clear(0.06, 0.08, 0.11)
 
-    Fx.r.rect(player.x, player.y - player.z, 20, 20, {200, 200, 200})
+    Fx.r.rect(player.x.pos, player.y.pos+18, 20, 4, {100, 100, 100})
+    Fx.r.rect(player.x.pos, player.y.pos - player.z.pos, 20, 20, {200, 200, 200})
 
     love.graphics.setCanvas()
 
