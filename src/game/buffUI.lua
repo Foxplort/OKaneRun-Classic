@@ -25,30 +25,46 @@ function BuffUI.draw(player)
         local selected = i == BuffUIDat.selected
 
         -- background
-        if selected and active then
-            love.graphics.setColor(1, 1, 1.0, 0.9)
-        elseif selected then
-            love.graphics.setColor(1, 1, 0.4, 0.9)
-        elseif active then
-            love.graphics.setColor(0.3, 0.8, 0.3, 0.8)
-        else
-            love.graphics.setColor(0, 0, 0, 0.6)
+        local color = {0, 0, 0, 70}
+        if active then
+            if Fx.el[id].type == "debuff" then
+                color = {180, 0, 0, 110}
+            else
+                color = {0, 180, 0, 110}
+            end
         end
 
-        love.graphics.rectangle(
-            "fill",
+        Fx.r.rect(
             x - 2, y - 2,
             BuffUIDat.size + 4,
-            BuffUIDat.size + 4
+            BuffUIDat.size + 4,
+            color,
+            true
         )
+
+        local entry = player.buffs[id]
+        local amountApplied = entry and entry.amount or 0
+        Fx.r.text(tostring(amountApplied), x+2, 100, 1)
+
+        if selected then
+            Fx.r.rect(
+                x - 2, y - 2,
+                BuffUIDat.size + 4,
+                BuffUIDat.size + 4,
+                255,
+                false
+            )
+
+            Fx.r.text(tostring(id), 10, 110, 1)
+        end
 
         -- icon (safe)
         love.graphics.setColor(1, 1, 1, 1)
         Fx.r.imageSafe(
             id, "missing",
             x, y,
-            BuffUIDat.size / 16,
-            BuffUIDat.size / 16
+            BuffUIDat.size,
+            BuffUIDat.size 
         )
 
         -- duration

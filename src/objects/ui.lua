@@ -15,7 +15,7 @@ function UI.draw()
 
     -- debug
     if debug then
-        Fx.r.text("OkaneRun [" .. Game.version .. "]", 10, 10, 1)
+        Fx.r.text("OkaneRun [" .. tostring(Game.version) .. "]", 10, 10, 1)
         Fx.r.text("DEBUG (Press K to close)", 10, 20, 1)
         Fx.r.text("---", 10, 30, 1)
         Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 40, 1)

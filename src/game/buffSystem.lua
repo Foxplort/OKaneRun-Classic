@@ -2,30 +2,35 @@ local BuffSystem = {}
 
 
 function BuffSystem.apply(player, buffDef)
-    -- one-shot buff
-    -- if buffDef.kind == "oneshot" then
-    --     if buffDef.onApply then
-    --         buffDef.onApply(player)
-    --     end
-    --     return
-    -- end
+    local id = buffDef.id
+    local entry = player.buffs[id]
 
-    -- prevent duplicates (optional)
-    -- if player.buffs[buffDef.id] then
-    --     return
-    -- end
+    -- create entry if missing
+    if not entry then
+        entry = {
+            def = buffDef,
+            amount = 0,
+            instances = {}
+        }
+        player.buffs[id] = entry
+    end
 
-    local inst = {
-        id = buffDef.id,
-        def = buffDef,
-        timeLeft = buffDef.duration,
-    }
+    -- cap check
+    if buffDef.maxAmount and entry.amount >= buffDef.maxAmount then
+        return false -- cannot apply
+    end
 
-    player.buffs[buffDef.id] = inst
+    -- apply effect ONCE PER STACK
+    entry.amount = entry.amount + 1
+    table.insert(entry.instances, {
+        timeLeft = buffDef.duration
+    })
 
     if buffDef.onApply then
         buffDef.onApply(player)
     end
+
+    return true
 end
 
 function BuffSystem.update(player, dt)
@@ -44,14 +49,21 @@ function BuffSystem.update(player, dt)
 end
 
 function BuffSystem.remove(player, id)
-    local inst = player.buffs[id]
-    if not inst then return end
+    local entry = player.buffs[id]
+    if not entry then return end
 
-    if inst.def.onRemove then
-        inst.def.onRemove(player)
+    -- remove one instance
+    table.remove(entry.instances)
+    entry.amount = entry.amount - 1
+
+    if entry.def.onRemove then
+        entry.def.onRemove(player)
     end
 
-    player.buffs[id] = nil
+    -- clean up if empty
+    if entry.amount <= 0 then
+        player.buffs[id] = nil
+    end
 end
 
 
