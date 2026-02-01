@@ -1,0 +1,19 @@
+local MathP = {} 
+
+function MathP.approach(v, target, amount)
+    if v < target then
+        return math.min(v + amount, target)
+    elseif v > target then
+        return math.max(v - amount, target)
+    end
+    return target
+end
+
+function MathP.aabb(a, b)
+    return a.x < b.x + b.w and
+           a.x + a.w > b.x and
+           a.y < b.y + b.h and
+           a.y + a.h > b.y
+end
+
+return MathP

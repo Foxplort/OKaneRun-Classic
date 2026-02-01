@@ -1,6 +1,14 @@
 Fx = {
-    r = require("src.renderer"),
-    i = require("src.input"),
+    r = require("src.utils.renderer"), -- R - Render
+    i = require("src.utils.input"), -- I - Input
+    m = require("src.utils.math"), -- M - Math
+    dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
+    cl = require("src.utils.collision"), -- Cl - Collision
+    obj = {
+        player = require("src.objects.player"),
+        world = require("src.objects.world"),
+        ui = require("src.objects.ui"),
+    },
 }
 
 local config = {
@@ -13,29 +21,12 @@ local scale
 local screenX
 local screenY
 
-local shader_code = [[
-    extern number time;
-    vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
-        vec4 texcolor = Texel(texture, texture_coords);
-        
-        vec2 uv = texture_coords - 0.5;
-        float dist = length(uv);
-        float vignette = smoothstep(0.95, 0.4, dist);
-        
-        texcolor.rgb *= vignette;
-        texcolor.rgb *= 1.1;
-        
-        return texcolor * color;
-    }
-]]
 local myShader
 
 -- GAME LOGIC
 
-local debug = false
-local drawQueue = {}
+debug = false
 
-local mapWidth, mapHeight = 1200, 800
 local camX, camY = 0, 0
 local shakeAmount = 0
 local uiShake = 0
@@ -45,162 +36,8 @@ local particles = {}
 local trail = {}
 local TRAIL_MAX = 30
 
-local player = {
-    x = {
-        pos = 80,
-        vel = 0,
-    },
-    y = {
-        pos = 80,
-        vel = 0,
-    },
-    z = {
-        pos = 0,
-        vel = 0,
-    },
-    jump = {
-        cons = 0,
-    },
-    hp = {
-        count = 3,
-        max = 3,
-    },
-    coins = 0,
-    visual = {
-        sx = 1,
-        sy = 1,
-    },
-    dead = false,
-    meta = {
-        move = {
-            accel = 600,
-            maxVel = 120,
-            fri = 800,
-        },
-        jump = {
-            vel = 260,
-            g = 900,
-            lim = 2,
-        },
-        player = {
-            w = 20,
-            h = 20,
-            hitbox = {
-                w = 20,
-                h = 6,
-                xt = 0,
-                yt = -3,
-            },
-        },
-    },
-    coinChain = {},
-}
-
-local area = {
-    walls = {
-        {
-            x = 200,
-            y = 120,
-            w = 30,
-            h = 30,
-            t = 30,
-        },
-        {
-            x = 300,
-            y = 170,
-            w = 60,
-            h = 20,
-            t = 40,
-        },
-        {
-            x = 600,
-            y = 230,
-            w = 40,
-            h = 40,
-            t = 120,
-        },
-        {
-            x = 200,
-            y = 450,
-            w = 10,
-            h = 15,
-            t = 10,
-        },
-    },
-    ground = {
-        { x = 50, y = 50, w = mapWidth-100, h = mapHeight-100 }
-    },
-    coins = {
-        {
-            x = 200,
-            y = 200,
-        },
-        {
-            x = 220,
-            y = 200,
-        },
-        {
-            x = 240,
-            y = 200,
-        },
-        {
-            x = 260,
-            y = 200,
-        },
-    },
-}
-
-local function approach(v, target, amount)
-    if v < target then
-        return math.min(v + amount, target)
-    elseif v > target then
-        return math.max(v - amount, target)
-    end
-    return target
-end
-
-local function submitDraw(y, fn)
-    drawQueue[#drawQueue + 1] = {
-        y = y,
-        fn = fn
-    }
-end
-
-local function getPlayerHitbox()
-    local hb = player.meta.player.hitbox
-    return {
-        x = player.x.pos + hb.xt,
-        y = player.y.pos + hb.yt,
-        w = hb.w,
-        h = hb.h,
-    }
-end
-
--- wall collision zone (the base)
-local function getWallHitbox(w)
-    return {
-        x = w.x,
-        y = w.y - w.h, -- base thickness
-        w = w.w,
-        h = w.h,
-    }
-end
-
-local function getGroundHitbox(g)
-    return {
-        x = g.x,
-        y = g.y,
-        w = g.w,
-        h = g.h,
-    }
-end
-
-local function aabb(a, b)
-    return a.x < b.x + b.w and
-           a.x + a.w > b.x and
-           a.y < b.y + b.h and
-           a.y + a.h > b.y
-end
+player = Fx.obj.player.baseData
+area = Fx.obj.world.testArea
 
 local function spawnDust(x, y, z)
     for i = 1, 4 do -- Spawn a small cluster
@@ -222,8 +59,8 @@ local function updateParticles(dt)
         local p = particles[i]
         
         -- Air resistance (drag)
-        p.vx = approach(p.vx, 0, 100 * dt)
-        p.vy = approach(p.vy, 0, 100 * dt)
+        p.vx = Fx.m.approach(p.vx, 0, 100 * dt)
+        p.vy = Fx.m.approach(p.vy, 0, 100 * dt)
         p.vz = p.vz - 20 * dt -- very light gravity for dust
         
         -- Move
@@ -237,10 +74,10 @@ local function updateParticles(dt)
 end
 
 local function checkOnGround(tx, ty)
-    local hb = getPlayerHitbox()
+    local hb = Fx.cl.getPlayerHitbox()
     hb.x, hb.y = tx + player.meta.player.hitbox.xt, ty + player.meta.player.hitbox.yt
     for _, g in ipairs(area.ground) do
-        if aabb(hb, getGroundHitbox(g)) then return true end
+        if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then return true end
     end
     return false
 end
@@ -253,7 +90,7 @@ end
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
     canvas:setFilter("nearest", "nearest")
-    myShader = love.graphics.newShader(shader_code)
+    myShader = love.graphics.newShader("assets/shaders/main.glsl")
 end
 
 function love.keypressed(k)
@@ -316,8 +153,8 @@ function love.update(dt)
         player.y.vel = player.y.vel + my * player.meta.move.accel * dt
     else
         -- Apply friction when no input
-        player.x.vel = approach(player.x.vel, 0, player.meta.move.fri * dt)
-        player.y.vel = approach(player.y.vel, 0, player.meta.move.fri * dt)
+        player.x.vel = Fx.m.approach(player.x.vel, 0, player.meta.move.fri * dt)
+        player.y.vel = Fx.m.approach(player.y.vel, 0, player.meta.move.fri * dt)
     end
 
     -- Clamp max speed
@@ -330,13 +167,13 @@ function love.update(dt)
 
     -- Apply X movement
     local nextX = player.x.pos + player.x.vel * dt
-    local hb = getPlayerHitbox()
+    local hb = Fx.cl.getPlayerHitbox()
 
     hb.x = nextX + player.meta.player.hitbox.xt
 
     for _, w in ipairs(area.walls) do
-        local wh = getWallHitbox(w)
-        if aabb(hb, wh) then
+        local wh = Fx.cl.getWallHitbox(w)
+        if Fx.m.aabb(hb, wh) then
             nextX = player.x.pos
             player.x.vel = 0
             break
@@ -347,12 +184,12 @@ function love.update(dt)
 
     -- Apply Y movement
     local nextY = player.y.pos + player.y.vel * dt
-    hb = getPlayerHitbox()
+    hb = Fx.cl.getPlayerHitbox()
     hb.y = nextY + player.meta.player.hitbox.yt
 
     for _, w in ipairs(area.walls) do
-        local wh = getWallHitbox(w)
-        if aabb(hb, wh) then
+        local wh = Fx.cl.getWallHitbox(w)
+        if Fx.m.aabb(hb, wh) then
             nextY = player.y.pos
             player.y.vel = 0
             break
@@ -363,11 +200,11 @@ function love.update(dt)
 
     -- PIT COLLISION LOGIC
     if player.z.pos < 0 then
-        local hb = getPlayerHitbox()
+        local hb = Fx.cl.getPlayerHitbox()
         local touchingGround = false
         
         for _, g in ipairs(area.ground) do
-            if aabb(hb, getGroundHitbox(g)) then
+            if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then
                 touchingGround = true
                 break
             end
@@ -391,14 +228,14 @@ function love.update(dt)
 
     local overPit = true
     for _, g in ipairs(area.ground) do
-        if aabb(getPlayerHitbox(), getGroundHitbox(g)) then
+        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), Fx.cl.getGroundHitbox(g)) then
             overPit = false
         end
     end
 
     -- Collect coins
     for i, c in ipairs(area.coins) do
-        if aabb(getPlayerHitbox(), {x=c.x, y=c.y-3, w=15, h=6}) then
+        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=15, h=6}) then
             local coin = {
                 x = c.x,
                 y = c.y,
@@ -428,8 +265,8 @@ function love.update(dt)
     end
 
     -- Visual recovery (bring scale back to 1)
-    player.visual.sx = approach(player.visual.sx, 1, 2 * dt)
-    player.visual.sy = approach(player.visual.sy, 1, 2 * dt)
+    player.visual.sx = Fx.m.approach(player.visual.sx, 1, 2 * dt)
+    player.visual.sy = Fx.m.approach(player.visual.sy, 1, 2 * dt)
 
     -- Trail
     table.insert(trail, 1, {
@@ -460,11 +297,11 @@ function love.update(dt)
     camY = camY + (targetY - camY) * 5 * dt
 
     -- Constrain to map bounds
-    camX = math.max(0, math.min(camX, mapWidth - 640))
-    camY = math.max(0, math.min(camY, mapHeight - 360))
+    camX = math.max(0, math.min(camX, area.mapWidth - 640))
+    camY = math.max(0, math.min(camY, area.mapHeight - 360))
 
-    shakeAmount = approach(shakeAmount, 0, 40 * dt)
-    uiShake = approach(uiShake, 0, 40 * dt)
+    shakeAmount = Fx.m.approach(shakeAmount, 0, 40 * dt)
+    uiShake = Fx.m.approach(uiShake, 0, 40 * dt)
 
     updateParticles(dt)
     damageHandler(dt)
@@ -481,162 +318,13 @@ function love.draw()
 
     -- ## BASE DRAW PART ##
 
-    -- shadow
-    submitDraw(-99, function()
-        love.graphics.stencil(function()
-            for _, g in ipairs(area.ground) do
-                love.graphics.rectangle("fill", g.x, g.y, g.w, g.h)
-            end
-        end, "replace", 1)
-        love.graphics.setStencilTest("equal", 1) -- "Only draw where ground IS"
+    Fx.obj.player.render() -- render player + shadow
 
-
-        local z = player.z.pos
-        local pm = player.meta.player
-
-        -- base shadow size from player size
-        local baseW = pm.w * 1.2
-        local baseH = pm.h * 0.35
-
-        -- shrink with jump
-        local shadowZ = math.max(0, player.z.pos) -- Don't go below floor
-        local shrink = math.max(0.45, 1 - shadowZ / 80)
-
-        local w = baseW * shrink
-        local h = baseH * shrink
-
-        -- fade slightly with height
-        local alpha = math.max(60, 160 - z * 1.5)
-
-        -- center under feet
-        local cx = player.x.pos + pm.w * 0.5
-        local cy = player.y.pos - 2
-
-        Fx.r.circ(
-            cx - w * 0.5,
-            cy - h * 0.5 + 2,
-            w,
-            h,
-            {0, 0, 0, alpha}
-        )
-
-        love.graphics.setStencilTest()
-    end)
-
-
-
-    -- player
-    submitDraw(player.y.pos, function()
-        local pm = player.meta.player
-        local vs = player.visual
-        
-        -- Calculate visual dimensions
-        local vw = pm.w * vs.sx
-        local vh = pm.h * vs.sy
-
-        local sortY = player.y.pos
-        if player.z.pos < -5 then 
-            sortY = -998
-        end
-        
-        if player.z.pos < 0 then
-            love.graphics.stencil(function()
-                for _, g in ipairs(area.ground) do
-                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-player.meta.player.h)
-                end
-            end, "replace", 1)
-            -- "notequal 1" means: Only draw where the stencil (ground) is NOT
-            love.graphics.setStencilTest("notequal", 1)
-        end
-
-        Fx.r.rect(
-            player.x.pos + (pm.w - vw) / 2,
-            player.y.pos - player.z.pos - vh,
-            vw, vh,
-            {200, 200, 200, 255-math.abs(math.min(0, player.z.pos*6))}
-        )
-
-        love.graphics.setStencilTest() -- Reset stencil
-    end)
-
-    local function playerBehindWall()
-        for _, w in ipairs(area.walls) do
-            if player.y.pos < w.y and
-            player.y.pos > w.y - w.h - w.t and
-            math.abs((player.x.pos + 10) - (w.x + w.w/2)) < w.w/2 + 6 then
-                return true
-            end
-        end
-        return false
-    end
-
-    for _, i in pairs(area.walls) do
-        -- I don't want them to flood anything outside of this loop
-        local px = player.x.pos + player.meta.player.w * 0.5
-        local py = player.y.pos
-
-        submitDraw(i.y - 1, function()
-            -- direction from player to wall
-            local wx = i.x + i.w * 0.5
-            local wy = i.y
-
-            local dx = wx - px
-            local dy = wy - py
-
-            local len = math.sqrt(dx*dx + dy*dy)
-            if len > 0 then
-                dx = dx / len
-                dy = dy / len
-            end
-
-            local jumpFactor = math.max(0.2, 1 - math.max(player.z.pos, 0) / 80)
-
-            local shadowLen = 7 * jumpFactor
-            local sx = dx * shadowLen
-            local sy = math.min(0, dy * shadowLen)
-
-            local skew = (i.x - px) * 0.02
-            skew = math.max(-6, math.min(6, skew))
-
-            local alpha = 80 * jumpFactor
-
-            -- shadow
-            Fx.r.rect(
-                i.x + sx + skew,
-                i.y - i.h - i.t + sy,
-                i.w,
-                i.h + i.t,
-                {0, 0, 0, alpha}
-            )
-
-            -- wall
-            Fx.r.rect(
-                i.x,
-                i.y - i.h - i.t,
-                i.w,
-                i.h + i.t,
-                {0,100,200}
-            )
-
-            -- roof
-            Fx.r.rect(
-                i.x,
-                i.y - i.h - i.t,
-                i.w,
-                i.h,
-                {0,50,100}
-            )
-
-            -- Inner Highlight (Top Edge)
-            Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) 
-            -- Inner Shadow (Right Edge)
-            Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50})
-        end)
-    end
+    Fx.obj.world.renderWalls() -- render walls
 
     -- Ground
     for _, g in ipairs(area.ground) do
-        submitDraw(-999, function()
+        Fx.dq.submitDraw(-999, function()
             -- The Floor
             Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
 
@@ -647,7 +335,7 @@ function love.draw()
                 end
             end
         end)
-        submitDraw(-1000, function()
+        Fx.dq.submitDraw(-1000, function()
             -- The Floor
             Fx.r.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
             Fx.r.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
@@ -658,13 +346,13 @@ function love.draw()
 
     -- Coins
     for _, c in ipairs(area.coins) do
-        submitDraw(c.y, function()
+        Fx.dq.submitDraw(c.y, function()
             Fx.r.circ(c.x, c.y-15, 15, 15, {255, 200, 0})
         end)
     end
 
     for _, c in ipairs(player.coinChain) do
-        submitDraw(c.y, function()
+        Fx.dq.submitDraw(c.y, function()
             Fx.r.circ(
                 c.x + 2.5,
                 c.y - c.z - 15,
@@ -676,7 +364,7 @@ function love.draw()
 
     -- Dust
     for _, p in ipairs(particles) do
-        submitDraw(p.y, function()
+        Fx.dq.submitDraw(p.y, function()
             local alpha = p.life * 180
             local s = p.size * (0.5 + p.life * 0.5) -- Shrink over time
             
@@ -692,65 +380,22 @@ function love.draw()
 
     -- ## END OF DRAW ##
 
-    -- Depth based visual reder thingy
-    table.sort(drawQueue, function(a, b)
-        return a.y < b.y
-    end)
+    Fx.dq.draw() -- draw items in order
 
-    for _, item in ipairs(drawQueue) do
-        item.fn()
-    end
-
-    drawQueue = {}
-
-    -- Shiluette
-    if playerBehindWall() then
-        local pm = player.meta.player
-        local vs = player.visual
-        local vw = pm.w * vs.sx
-        local vh = pm.h * vs.sy
-
-        -- 1) Write wall area to stencil
-        love.graphics.stencil(function()
-            for _, w in ipairs(area.walls) do
-                love.graphics.rectangle(
-                    "fill",
-                    w.x,
-                    w.y - w.h - w.t,
-                    w.w,
-                    w.h + w.t
-                )
-            end
-        end, "replace", 1)
-
-        -- 2) Only draw where walls exist
-        love.graphics.setStencilTest("equal", 1)
-
-        -- 3) Draw silhouette
-        Fx.r.rect(
-            player.x.pos + (pm.w - vw) / 2,
-            player.y.pos - player.z.pos - vh,
-            vw,
-            vh,
-            {0, 0, 0, 90}
-        )
-
-        -- 4) Reset
-        love.graphics.setStencilTest()
-    end
+    Fx.obj.player.shiluette() -- Player's shiluette
 
 
     if debug then
         for _, g in ipairs(area.ground) do
-            local gh = getGroundHitbox(g)
+            local gh = Fx.cl.getGroundHitbox(g)
             Fx.r.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
         end
 
-        local hb = getPlayerHitbox()
+        local hb = Fx.cl.getPlayerHitbox()
         Fx.r.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
 
         for _, w in ipairs(area.walls) do
-            local wh = getWallHitbox(w)
+            local wh = Fx.cl.getWallHitbox(w)
             Fx.r.rect(wh.x, wh.y, wh.w, wh.h, {0,255,0}, false)
         end
     end
@@ -764,26 +409,7 @@ function love.draw()
         love.graphics.translate(math.random(-1, 1), math.random(-1, 1))
     end
 
-    -- health
-    for i = 0, player.hp.max-1 do
-        Fx.r.rect(19, Game.height-21-(i+1)*15, 15, 15, {0, 0, 0})
-        Fx.r.rect(20, Game.height-20-(i+1)*15, 13, 13, {127, 0, 63})
-        if i < player.hp.count then
-            Fx.r.rect(20, Game.height-20-(i+1)*15, 13, 13, {255, 0, 127})
-        end
-    end
-
-    -- coin count
-    Fx.r.text(tostring(player.coins) .. "c", Game.width-225, 20, 1, 255, 200, "right")
-
-    -- debug
-    if debug then
-        Fx.r.text("OkaneRun [" .. Game.version .. "]", 10, 10, 1)
-        Fx.r.text("DEBUG (Press K to close)", 10, 20, 1)
-        Fx.r.text("---", 10, 30, 1)
-        Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 40, 1)
-        Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 50, 1)
-    end
+    Fx.obj.ui.draw()
 
     love.graphics.pop()
 
