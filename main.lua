@@ -2,12 +2,17 @@ Fx = {
     r = require("src.utils.renderer"), -- R - Render
     i = require("src.utils.input"), -- I - Input
     m = require("src.utils.math"), -- M - Math
+    el = require("src.game.buffs"), -- EL - Effect List
+    es = require("src.game.buffSystem"), -- ES - Effect System
     dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
-    obj = {
+    obj = { -- OBJ - Renderable Objects
         player = require("src.objects.player"),
         world = require("src.objects.world"),
         ui = require("src.objects.ui"),
+    },
+    db = { -- DB - DeBug systems
+        e = require("src.game.buffUI"), -- db.E - Effects
     },
 }
 
@@ -38,6 +43,16 @@ local TRAIL_MAX = 30
 
 player = Fx.obj.player.baseData
 area = Fx.obj.world.testArea
+
+BuffUIDat = {
+    visible = false,
+    x = 10,
+    y = 80,
+    cols = 8,
+    size = 20,
+    padding = 4,
+    selected = 1,
+}
 
 local function spawnDust(x, y, z)
     for i = 1, 4 do -- Spawn a small cluster
@@ -91,6 +106,17 @@ function love.load()
     canvas = love.graphics.newCanvas(640, 360)
     canvas:setFilter("nearest", "nearest")
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
+
+    Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
+
+    for id, buff in pairs(Fx.el) do
+        local path = "assets/images/buffs/" .. buff.id .. ".png"
+        if love.filesystem.getInfo(path) then
+            Fx.r.loadImage(buff.id, path)
+        end
+    end
+
+    Fx.db.e.load()
 end
 
 function love.keypressed(k)
@@ -110,6 +136,10 @@ function love.keypressed(k)
     elseif k == "f11" then
         fullScreen = not fullScreen
         love.window.setFullscreen(fullScreen)
+    elseif k == "b" then
+        BuffUIDat.visible = not BuffUIDat.visible
+    elseif BuffUIDat.visible then
+        Fx.db.e.keypressed(player, k)
     end
 end
 
@@ -248,6 +278,7 @@ function love.update(dt)
             player.coins = player.coins + 1
             
             table.remove(area.coins, i)
+            Fx.es.apply(player, Fx.el["coin"])
         end
     end
 
@@ -410,6 +441,8 @@ function love.draw()
     end
 
     Fx.obj.ui.draw()
+
+    Fx.db.e.draw(player)
 
     love.graphics.pop()
 

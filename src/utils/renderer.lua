@@ -101,6 +101,19 @@ function Renderer.image(name, x, y, sx, sy, r, ox, oy)
     love.graphics.draw(img, x, y, r, sx, sy, ox, oy)
 end
 
+function Renderer.imageSafe(name, fallback, x, y, sx, sy, r, ox, oy)
+    local img = Renderer.images[name] or Renderer.images[fallback]
+    if not img then return end
+
+    r = r or 0
+    ox = ox or 0
+    oy = oy or 0
+    sx = sx or 1
+    sy = sy or 1
+
+    love.graphics.draw(img, x, y, r, sx, sy, ox, oy)
+end
+
 function Renderer.imageSized(name, x, y, w, h)
     local img = Renderer.images[name]
     if not img then return end

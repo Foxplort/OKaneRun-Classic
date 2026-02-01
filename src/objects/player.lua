@@ -49,6 +49,7 @@ Player.baseData = {
         },
     },
     coinChain = {},
+    buffs = {},
 }
 
 function Player.render()
