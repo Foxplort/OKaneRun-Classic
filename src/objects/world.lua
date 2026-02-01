@@ -54,6 +54,12 @@ World.testArea = {
             y = 200,
         },
     },
+    cores = {
+        {
+            x = 600,
+            y = 400,
+        },
+    },
 }
 
 function World.renderWalls()
@@ -118,6 +124,56 @@ function World.renderWalls()
             Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) 
             -- Inner Shadow (Right Edge)
             Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50})
+        end)
+    end
+end
+
+function World.renderCoins()
+    for _, c in ipairs(area.coins) do
+        Fx.dq.submitDraw(c.y, function()
+            Fx.r.circ(c.x, c.y-15, 15, 15, {255, 200, 0})
+        end)
+    end
+
+    for _, c in ipairs(player.coinChain) do
+        Fx.dq.submitDraw(c.y, function()
+            Fx.r.circ(
+                c.x + 2.5,
+                c.y - c.z - 15,
+                15, 15,
+                {255, 200, 0}
+            )
+        end)
+    end
+end
+
+function World.renderCores()
+    for _, c in ipairs(area.cores) do
+        Fx.dq.submitDraw(c.y, function()
+            Fx.r.rect(c.x, c.y, 40, 40, {0, 190, 80})
+        end)
+    end
+end
+
+function World.renderGround()
+    for _, g in ipairs(area.ground) do
+        Fx.dq.submitDraw(-999, function()
+            -- The Floor
+            Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
+
+            for gx = g.x, g.x + g.w, 40 do
+                for gy = g.y, g.y + g.h, 40 do
+                    -- Draw a tiny 1x1 dot or a subtle cross
+                    Fx.r.rect(gx, gy, 1, 1, {150, 200, 255, 20})
+                end
+            end
+        end)
+        Fx.dq.submitDraw(-1000, function()
+            -- The Floor
+            Fx.r.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
+            Fx.r.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
         end)
     end
 end

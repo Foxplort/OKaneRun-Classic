@@ -210,6 +210,20 @@ function love.update(dt)
         end
     end
 
+    for _, c in ipairs(area.cores) do
+        local ch = {x=c.x, y=c.y, w=40, h=40}
+        if Fx.m.aabb(hb, ch) then
+            nextX = player.x.pos
+            player.x.vel = 0
+            if #player.coinChain > 0 then
+                player.coins = player.coins + #player.coinChain
+                Fx.es.remove(player, "coin", #player.coinChain)
+                player.coinChain = {}
+            end
+            break
+        end
+    end
+
     player.x.pos = nextX
 
     -- Apply Y movement
@@ -222,6 +236,20 @@ function love.update(dt)
         if Fx.m.aabb(hb, wh) then
             nextY = player.y.pos
             player.y.vel = 0
+            break
+        end
+    end
+
+    for _, c in ipairs(area.cores) do
+        local ch = {x=c.x, y=c.y, w=40, h=40}
+        if Fx.m.aabb(hb, ch) then
+            nextY = player.y.pos
+            player.y.vel = 0
+            if #player.coinChain > 0 then
+                player.coins = player.coins + #player.coinChain
+                player.coinChain = {}
+                Fx.es.remove(player, "coin")
+            end
             break
         end
     end
@@ -275,8 +303,6 @@ function love.update(dt)
             }
 
             table.insert(player.coinChain, coin)
-            player.coins = player.coins + 1
-            
             table.remove(area.coins, i)
             Fx.es.apply(player, Fx.el["coin"])
         end
@@ -352,46 +378,9 @@ function love.draw()
     Fx.obj.player.render() -- render player + shadow
 
     Fx.obj.world.renderWalls() -- render walls
-
-    -- Ground
-    for _, g in ipairs(area.ground) do
-        Fx.dq.submitDraw(-999, function()
-            -- The Floor
-            Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
-
-            for gx = g.x, g.x + g.w, 40 do
-                for gy = g.y, g.y + g.h, 40 do
-                    -- Draw a tiny 1x1 dot or a subtle cross
-                    Fx.r.rect(gx, gy, 1, 1, {150, 200, 255, 20})
-                end
-            end
-        end)
-        Fx.dq.submitDraw(-1000, function()
-            -- The Floor
-            Fx.r.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
-            Fx.r.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
-            Fx.r.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
-            Fx.r.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
-        end)
-    end
-
-    -- Coins
-    for _, c in ipairs(area.coins) do
-        Fx.dq.submitDraw(c.y, function()
-            Fx.r.circ(c.x, c.y-15, 15, 15, {255, 200, 0})
-        end)
-    end
-
-    for _, c in ipairs(player.coinChain) do
-        Fx.dq.submitDraw(c.y, function()
-            Fx.r.circ(
-                c.x + 2.5,
-                c.y - c.z - 15,
-                15, 15,
-                {255, 200, 0}
-            )
-        end)
-    end
+    Fx.obj.world.renderGround() -- render ground
+    Fx.obj.world.renderCoins() -- render coins
+    Fx.obj.world.renderCores() -- render cores
 
     -- Dust
     for _, p in ipairs(particles) do
@@ -428,6 +417,11 @@ function love.draw()
         for _, w in ipairs(area.walls) do
             local wh = Fx.cl.getWallHitbox(w)
             Fx.r.rect(wh.x, wh.y, wh.w, wh.h, {0,255,0}, false)
+        end
+
+        for _, c in ipairs(area.coins) do
+            local ch = {x=c.x, y=c.y-3, w=15, h=6}
+            Fx.r.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
     end
 

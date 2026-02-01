@@ -44,7 +44,7 @@ Player.baseData = {
                 w = 20,
                 h = 6,
                 xt = 0,
-                yt = -3,
+                yt = -6,
             },
         },
     },

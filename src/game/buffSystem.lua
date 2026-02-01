@@ -48,21 +48,28 @@ function BuffSystem.update(player, dt)
     end
 end
 
-function BuffSystem.remove(player, id)
+function BuffSystem.remove(player, id, amount)
     local entry = player.buffs[id]
     if not entry then return end
 
-    -- remove one instance
-    table.remove(entry.instances)
-    entry.amount = entry.amount - 1
+    amount = amount or 1
 
-    if entry.def.onRemove then
-        entry.def.onRemove(player)
-    end
+    for i = 1, amount do
+        if entry.amount <= 0 then break end
 
-    -- clean up if empty
-    if entry.amount <= 0 then
-        player.buffs[id] = nil
+        -- remove one instance
+        table.remove(entry.instances)
+        entry.amount = entry.amount - 1
+
+        if entry.def.onRemove then
+            entry.def.onRemove(player)
+        end
+
+        -- clean up if empty
+        if entry.amount <= 0 then
+            player.buffs[id] = nil
+            break
+        end
     end
 end
 
