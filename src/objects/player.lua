@@ -30,7 +30,7 @@ Player.baseData = {
         move = {
             accel = 600,
             maxVel = 120,
-            fri = 800,
+            fri = 400,
         },
         jump = {
             vel = 260,

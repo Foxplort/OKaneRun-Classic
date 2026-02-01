@@ -174,18 +174,26 @@ function love.update(dt)
         if Fx.i.i("s") then my = my + 1 end
     end
 
-    -- Normalize diagonal movement
-    if mx ~= 0 or my ~= 0 then
-        local len = math.sqrt(mx*mx + my*my)
-        mx, my = mx / len, my / len
+    local targetVX = mx * player.meta.move.maxVel
+    local targetVY = my * player.meta.move.maxVel
 
-        player.x.vel = player.x.vel + mx * player.meta.move.accel * dt
-        player.y.vel = player.y.vel + my * player.meta.move.accel * dt
+    local accel = player.meta.move.accel
+    local decel = player.meta.move.fri
+
+    -- X axis
+    if targetVX ~= 0 then
+        player.x.vel = Fx.m.approach(player.x.vel, targetVX, accel * dt)
     else
-        -- Apply friction when no input
-        player.x.vel = Fx.m.approach(player.x.vel, 0, player.meta.move.fri * dt)
-        player.y.vel = Fx.m.approach(player.y.vel, 0, player.meta.move.fri * dt)
+        player.x.vel = Fx.m.approach(player.x.vel, 0, decel * dt)
     end
+
+    -- Y axis
+    if targetVY ~= 0 then
+        player.y.vel = Fx.m.approach(player.y.vel, targetVY, accel * dt)
+    else
+        player.y.vel = Fx.m.approach(player.y.vel, 0, decel * dt)
+    end
+
 
     -- Clamp max speed
     local speed = math.sqrt(player.x.vel^2 + player.y.vel^2)
@@ -247,8 +255,8 @@ function love.update(dt)
             player.y.vel = 0
             if #player.coinChain > 0 then
                 player.coins = player.coins + #player.coinChain
+                Fx.es.remove(player, "coin", #player.coinChain)
                 player.coinChain = {}
-                Fx.es.remove(player, "coin")
             end
             break
         end

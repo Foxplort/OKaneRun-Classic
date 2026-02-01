@@ -120,10 +120,15 @@ function World.renderWalls()
                 {0,50,100}
             )
 
-            -- Inner Highlight (Top Edge)
-            Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) 
-            -- Inner Shadow (Right Edge)
-            Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50})
+            -- Highlights
+            Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) -- Bottom Roof
+            Fx.r.rect(i.x, i.y - i.t, i.w, 2, {20, 200, 255, 50}) -- Top Face
+            Fx.r.rect(i.x, i.y - i.t, 2, i.t, {20, 200, 255, 50}) -- Left Side Face
+            Fx.r.rect(i.x, i.y - i.h - i.t, 2, i.h, {0, 100, 200, 20}) -- Left Side Roof
+            -- Shadows
+            Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50}) -- Right Side
+            Fx.r.rect(i.x, i.y - i.t - i.h, i.w, 2, {0, 25, 50, 50}) -- Top Roof
+            Fx.r.rect(i.x, i.y - 2, i.w, 2, {0, 25, 50, 50}) -- Top Roof
         end)
     end
 end
