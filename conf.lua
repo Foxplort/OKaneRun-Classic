@@ -1,6 +1,10 @@
 function love.conf(t)
-    GameVersion = "Prototype Git"
-    t.window.title = "OkaneRun [" .. GameVersion .. "]"
+    Game = {
+        version = "Prototype Git",
+        width = 640,
+        height = 360,
+    }
+    t.window.title = "OkaneRun [" .. Game.version .. "]"
     -- ## Window Settings ##
     t.window.width = 640*2 -- base resolution (X)
     t.window.height = 360*2 -- base resolution (Y)

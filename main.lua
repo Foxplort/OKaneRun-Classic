@@ -4,7 +4,8 @@ Fx = {
 }
 
 local config = {
-    integerScaling = true
+    integerScaling = true,
+    fullScreen = false,
 }
 
 local canvas
@@ -37,8 +38,12 @@ local drawQueue = {}
 local mapWidth, mapHeight = 1200, 800
 local camX, camY = 0, 0
 local shakeAmount = 0
+local uiShake = 0
 
 local particles = {}
+
+local trail = {}
+local TRAIL_MAX = 30
 
 local player = {
     x = {
@@ -65,6 +70,7 @@ local player = {
         sx = 1,
         sy = 1,
     },
+    dead = false,
     meta = {
         move = {
             accel = 600,
@@ -104,6 +110,20 @@ local area = {
             w = 60,
             h = 20,
             t = 40,
+        },
+        {
+            x = 600,
+            y = 230,
+            w = 40,
+            h = 40,
+            t = 120,
+        },
+        {
+            x = 200,
+            y = 450,
+            w = 10,
+            h = 15,
+            t = 10,
         },
     },
     ground = {
@@ -232,6 +252,26 @@ function love.keypressed(k)
         end
     elseif k == "k" then
         debug = not debug
+    elseif k == "f11" then
+        fullScreen = not fullScreen
+        love.window.setFullscreen(fullScreen)
+    end
+end
+
+local function damageHandler(dt)
+    -- Fall into the pit
+    if player.z.pos <= -150 then
+        player.hp.count = player.hp.count - 1
+        player.x.pos = 100
+        player.y.pos = 100
+        player.z.pos = 40
+        shakeAmount = shakeAmount + 3
+        uiShake = uiShake + 3
+    end
+
+    -- Getting the results
+    if player.hp.count <= 0 then
+        player.dead = true
     end
 end
 
@@ -242,10 +282,12 @@ function love.update(dt)
     local isSubmerged = player.z.pos < 0
     local mx, my = 0, 0
 
-    if Fx.i.i("d") then mx = mx + 1 end
-    if Fx.i.i("a") then mx = mx - 1 end
-    if Fx.i.i("w") then my = my - 1 end
-    if Fx.i.i("s") then my = my + 1 end
+    if not player.dead then
+        if Fx.i.i("d") then mx = mx + 1 end
+        if Fx.i.i("a") then mx = mx - 1 end
+        if Fx.i.i("w") then my = my - 1 end
+        if Fx.i.i("s") then my = my + 1 end
+    end
 
     -- Normalize diagonal movement
     if mx ~= 0 or my ~= 0 then
@@ -343,7 +385,6 @@ function love.update(dt)
             player.visual.sx = 1.5 -- Wide
             player.visual.sy = 0.5 -- Short
             spawnDust(player.x.pos + 10, player.y.pos, 0)
-            -- shakeAmount = 2 -- too violent, lol
         end
         player.z.pos = 0
         player.z.vel = 0
@@ -353,6 +394,17 @@ function love.update(dt)
     -- Visual recovery (bring scale back to 1)
     player.visual.sx = approach(player.visual.sx, 1, 2 * dt)
     player.visual.sy = approach(player.visual.sy, 1, 2 * dt)
+
+    -- Trail
+    table.insert(trail, 1, {
+        x = player.x.pos,
+        y = player.y.pos,
+        z = player.z.pos
+    })
+
+    if #trail > TRAIL_MAX then
+        table.remove(trail)
+    end
 
     -- Camera target (center of screen)
     local targetX = player.x.pos + player.meta.player.w / 2 - 320 -- 320 is half-width
@@ -367,8 +419,10 @@ function love.update(dt)
     camY = math.max(0, math.min(camY, mapHeight - 360))
 
     shakeAmount = approach(shakeAmount, 0, 40 * dt)
+    uiShake = approach(uiShake, 0, 40 * dt)
 
     updateParticles(dt)
+    damageHandler(dt)
 end
 
 
@@ -377,8 +431,7 @@ function love.draw()
     love.graphics.clear(0.01, 0.01, 0.02)
 
     love.graphics.push()
-    local s = shakeAmount
-    love.graphics.translate(math.random(-s, s), math.random(-s, s))
+    love.graphics.translate(math.random(-shakeAmount, shakeAmount), math.random(-shakeAmount, shakeAmount))
     love.graphics.translate(-math.floor(camX), -math.floor(camY))
 
     -- ## BASE DRAW PART ##
@@ -483,15 +536,18 @@ function love.draw()
 
             local jumpFactor = math.max(0.2, 1 - math.max(player.z.pos, 0) / 80)
 
-            local shadowLen = 8 * jumpFactor
+            local shadowLen = 7 * jumpFactor
             local sx = dx * shadowLen
-            local sy = dy * shadowLen
+            local sy = math.min(0, dy * shadowLen)
+
+            local skew = (i.x - px) * 0.02
+            skew = math.max(-6, math.min(6, skew))
 
             local alpha = 80 * jumpFactor
 
             -- shadow
             Fx.r.rect(
-                i.x + sx,
+                i.x + sx + skew,
                 i.y - i.h - i.t + sy,
                 i.w,
                 i.h + i.t,
@@ -593,12 +649,33 @@ function love.draw()
 
     -- ## USER INERTFACE ##
 
-    if debug then
-        Fx.r.text("OkaneRun [" .. GameVersion .. "]", 10, 10, 1)
-        Fx.r.text("---", 10, 20, 1)
-        Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 30, 1)
-        Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 40, 1)
+    love.graphics.push()
+    if uiShake > 0 then
+        love.graphics.translate(math.random(-1, 1), math.random(-1, 1))
     end
+
+    -- health
+    for i = 0, player.hp.max-1 do
+        Fx.r.rect(19, Game.height-21-(i+1)*15, 15, 15, {0, 0, 0})
+        Fx.r.rect(20, Game.height-20-(i+1)*15, 13, 13, {127, 0, 63})
+        if i < player.hp.count then
+            Fx.r.rect(20, Game.height-20-(i+1)*15, 13, 13, {255, 0, 127})
+        end
+    end
+
+    -- coin count
+    Fx.r.text(tostring(player.coins) .. "c", Game.width-225, 20, 1, 255, 200, "right")
+
+    -- debug
+    if debug then
+        Fx.r.text("OkaneRun [" .. Game.version .. "]", 10, 10, 1)
+        Fx.r.text("DEBUG (Press K to close)", 10, 20, 1)
+        Fx.r.text("---", 10, 30, 1)
+        Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 40, 1)
+        Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 50, 1)
+    end
+
+    love.graphics.pop()
 
     -- ## END OF UI ##
 
