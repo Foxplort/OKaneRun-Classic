@@ -93,6 +93,7 @@ local player = {
             },
         },
     },
+    coinChain = {},
 }
 
 local area = {
@@ -129,7 +130,24 @@ local area = {
     ground = {
         { x = 50, y = 50, w = mapWidth-100, h = mapHeight-100 }
     },
-    coins = {},
+    coins = {
+        {
+            x = 200,
+            y = 200,
+        },
+        {
+            x = 220,
+            y = 200,
+        },
+        {
+            x = 240,
+            y = 200,
+        },
+        {
+            x = 260,
+            y = 200,
+        },
+    },
 }
 
 local function approach(v, target, amount)
@@ -378,6 +396,24 @@ function love.update(dt)
         end
     end
 
+    -- Collect coins
+    for i, c in ipairs(area.coins) do
+        if aabb(getPlayerHitbox(), {x=c.x, y=c.y-3, w=15, h=6}) then
+            local coin = {
+                x = c.x,
+                y = c.y,
+                z = player.z.pos,
+
+                followIndex = #player.coinChain * 6 + 6
+            }
+
+            table.insert(player.coinChain, coin)
+            player.coins = player.coins + 1
+            
+            table.remove(area.coins, i)
+        end
+    end
+
     -- Ground collision
     if player.z.pos < 0 and not overPit then
         -- Detect landing
@@ -404,6 +440,15 @@ function love.update(dt)
 
     if #trail > TRAIL_MAX then
         table.remove(trail)
+    end
+
+    for _, coin in ipairs(player.coinChain) do
+        local p = trail[coin.followIndex]
+        if p then
+            coin.x = coin.x + (p.x - coin.x) * 12 * dt
+            coin.y = coin.y + (p.y - coin.y) * 12 * dt
+            coin.z = coin.z + (p.z - coin.z) * 10 * dt
+        end
     end
 
     -- Camera target (center of screen)
@@ -514,7 +559,17 @@ function love.draw()
         love.graphics.setStencilTest() -- Reset stencil
     end)
 
-    -- walls
+    local function playerBehindWall()
+        for _, w in ipairs(area.walls) do
+            if player.y.pos < w.y and
+            player.y.pos > w.y - w.h - w.t and
+            math.abs((player.x.pos + 10) - (w.x + w.w/2)) < w.w/2 + 6 then
+                return true
+            end
+        end
+        return false
+    end
+
     for _, i in pairs(area.walls) do
         -- I don't want them to flood anything outside of this loop
         local px = player.x.pos + player.meta.player.w * 0.5
@@ -601,6 +656,24 @@ function love.draw()
         end)
     end
 
+    -- Coins
+    for _, c in ipairs(area.coins) do
+        submitDraw(c.y, function()
+            Fx.r.circ(c.x, c.y-15, 15, 15, {255, 200, 0})
+        end)
+    end
+
+    for _, c in ipairs(player.coinChain) do
+        submitDraw(c.y, function()
+            Fx.r.circ(
+                c.x + 2.5,
+                c.y - c.z - 15,
+                15, 15,
+                {255, 200, 0}
+            )
+        end)
+    end
+
     -- Dust
     for _, p in ipairs(particles) do
         submitDraw(p.y, function()
@@ -629,6 +702,43 @@ function love.draw()
     end
 
     drawQueue = {}
+
+    -- Shiluette
+    if playerBehindWall() then
+        local pm = player.meta.player
+        local vs = player.visual
+        local vw = pm.w * vs.sx
+        local vh = pm.h * vs.sy
+
+        -- 1) Write wall area to stencil
+        love.graphics.stencil(function()
+            for _, w in ipairs(area.walls) do
+                love.graphics.rectangle(
+                    "fill",
+                    w.x,
+                    w.y - w.h - w.t,
+                    w.w,
+                    w.h + w.t
+                )
+            end
+        end, "replace", 1)
+
+        -- 2) Only draw where walls exist
+        love.graphics.setStencilTest("equal", 1)
+
+        -- 3) Draw silhouette
+        Fx.r.rect(
+            player.x.pos + (pm.w - vw) / 2,
+            player.y.pos - player.z.pos - vh,
+            vw,
+            vh,
+            {0, 0, 0, 90}
+        )
+
+        -- 4) Reset
+        love.graphics.setStencilTest()
+    end
+
 
     if debug then
         for _, g in ipairs(area.ground) do
