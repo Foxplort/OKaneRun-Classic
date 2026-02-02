@@ -1,6 +1,6 @@
 function love.conf(t)
     Game = {
-        version = "Prototype Git",
+        version = "0.1.0-dev",
         width = 640,
         height = 360,
     }
