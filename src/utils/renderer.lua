@@ -72,6 +72,13 @@ function Renderer.circ(x, y, w, h, c, f, s)
     love.graphics.ellipse(f, x, y, w, h, s)
 end
 
+function Renderer.polygon(vertices, c, f)
+    f = filling(f)
+
+    setColor(c)
+    love.graphics.polygon(f, vertices)
+end
+
 function Renderer.text(text, x, y, s, c, wrap, align)
     s = s or {1, 1}
     if type(s) == "number" then s = {s, s} end

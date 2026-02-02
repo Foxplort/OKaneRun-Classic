@@ -29,8 +29,15 @@ World.testArea = {
             x = 200,
             y = 450,
             w = 10,
-            h = 15,
+            h = 10,
             t = 10,
+        },
+        {
+            x = 800,
+            y = 320,
+            w = 20,
+            h = 20,
+            t = 20,
         },
     },
     ground = {
@@ -64,44 +71,33 @@ World.testArea = {
 
 function World.renderWalls()
     for _, i in pairs(area.walls) do
-        -- I don't want them to flood anything outside of this loop
-        local px = player.x.pos + player.meta.player.w * 0.5
-        local py = player.y.pos
+        Fx.dq.submitDraw(-99, function()
+            -- Draw shadow behind the wall
+            local shadowOffsetX = i.t * 0.6
+            local shadowOffsetY = i.t * 0.35
 
-        Fx.dq.submitDraw(i.y - 1, function()
-            -- direction from player to wall
-            local wx = i.x + i.w * 0.5
-            local wy = i.y
+            -- Corners of the skewed shadow
+            local x1, y1 = i.x, i.y - i.h
+            local x2, y2 = i.x + i.w, i.y
+            local x3, y3 = i.x + i.w + shadowOffsetX, i.y - i.t
+            local x4, y4 = i.x + i.w + shadowOffsetX, i.y - i.h - i.t
+            local x5, y5 = i.x + shadowOffsetX, i.y - i.h - i.t
 
-            local dx = wx - px
-            local dy = wy - py
-
-            local len = math.sqrt(dx*dx + dy*dy)
-            if len > 0 then
-                dx = dx / len
-                dy = dy / len
-            end
-
-            local jumpFactor = math.max(0.2, 1 - math.max(player.z.pos, 0) / 80)
-
-            local shadowLen = 7 * jumpFactor
-            local sx = dx * shadowLen
-            local sy = math.min(0, dy * shadowLen)
-
-            local skew = (i.x - px) * 0.02
-            skew = math.max(-6, math.min(6, skew))
-
-            local alpha = 80 * jumpFactor
-
-            -- shadow
-            Fx.r.rect(
-                i.x + sx + skew,
-                i.y - i.h - i.t + sy,
-                i.w,
-                i.h + i.t,
-                {0, 0, 0, alpha}
+            Fx.r.polygon(
+                {x1, y1, x2, y2, x3, y3, x4, y4, x5, y5},
+                {0, 0, 0, 90}
             )
 
+            -- ambient occlusion
+            Fx.r.rect(
+                i.x,
+                i.y - 2,
+                i.w,
+                4,
+                {0, 0, 0, 90}
+            )
+        end)
+        Fx.dq.submitDraw(i.y, function()
             -- wall
             Fx.r.rect(
                 i.x,
@@ -120,15 +116,10 @@ function World.renderWalls()
                 {0,50,100}
             )
 
-            -- Highlights
-            Fx.r.rect(i.x, i.y - i.t - 2, i.w, 2, {0, 100, 200, 50}) -- Bottom Roof
-            Fx.r.rect(i.x, i.y - i.t, i.w, 2, {20, 200, 255, 50}) -- Top Face
-            Fx.r.rect(i.x, i.y - i.t, 2, i.t, {20, 200, 255, 50}) -- Left Side Face
-            Fx.r.rect(i.x, i.y - i.h - i.t, 2, i.h, {0, 100, 200, 20}) -- Left Side Roof
-            -- Shadows
-            Fx.r.rect(i.x + i.w - 2, i.y - i.h - i.t, 2, i.h + i.t, {0, 25, 50, 50}) -- Right Side
-            Fx.r.rect(i.x, i.y - i.t - i.h, i.w, 2, {0, 25, 50, 50}) -- Top Roof
-            Fx.r.rect(i.x, i.y - 2, i.w, 2, {0, 25, 50, 50}) -- Top Roof
+            -- Highlight
+            Fx.r.rect(i.x, i.y - i.t, i.w, 1, {200, 240, 255, 60})
+            -- Shadow
+            Fx.r.rect(i.x + i.w - 1, i.y - i.t, 1, i.t, {0, 0, 0, 80}) -- Right Side
         end)
     end
 end
