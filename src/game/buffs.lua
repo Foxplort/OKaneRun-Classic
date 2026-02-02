@@ -2,7 +2,7 @@ local buffs = {}
 
 buffs.haste = {
     id = "haste",
-    kind = "buff",
+    type = "buff",
     duration = nil,
     maxAmount = 2,
 
@@ -17,7 +17,7 @@ buffs.haste = {
 
 buffs.fatso = {
     id = "fatso",
-    kind = "debuff",
+    type = "debuff",
     duration = nil,
     maxAmount = 2,
     
@@ -32,7 +32,7 @@ buffs.fatso = {
 
 buffs.winged = {
     id = "winged",
-    kind = "buff",
+    type = "buff",
     duration = nil,
     maxAmount = 4,
 
@@ -47,7 +47,7 @@ buffs.winged = {
 
 buffs.icy = {
     id = "icy",
-    kind = "debuff",
+    type = "debuff",
     duration = nil,
     maxAmount = 2,
     
@@ -64,7 +64,7 @@ buffs.icy = {
 
 buffs.coin = {
     id = "coin",
-    kind = "debuff",
+    type = "debuff",
     duration = nil,
     maxAmount = 1023,
     

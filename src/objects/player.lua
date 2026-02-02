@@ -140,6 +140,13 @@ local function playerBehindWall()
             return true
         end
     end
+    for _, w in ipairs(area.cores) do
+        if player.y.pos < w.y and
+        player.y.pos > w.y - 80 and
+        math.abs((player.x.pos + 10) - (w.x + 20)) < 32 then
+            return true
+        end
+    end
     return false
 end
 
@@ -159,6 +166,15 @@ function Player.shiluette()
                     w.y - w.h - w.t,
                     w.w,
                     w.h + w.t
+                )
+            end
+            for _, w in ipairs(area.cores) do
+                love.graphics.rectangle(
+                    "fill",
+                    w.x,
+                    w.y - 80,
+                    40,
+                    80
                 )
             end
         end, "replace", 1)

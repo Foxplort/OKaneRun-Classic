@@ -79,9 +79,9 @@ function World.renderWalls()
             -- Corners of the skewed shadow
             local x1, y1 = i.x, i.y - i.h
             local x2, y2 = i.x + i.w, i.y
-            local x3, y3 = i.x + i.w + shadowOffsetX, i.y - i.t
-            local x4, y4 = i.x + i.w + shadowOffsetX, i.y - i.h - i.t
-            local x5, y5 = i.x + shadowOffsetX, i.y - i.h - i.t
+            local x3, y3 = i.x + i.w + shadowOffsetX, i.y - i.t + shadowOffsetY
+            local x4, y4 = i.x + i.w + shadowOffsetX, i.y - i.h - i.t + shadowOffsetY
+            local x5, y5 = i.x + shadowOffsetX, i.y - i.h - i.t + shadowOffsetY
 
             Fx.r.polygon(
                 {x1, y1, x2, y2, x3, y3, x4, y4, x5, y5},
@@ -125,28 +125,151 @@ function World.renderWalls()
 end
 
 function World.renderCoins()
+    -- Real coins
     for _, c in ipairs(area.coins) do
+        -- Coin
         Fx.dq.submitDraw(c.y, function()
-            Fx.r.circ(c.x, c.y-15, 15, 15, {255, 200, 0})
+            Fx.r.circ(c.x, c.y-15, 10, 15, {255, 200, 0}, true, 7)
+            Fx.r.circ(c.x+3, c.y-15, 3, 15, {200, 160, 0}, true, 3)
+            Fx.r.circ(c.x+6, c.y-13, 5, 5, {255, 255, 160}, true, 5)
+        end)
+
+        -- Shadow
+        Fx.dq.submitDraw(-99, function()
+            local z = 5
+            local cw, ch = 10, 7
+
+            -- base shadow size from [coin] size
+            local baseW = cw * 1.2
+            local baseH = ch * 0.35
+
+            -- shrink with jump
+            local shadowZ = math.max(0, z) -- Don't go below floor
+            local shrink = math.max(0.45, 1 - shadowZ / 80)
+
+            local w = baseW * shrink
+            local h = baseH * shrink
+
+            -- fade slightly with height
+            local alpha = math.max(60, 160 - z * 1.5)
+
+            -- center under feet
+            local cx = c.x + cw * 0.5
+            local cy = c.y - 2
+
+            Fx.r.circ(
+                cx - w * 0.5,
+                cy - h * 0.5 + 2,
+                w,
+                h,
+                {0, 0, 0, alpha}
+            )
         end)
     end
 
+    -- Coins that follow the player
     for _, c in ipairs(player.coinChain) do
+        -- Coin
         Fx.dq.submitDraw(c.y, function()
             Fx.r.circ(
                 c.x + 2.5,
                 c.y - c.z - 15,
-                15, 15,
-                {255, 200, 0}
+                10, 15,
+                {255, 200, 0},
+                true, 7
+            )
+
+            Fx.r.circ(c.x+3+2.5, c.y-c.z-15, 3, 15, {200, 160, 0}, true, 3)
+            Fx.r.circ(c.x+6+2.5, c.y-c.z-13, 5, 5, {255, 255, 160}, true, 5)
+        end)
+
+        -- Shadow
+        Fx.dq.submitDraw(-99, function()
+            local z = c.z
+            local cw, ch = 10, 7
+
+            -- base shadow size from [coin] size
+            local baseW = cw * 1.2
+            local baseH = ch * 0.35
+
+            -- shrink with jump
+            local shadowZ = math.max(0, z) -- Don't go below floor
+            local shrink = math.max(0.45, 1 - shadowZ / 80)
+
+            local w = baseW * shrink
+            local h = baseH * shrink
+
+            -- fade slightly with height
+            local alpha = math.max(60, 160 - z * 1.5)
+
+            -- center under feet
+            local cx = c.x + cw * 0.5
+            local cy = c.y - 2
+
+            Fx.r.circ(
+                cx - w * 0.5 + 2.5,
+                cy - h * 0.5 + 2,
+                w,
+                h,
+                {0, 0, 0, alpha}
             )
         end)
     end
 end
 
 function World.renderCores()
-    for _, c in ipairs(area.cores) do
-        Fx.dq.submitDraw(c.y, function()
-            Fx.r.rect(c.x, c.y, 40, 40, {0, 190, 80})
+    for _, i in ipairs(area.cores) do
+        local h, w, t = 40, 40, 40
+
+        Fx.dq.submitDraw(-99, function()
+            -- Draw shadow behind the wall
+            local shadowOffsetX = t * 0.6
+            local shadowOffsetY = t * 0.35
+
+            -- Corners of the skewed shadow
+            local x1, y1 = i.x, i.y - h
+            local x2, y2 = i.x + w, i.y
+            local x3, y3 = i.x + w + shadowOffsetX, i.y - t + shadowOffsetY
+            local x4, y4 = i.x + w + shadowOffsetX, i.y - h - t + shadowOffsetY
+            local x5, y5 = i.x + shadowOffsetX, i.y - h - t + shadowOffsetY
+
+            Fx.r.polygon(
+                {x1, y1, x2, y2, x3, y3, x4, y4, x5, y5},
+                {0, 0, 0, 90}
+            )
+
+            -- ambient occlusion
+            Fx.r.rect(
+                i.x,
+                i.y - 2,
+                w,
+                4,
+                {0, 0, 0, 90}
+            )
+        end)
+        Fx.dq.submitDraw(i.y, function()
+            -- wall
+            Fx.r.rect(
+                i.x,
+                i.y - h - t,
+                w,
+                h + t,
+                {0, 190, 80}
+            )
+
+            -- roof
+            Fx.r.rect(
+                i.x,
+                i.y - h - t,
+                w,
+                h,
+                {0, 90, 60}
+            )
+
+            -- Highlight
+            Fx.r.rect(i.x, i.y - t, w, 1, {200, 255, 240, 60})
+            -- Shadow
+            Fx.r.rect(i.x + w - 1, i.y - t, 1, t, {0, 0, 0, 80}) -- Right Side
         end)
     end
 end

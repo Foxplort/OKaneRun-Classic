@@ -105,6 +105,8 @@ end
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
     canvas:setFilter("nearest", "nearest")
+    love.window.setIcon(love.image.newImageData("assets/images/icon.png"))
+
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
@@ -219,7 +221,7 @@ function love.update(dt)
     end
 
     for _, c in ipairs(area.cores) do
-        local ch = {x=c.x, y=c.y, w=40, h=40}
+        local ch = {x=c.x, y=c.y-40, w=40, h=40}
         if Fx.m.aabb(hb, ch) then
             nextX = player.x.pos
             player.x.vel = 0
@@ -249,7 +251,7 @@ function love.update(dt)
     end
 
     for _, c in ipairs(area.cores) do
-        local ch = {x=c.x, y=c.y, w=40, h=40}
+        local ch = {x=c.x, y=c.y-40, w=40, h=40}
         if Fx.m.aabb(hb, ch) then
             nextY = player.y.pos
             player.y.vel = 0
