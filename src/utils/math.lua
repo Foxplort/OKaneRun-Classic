@@ -9,6 +9,10 @@ function MathP.approach(v, target, amount)
     return target
 end
 
+function MathP.clamp(value, min_val, max_val)
+    return math.max(min_val, math.min(max_val, value))
+end
+
 function MathP.aabb(a, b)
     return a.x < b.x + b.w and
            a.x + a.w > b.x and

@@ -25,6 +25,7 @@ local canvas
 local scale
 local screenX
 local screenY
+local detFrame = 1
 
 local myShader
 
@@ -37,9 +38,6 @@ local shakeAmount = 0
 local uiShake = 0
 
 local particles = {}
-
-local trail = {}
-local TRAIL_MAX = 30
 
 player = Fx.obj.player.baseData
 area = Fx.obj.world.testArea
@@ -97,6 +95,25 @@ local function checkOnGround(tx, ty)
     return false
 end
 
+local function followTarget(coin, tx, ty, tz, dt)
+    local dx = coin.x - tx
+    local dy = coin.y - ty
+    local dz = coin.z - tz
+
+    local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+    if dist == 0 then return end
+
+    local desired = coin.spacing
+    local diff = dist - desired
+
+    -- Soft clamp
+    local pull = Fx.m.clamp(diff * 8, -200, 200)
+
+    coin.x = coin.x - (dx / dist) * pull * dt
+    coin.y = coin.y - (dy / dist) * pull * dt
+    --coin.z = coin.z - (dz / dist) * pull * dt
+    coin.z = coin.z + (tz - coin.z) * 6 * dt
+end
 
 -------------------
 -- BASE LUA LOVE --
@@ -149,9 +166,20 @@ local function damageHandler(dt)
     -- Fall into the pit
     if player.z.pos <= -150 then
         player.hp.count = player.hp.count - 1
+
+        -- Safe Teleport
         player.x.pos = 100
         player.y.pos = 100
         player.z.pos = 40
+
+        -- Coins teleport
+        for i, coin in ipairs(player.coinChain) do
+            coin.x = player.x.pos
+            coin.y = player.y.pos
+            coin.z = player.z.pos
+        end
+
+        -- Effects
         shakeAmount = shakeAmount + 3
         uiShake = uiShake + 3
     end
@@ -303,13 +331,14 @@ function love.update(dt)
 
     -- Collect coins
     for i, c in ipairs(area.coins) do
-        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=15, h=6}) then
+        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) then
+            local SPACING = 10
+
             local coin = {
                 x = c.x,
                 y = c.y,
                 z = player.z.pos,
-
-                followIndex = #player.coinChain * 6 + 6
+                spacing = SPACING --* (#player.coinChain + 1)
             }
 
             table.insert(player.coinChain, coin)
@@ -336,24 +365,23 @@ function love.update(dt)
     player.visual.sy = Fx.m.approach(player.visual.sy, 1, 2 * dt)
 
     -- Trail
-    table.insert(trail, 1, {
-        x = player.x.pos,
-        y = player.y.pos,
-        z = player.z.pos
-    })
+    for i, coin in ipairs(player.coinChain) do
+        local tx, ty, tz
 
-    if #trail > TRAIL_MAX then
-        table.remove(trail)
-    end
-
-    for _, coin in ipairs(player.coinChain) do
-        local p = trail[coin.followIndex]
-        if p then
-            coin.x = coin.x + (p.x - coin.x) * 12 * dt
-            coin.y = coin.y + (p.y - coin.y) * 12 * dt
-            coin.z = coin.z + (p.z - coin.z) * 10 * dt
+        if i == 1 then
+            tx = player.x.pos
+            ty = player.y.pos
+            tz = player.z.pos
+        else
+            local prev = player.coinChain[i - 1]
+            tx = prev.x
+            ty = prev.y
+            tz = prev.z
         end
+
+        followTarget(coin, tx, ty, tz, dt)
     end
+
 
     -- Camera target (center of screen)
     local targetX = player.x.pos + player.meta.player.w / 2 - 320 -- 320 is half-width
@@ -372,6 +400,9 @@ function love.update(dt)
 
     updateParticles(dt)
     damageHandler(dt)
+
+    detFrame = detFrame + 1
+    if detFrame > 120 then detFrame = 1 end
 end
 
 
@@ -430,7 +461,7 @@ function love.draw()
         end
 
         for _, c in ipairs(area.coins) do
-            local ch = {x=c.x, y=c.y-3, w=15, h=6}
+            local ch = {x=c.x, y=c.y-3, w=10, h=6}
             Fx.r.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
     end

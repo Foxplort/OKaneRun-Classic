@@ -52,12 +52,12 @@ buffs.icy = {
     maxAmount = 2,
     
     onApply = function(player)
-        player.meta.move.fri = player.meta.move.fri * 0.7
+        player.meta.move.fri = player.meta.move.fri * 0.5
         player.meta.move.accel = player.meta.move.accel * 0.9
     end,
 
     onRemove = function(player)
-        player.meta.move.fri = player.meta.move.fri / 0.7
+        player.meta.move.fri = player.meta.move.fri / 0.5
         player.meta.move.accel = player.meta.move.accel / 0.9
     end,
 }
@@ -70,12 +70,16 @@ buffs.coin = {
     
     onApply = function(player)
         player.meta.move.fri = player.meta.move.fri * 0.8
-        player.meta.move.accel = player.meta.move.accel * 0.8
+        player.meta.move.accel = player.meta.move.accel * 0.7
+        player.meta.move.maxVel = player.meta.move.maxVel * 0.97
+        player.meta.jump.vel = player.meta.jump.vel * 0.9
     end,
 
     onRemove = function(player)
         player.meta.move.fri = player.meta.move.fri / 0.8
-        player.meta.move.accel = player.meta.move.accel / 0.8
+        player.meta.move.accel = player.meta.move.accel / 0.7
+        player.meta.move.maxVel = player.meta.move.maxVel / 0.97
+        player.meta.jump.vel = player.meta.jump.vel / 0.9
     end,
 }
 
