@@ -208,7 +208,7 @@ function World.renderCoins()
 
         -- Shadow
         Fx.dq.submitDraw(-99, function()
-            if c.z < -1 then
+            if c.z > -1 then
                 local z = c.z
                 local cw, ch = 10, 7
 

@@ -72,14 +72,14 @@ buffs.coin = {
         player.meta.move.fri = player.meta.move.fri * 0.8
         player.meta.move.accel = player.meta.move.accel * 0.7
         player.meta.move.maxVel = player.meta.move.maxVel * 0.97
-        player.meta.jump.vel = player.meta.jump.vel * 0.9
+        player.meta.jump.vel = player.meta.jump.vel * 0.95
     end,
 
     onRemove = function(player)
         player.meta.move.fri = player.meta.move.fri / 0.8
         player.meta.move.accel = player.meta.move.accel / 0.7
         player.meta.move.maxVel = player.meta.move.maxVel / 0.97
-        player.meta.jump.vel = player.meta.jump.vel / 0.9
+        player.meta.jump.vel = player.meta.jump.vel / 0.95
     end,
 }
 
