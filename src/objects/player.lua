@@ -45,6 +45,7 @@ Player.baseData = {
                 h = 6,
                 xt = 0,
                 yt = -6,
+                t = 15,
             },
         },
     },
@@ -52,9 +53,39 @@ Player.baseData = {
     buffs = {},
 }
 
+local function playerRenderDepth()
+    local depth = player.y.pos
+
+    for _, w in ipairs(area.walls) do
+        local wallMinY = w.y - w.h - w.t
+        local wallMaxY = w.y
+
+        local overlappingXY =
+            player.x.pos + player.meta.player.w > w.x and
+            player.x.pos < w.x + w.w and
+            player.y.pos > wallMinY and
+            player.y.pos < wallMaxY
+
+        if overlappingXY then
+            local wallTopZ = w.z + w.t
+
+            if player.z.pos >= wallTopZ then
+                -- Player stands on the wall - force in front
+                depth = math.max(depth, w.y + 1)
+            else
+                -- Player is behind the wall - force behind
+                depth = math.min(depth, w.y - 1)
+            end
+        end
+    end
+
+    return depth
+end
+
+
 function Player.render()
     -- shadow
-    Fx.dq.submitDraw(-99, function()
+    Fx.dq.submit(L.SHADOW, player.y.pos, function()
         love.graphics.stencil(function()
             for _, g in ipairs(area.ground) do
                 love.graphics.rectangle("fill", g.x, g.y, g.w, g.h)
@@ -98,7 +129,7 @@ function Player.render()
 
 
     -- player
-    Fx.dq.submitDraw(player.y.pos, function()
+    Fx.dq.submit(L.ACTOR, playerRenderDepth(), function()
         local pm = player.meta.player
         local vs = player.visual
         
@@ -134,66 +165,85 @@ end
 
 local function playerBehindWall()
     for _, w in ipairs(area.walls) do
-        if player.y.pos < w.y and
-        player.y.pos > w.y - w.h - w.t and
-        math.abs((player.x.pos + 10) - (w.x + w.w/2)) < w.w/2 + 12 then
-            return true
+        local wallMinY = w.y - w.h - w.t
+        local wallMaxY = w.y
+
+        local overlappingXY =
+            player.x.pos + player.meta.player.w > w.x and
+            player.x.pos < w.x + w.w and
+            player.y.pos > wallMinY and
+            player.y.pos < wallMaxY
+
+        if overlappingXY then
+            if player.z.pos < (w.z + w.t) then
+                return true
+            end
         end
     end
     for _, w in ipairs(area.cores) do
-        if player.y.pos < w.y and
-        player.y.pos > w.y - 80 and
-        math.abs((player.x.pos + 10) - (w.x + 20)) < 32 then
-            return true
+        local wallMinY = w.y - 40 - 40
+        local wallMaxY = w.y
+
+        local overlappingXY =
+            player.x.pos + player.meta.player.w > w.x and
+            player.x.pos < w.x + 40 and
+            player.y.pos > wallMinY and
+            player.y.pos < wallMaxY
+
+        if overlappingXY then
+            if player.z.pos < (40) then
+                return true
+            end
         end
     end
     return false
 end
 
-function Player.shiluette()
-    if playerBehindWall() then
-        local pm = player.meta.player
-        local vs = player.visual
-        local vw = pm.w * vs.sx
-        local vh = pm.h * vs.sy
 
-        -- 1) Write wall area to stencil
-        love.graphics.stencil(function()
-            for _, w in ipairs(area.walls) do
-                love.graphics.rectangle(
-                    "fill",
-                    w.x,
-                    w.y - w.h - w.t,
-                    w.w,
-                    w.h + w.t
-                )
-            end
-            for _, w in ipairs(area.cores) do
-                love.graphics.rectangle(
-                    "fill",
-                    w.x,
-                    w.y - 80,
-                    40,
-                    80
-                )
-            end
-        end, "replace", 1)
+function Player.silhuette()
+    if not playerBehindWall() then return end
 
-        -- 2) Only draw where walls exist
-        love.graphics.setStencilTest("equal", 1)
+    local pm = player.meta.player
+    local vs = player.visual
+    local vw = pm.w * vs.sx
+    local vh = pm.h * vs.sy
 
-        -- 3) Draw silhouette
-        Fx.r.rect(
-            player.x.pos + (pm.w - vw) / 2,
-            player.y.pos - player.z.pos - vh,
-            vw,
-            vh,
-            {0, 0, 0, 90}
-        )
+    -- Write wall shapes to stencil
+    love.graphics.stencil(function()
+        for _, w in ipairs(area.walls) do
+            love.graphics.rectangle(
+                "fill",
+                w.x,
+                w.y - w.h - w.t - w.z,
+                w.w,
+                w.h + w.t
+            )
+        end
+        for _, c in ipairs(area.cores) do
+            love.graphics.rectangle(
+                "fill",
+                c.x,
+                c.y - 40 - 40,
+                40,
+                40 + 40
+            )
+        end
+    end, "replace", 1)
 
-        -- 4) Reset
-        love.graphics.setStencilTest()
-    end
+    -- Draw ONLY where walls exist
+    love.graphics.setStencilTest("equal", 1)
+
+    -- Draw silhouette
+    Fx.r.rect(
+        player.x.pos + (pm.w - vw) / 2,
+        player.y.pos - player.z.pos - vh,
+        vw,
+        vh,
+        {0, 0, 0, 110}
+    )
+
+    -- Reset stencil
+    love.graphics.setStencilTest()
 end
 
 return Player

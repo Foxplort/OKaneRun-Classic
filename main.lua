@@ -25,7 +25,6 @@ local canvas
 local scale
 local screenX
 local screenY
-local detFrame = 1
 
 local myShader
 
@@ -41,6 +40,15 @@ local particles = {}
 
 player = Fx.obj.player.baseData
 area = Fx.obj.world.testArea
+
+-- layers
+L = {
+    FLOOR      = 0,
+    FLOOR_DEC  = 1,
+    SHADOW     = 2,
+    ACTOR      = 3,
+}
+
 
 BuffUIDat = {
     visible = false,
@@ -66,6 +74,26 @@ local function spawnDust(x, y, z)
         })
     end
 end
+
+local function spawnLandingDust(x, y, z)
+    local count = 8
+    for i = 1, count do
+        local a = (i / count) * math.pi * 2
+        local r = math.random(30, 60)
+
+        table.insert(particles, {
+            x = x,
+            y = y,
+            z = z,
+            vx = math.cos(a) * r,
+            vy = math.sin(a) * r/2,
+            vz = math.random(2, 10),
+            life = 1.0,
+            size = math.random(2, 4)
+        })
+    end
+end
+
 
 local function updateParticles(dt)
     for i = #particles, 1, -1 do
@@ -113,6 +141,33 @@ local function followTarget(coin, tx, ty, tz, dt)
     coin.y = coin.y - (dy / dist) * pull * dt
     --coin.z = coin.z - (dz / dist) * pull * dt
     coin.z = coin.z + (tz - coin.z) * 6 * dt
+end
+
+local function actorRenderDepth(x, y, z)
+    local depth = y
+
+    for _, w in ipairs(area.walls) do
+        local wallMinY = w.y - w.h - w.t
+        local wallMaxY = w.y
+
+        local overlappingXY =
+            x > w.x and
+            x < w.x + w.w and
+            y > wallMinY and
+            y < wallMaxY
+
+        if overlappingXY then
+            local wallTopZ = (w.z or 0) + (w.t or 0)
+
+            if z >= wallTopZ then
+                depth = math.max(depth, w.y + 1)
+            else
+                depth = math.min(depth, w.y - 1)
+            end
+        end
+    end
+
+    return depth
 end
 
 -------------------
@@ -193,6 +248,7 @@ end
 function love.update(dt)
     local lastX = player.x.pos
     local lastY = player.y.pos
+    local lastZ = player.z.pos
     
     local isSubmerged = player.z.pos < 0
     local mx, my = 0, 0
@@ -224,7 +280,6 @@ function love.update(dt)
         player.y.vel = Fx.m.approach(player.y.vel, 0, decel * dt)
     end
 
-
     -- Clamp max speed
     local speed = math.sqrt(player.x.vel^2 + player.y.vel^2)
     if speed > player.meta.move.maxVel then
@@ -241,7 +296,15 @@ function love.update(dt)
 
     for _, w in ipairs(area.walls) do
         local wh = Fx.cl.getWallHitbox(w)
-        if Fx.m.aabb(hb, wh) then
+
+        if Fx.m.aabb3(
+            hb,
+            player.z.pos,
+            player.meta.player.hitbox.t,
+            wh,
+            w.z or 0,
+            w.t or math.huge
+        ) then
             nextX = player.x.pos
             player.x.vel = 0
             break
@@ -271,7 +334,15 @@ function love.update(dt)
 
     for _, w in ipairs(area.walls) do
         local wh = Fx.cl.getWallHitbox(w)
-        if Fx.m.aabb(hb, wh) then
+
+        if Fx.m.aabb3(
+            hb,
+            player.z.pos,
+            player.meta.player.hitbox.t,
+            wh,
+            w.z or 0,
+            w.t or math.huge
+        ) then
             nextY = player.y.pos
             player.y.vel = 0
             break
@@ -322,6 +393,58 @@ function love.update(dt)
     player.z.vel = player.z.vel - player.meta.jump.g * dt
     player.z.pos = player.z.pos + player.z.vel * dt
 
+    -- PLATFORM / WALL TOP LANDING
+    if player.z.vel <= 0 then -- only when falling
+        local hb = Fx.cl.getPlayerHitbox()
+        local playerBottom = player.z.pos
+        local playerTop = player.z.pos + player.meta.player.hitbox.t
+
+        for _, w in ipairs(area.walls) do
+            local wh = Fx.cl.getWallHitbox(w)
+            local wallTop = (w.z or 0) + (w.t or 0)
+
+            -- XY overlap?
+            if Fx.m.aabb(hb, wh) then
+                -- Did we cross the top this frame?
+                if lastZ >= wallTop and playerBottom <= wallTop then
+                    -- LAND
+                    if player.z.vel < -50 then 
+                        player.visual.sx = 1.5 -- Wide
+                        player.visual.sy = 0.5 -- Short
+                        spawnLandingDust(player.x.pos + 10, player.y.pos, wallTop)
+                    end
+                    player.z.pos = wallTop
+                    player.z.vel = 0
+                    player.jump.cons = 0
+                    break
+                end
+            end
+        end
+    end
+
+    -- CEILING / UNDERSIDE COLLISION
+    if player.z.vel > 0 then -- only when moving upward
+        local hb = Fx.cl.getPlayerHitbox()
+        local playerTop = player.z.pos + player.meta.player.hitbox.t
+
+        for _, w in ipairs(area.walls) do
+            local wh = Fx.cl.getWallHitbox(w)
+            local wallBottom = (w.z or 0)
+
+            -- XY overlap?
+            if Fx.m.aabb(hb, wh) then
+                -- Did we hit the underside?
+                if lastZ + player.meta.player.hitbox.t <= wallBottom
+                and playerTop >= wallBottom then
+
+                    player.z.pos = wallBottom - player.meta.player.hitbox.t
+                    player.z.vel = 0
+                    break
+                end
+            end
+        end
+    end
+
     local overPit = true
     for _, g in ipairs(area.ground) do
         if Fx.m.aabb(Fx.cl.getPlayerHitbox(), Fx.cl.getGroundHitbox(g)) then
@@ -353,7 +476,7 @@ function love.update(dt)
         if player.z.vel < -50 then 
             player.visual.sx = 1.5 -- Wide
             player.visual.sy = 0.5 -- Short
-            spawnDust(player.x.pos + 10, player.y.pos, 0)
+            spawnLandingDust(player.x.pos + 10, player.y.pos, 0)
         end
         player.z.pos = 0
         player.z.vel = 0
@@ -371,7 +494,7 @@ function love.update(dt)
         if i == 1 then
             tx = player.x.pos
             ty = player.y.pos
-            tz = player.z.pos
+            tz = player.z.pos + 4
         else
             local prev = player.coinChain[i - 1]
             tx = prev.x
@@ -400,9 +523,6 @@ function love.update(dt)
 
     updateParticles(dt)
     damageHandler(dt)
-
-    detFrame = detFrame + 1
-    if detFrame > 120 then detFrame = 1 end
 end
 
 
@@ -425,25 +545,29 @@ function love.draw()
 
     -- Dust
     for _, p in ipairs(particles) do
-        Fx.dq.submitDraw(p.y, function()
-            local alpha = p.life * 180
-            local s = p.size * (0.5 + p.life * 0.5) -- Shrink over time
-            
-            -- Draw the dust puff
-            Fx.r.rect(
-                p.x - s/2, 
-                p.y - p.z - s,
-                s, s, 
-                {255, 255, 255, alpha}
-            )
-        end)
+        Fx.dq.submit(
+            L.ACTOR,
+            actorRenderDepth(p.x, p.y, p.z),
+            function()
+                local alpha = p.life * 180
+                local s = p.size * (0.5 + p.life * 0.5)
+
+                Fx.r.rect(
+                    p.x - s/2,
+                    p.y - p.z - s,
+                    s, s,
+                    {255, 255, 255, alpha}
+                )
+            end
+        )
+
     end
 
     -- ## END OF DRAW ##
 
     Fx.dq.draw() -- draw items in order
 
-    Fx.obj.player.shiluette() -- Player's shiluette
+    Fx.obj.player.silhuette() -- Player's shiluette
 
 
     if debug then
@@ -458,6 +582,10 @@ function love.draw()
         for _, w in ipairs(area.walls) do
             local wh = Fx.cl.getWallHitbox(w)
             Fx.r.rect(wh.x, wh.y, wh.w, wh.h, {0,255,0}, false)
+        end
+
+        for _, c in ipairs(area.cores) do
+            Fx.r.rect(c.x, c.y-40, 40, 40, {0,255,0}, false)
         end
 
         for _, c in ipairs(area.coins) do

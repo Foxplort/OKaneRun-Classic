@@ -1,17 +1,20 @@
 local DrawQueue = {}
-
 local queue = {}
 
-function DrawQueue.submitDraw(y, fn)
+function DrawQueue.submit(layer, depth, fn)
     queue[#queue + 1] = {
-        y = y,
+        layer = layer,
+        depth = depth,
         fn = fn
     }
 end
 
 function DrawQueue.draw()
     table.sort(queue, function(a, b)
-        return a.y < b.y
+        if a.layer ~= b.layer then
+            return a.layer < b.layer
+        end
+        return a.depth < b.depth
     end)
 
     for _, item in ipairs(queue) do

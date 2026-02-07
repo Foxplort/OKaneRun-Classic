@@ -7,6 +7,7 @@ World.testArea = {
         {
             x = 200,
             y = 120,
+            z = 0,
             w = 30,
             h = 30,
             t = 30,
@@ -14,6 +15,7 @@ World.testArea = {
         {
             x = 300,
             y = 170,
+            z = 0,
             w = 60,
             h = 20,
             t = 40,
@@ -21,6 +23,7 @@ World.testArea = {
         {
             x = 600,
             y = 230,
+            z = 0,
             w = 40,
             h = 40,
             t = 120,
@@ -28,6 +31,7 @@ World.testArea = {
         {
             x = 200,
             y = 450,
+            z = 0,
             w = 10,
             h = 10,
             t = 10,
@@ -35,9 +39,26 @@ World.testArea = {
         {
             x = 800,
             y = 320,
+            z = 0,
             w = 20,
             h = 20,
             t = 20,
+        },
+        {
+            x = 600,
+            y = 300,
+            z = 20,
+            w = 70,
+            h = 70,
+            t = 20,
+        },
+        {
+            x = 600,
+            y = 600,
+            z = 200,
+            w = 70,
+            h = 70,
+            t = 10,
         },
     },
     ground = {
@@ -60,10 +81,18 @@ World.testArea = {
             x = 260,
             y = 200,
         },
+        {
+            x = 280,
+            y = 200,
+        },
+        {
+            x = 300,
+            y = 200,
+        },
     },
     cores = {
         {
-            x = 600,
+            x = 400,
             y = 400,
         },
     },
@@ -71,37 +100,40 @@ World.testArea = {
 
 function World.renderWalls()
     for _, i in pairs(area.walls) do
-        Fx.dq.submitDraw(-99, function()
+        Fx.dq.submit(L.SHADOW, i.y, function()
             -- Draw shadow behind the wall
             local shadowOffsetX = i.t * 0.6
             local shadowOffsetY = i.t * 0.35
 
             -- Corners of the skewed shadow
-            local x1, y1 = i.x, i.y - i.h
-            local x2, y2 = i.x + i.w, i.y
-            local x3, y3 = i.x + i.w + shadowOffsetX, i.y - i.t + shadowOffsetY
-            local x4, y4 = i.x + i.w + shadowOffsetX, i.y - i.h - i.t + shadowOffsetY
-            local x5, y5 = i.x + shadowOffsetX, i.y - i.h - i.t + shadowOffsetY
+            local x1, y1 = i.x + i.z, i.y - i.h - i.z*1.5
+            local x0, y0 = i.x + i.z, i.y - i.z*1.5
+            local x2, y2 = i.x + i.w + i.z, i.y - i.z*1.5
+            local x3, y3 = i.x + i.w + shadowOffsetX + i.z, i.y - i.t + shadowOffsetY - i.z*1.5
+            local x4, y4 = i.x + i.w + shadowOffsetX + i.z, i.y - i.h - i.t + shadowOffsetY - i.z*1.5
+            local x5, y5 = i.x + shadowOffsetX + i.z, i.y - i.h - i.t + shadowOffsetY - i.z*1.5
 
             Fx.r.polygon(
-                {x1, y1, x2, y2, x3, y3, x4, y4, x5, y5},
+                {x1, y1, x0, y0, x2, y2, x3, y3, x4, y4, x5, y5},
                 {0, 0, 0, 90}
             )
 
             -- ambient occlusion
-            Fx.r.rect(
-                i.x,
-                i.y - 2,
-                i.w,
-                4,
-                {0, 0, 0, 90}
-            )
+            if z == 0 then
+                Fx.r.rect(
+                    i.x,
+                    i.y - 2,
+                    i.w,
+                    4,
+                    {0, 0, 0, 90}
+                )
+            end
         end)
-        Fx.dq.submitDraw(i.y, function()
+        Fx.dq.submit(L.ACTOR, i.y, function()
             -- wall
             Fx.r.rect(
                 i.x,
-                i.y - i.h - i.t,
+                i.y - i.h - i.t - i.z,
                 i.w,
                 i.h + i.t,
                 {0,100,200}
@@ -110,16 +142,16 @@ function World.renderWalls()
             -- roof
             Fx.r.rect(
                 i.x,
-                i.y - i.h - i.t,
+                i.y - i.h - i.t - i.z,
                 i.w,
                 i.h,
                 {0,50,100}
             )
 
             -- Highlight
-            Fx.r.rect(i.x, i.y - i.t, i.w, 1, {200, 240, 255, 60})
+            Fx.r.rect(i.x, i.y - i.t - i.z, i.w, 1, {200, 240, 255, 60})
             -- Shadow
-            Fx.r.rect(i.x + i.w - 1, i.y - i.t, 1, i.t, {0, 0, 0, 80}) -- Right Side
+            Fx.r.rect(i.x + i.w - 1, i.y - i.t - i.z, 1, i.t, {0, 0, 0, 80}) -- Right Side
         end)
     end
 end
@@ -128,7 +160,7 @@ function World.renderCoins()
     -- Real coins
     for _, c in ipairs(area.coins) do
         -- Coin
-        Fx.dq.submitDraw(c.y, function()
+        Fx.dq.submit(L.ACTOR, c.y, function()
             Fx.r.circ(c.x-1, c.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
             Fx.r.circ(c.x, c.y-15, 10, 15, {255, 200, 0}, true, 7) -- body
             Fx.r.circ(c.x+3, c.y-15, 3, 15, {230, 140, 0}, true, 3) -- middle
@@ -136,7 +168,7 @@ function World.renderCoins()
         end)
 
         -- Shadow
-        Fx.dq.submitDraw(-99, function()
+        Fx.dq.submit(L.SHADOW, c.y, function()
             local z = 5
             local cw, ch = 10, 7
 
@@ -171,7 +203,7 @@ function World.renderCoins()
     -- Coins that follow the player
     for _, c in ipairs(player.coinChain) do
         -- Coin
-        Fx.dq.submitDraw(c.y, function()
+        Fx.dq.submit(L.ACTOR, c.y, function()
             if c.z < -1 then
                 love.graphics.stencil(function()
                     for _, g in ipairs(area.ground) do
@@ -207,7 +239,7 @@ function World.renderCoins()
         end)
 
         -- Shadow
-        Fx.dq.submitDraw(-99, function()
+        Fx.dq.submit(L.SHADOW, c.y, function()
             if c.z > -1 then
                 local z = c.z
                 local cw, ch = 10, 7
@@ -246,7 +278,7 @@ function World.renderCores()
     for _, i in ipairs(area.cores) do
         local h, w, t = 40, 40, 40
 
-        Fx.dq.submitDraw(-99, function()
+        Fx.dq.submit(L.SHADOW, i.y, function()
             -- Draw shadow behind the wall
             local shadowOffsetX = t * 0.6
             local shadowOffsetY = t * 0.35
@@ -272,7 +304,7 @@ function World.renderCores()
                 {0, 0, 0, 90}
             )
         end)
-        Fx.dq.submitDraw(i.y, function()
+        Fx.dq.submit(L.ACTOR, i.y, function()
             -- wall
             Fx.r.rect(
                 i.x,
@@ -301,7 +333,7 @@ end
 
 function World.renderGround()
     for _, g in ipairs(area.ground) do
-        Fx.dq.submitDraw(-999, function()
+        Fx.dq.submit(L.FLOOR, g.y+g.w, function()
             -- The Floor
             Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
 
@@ -312,7 +344,7 @@ function World.renderGround()
                 end
             end
         end)
-        Fx.dq.submitDraw(-1000, function()
+        Fx.dq.submit(L.FLOOR_DEC, g.y+g.w, function()
             -- The Floor
             Fx.r.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
             Fx.r.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
