@@ -20,6 +20,19 @@ function UI.draw()
         Fx.r.text("---", 10, 30, 1)
         Fx.r.text("FPS - " .. tostring(love.timer.getFPS()), 10, 40, 1)
         Fx.r.text("player.pos - " .. tostring(math.floor(player.x.pos)) .. " / " .. tostring(math.floor(player.y.pos)), 10, 50, 1)
+
+        Fx.r.text(
+            string.format(
+                "x: %.1f\ny: %.1f\nz: %.1f\nvz: %.2f\ngrounded: %s",
+                player.x.pos,
+                player.y.pos,
+                player.z.pos or 0,
+                player.z.vel or 0,
+                tostring(player.meta.move.grounded)
+            ),
+            Game.width-110,
+            Game.height-90, 1, 255, 100, "left"
+        )
     end
 end
 
