@@ -99,7 +99,7 @@ World.testArea = {
 }
 
 function World.renderWalls()
-    for _, i in pairs(area.walls) do
+    for _, i in pairs(GameState.area.walls) do
         Fx.dq.submit(L.SHADOW, i.y, function()
             -- Draw shadow behind the wall
             local shadowOffsetX = i.t * 0.6
@@ -158,7 +158,7 @@ end
 
 function World.renderCoins()
     -- Real coins
-    for _, c in ipairs(area.coins) do
+    for _, c in ipairs(GameState.area.coins) do
         -- Coin
         Fx.dq.submit(L.ACTOR, c.y, function()
             Fx.r.circ(c.x-1, c.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
@@ -201,12 +201,12 @@ function World.renderCoins()
     end
 
     -- Coins that follow the player
-    for _, c in ipairs(player.coinChain) do
+    for _, c in ipairs(GameState.player.coinChain) do
         -- Coin
         Fx.dq.submit(L.ACTOR, c.y, function()
             if c.z < -1 then
                 love.graphics.stencil(function()
-                    for _, g in ipairs(area.ground) do
+                    for _, g in ipairs(GameState.area.ground) do
                         love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-15)
                     end
                 end, "replace", 1)
@@ -275,7 +275,7 @@ function World.renderCoins()
 end
 
 function World.renderCores()
-    for _, i in ipairs(area.cores) do
+    for _, i in ipairs(GameState.area.cores) do
         local h, w, t = 40, 40, 40
 
         Fx.dq.submit(L.SHADOW, i.y, function()
@@ -332,7 +332,7 @@ function World.renderCores()
 end
 
 function World.renderGround()
-    for _, g in ipairs(area.ground) do
+    for _, g in ipairs(GameState.area.ground) do
         Fx.dq.submit(L.FLOOR, g.y+g.w, function()
             -- The Floor
             Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})

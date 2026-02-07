@@ -2,6 +2,16 @@ local BuffUI = {}
 
 local buffList = {}
 
+BuffUI.Data = {
+    visible = false,
+    x = 10,
+    y = 80,
+    cols = 8,
+    size = 20,
+    padding = 4,
+    selected = 1,
+}
+
 function BuffUI.load()
     for id in pairs(Fx.el) do
         table.insert(buffList, id)
@@ -10,19 +20,19 @@ function BuffUI.load()
 end
 
 function BuffUI.draw(player)
-    if not BuffUIDat.visible then return end
+    if not BuffUI.Data.visible then return end
 
     for i, id in ipairs(buffList) do
         local buff = Fx.el[id]
 
-        local col = (i - 1) % BuffUIDat.cols
-        local row = math.floor((i - 1) / BuffUIDat.cols)
+        local col = (i - 1) % BuffUI.Data.cols
+        local row = math.floor((i - 1) / BuffUI.Data.cols)
 
-        local x = BuffUIDat.x + col * (BuffUIDat.size + BuffUIDat.padding)
-        local y = BuffUIDat.y + row * (BuffUIDat.size + BuffUIDat.padding)
+        local x = BuffUI.Data.x + col * (BuffUI.Data.size + BuffUI.Data.padding)
+        local y = BuffUI.Data.y + row * (BuffUI.Data.size + BuffUI.Data.padding)
 
         local active = player.buffs[id] ~= nil
-        local selected = i == BuffUIDat.selected
+        local selected = i == BuffUI.Data.selected
 
         -- background
         local color = {0, 0, 0, 70}
@@ -36,8 +46,8 @@ function BuffUI.draw(player)
 
         Fx.r.rect(
             x - 2, y - 2,
-            BuffUIDat.size + 4,
-            BuffUIDat.size + 4,
+            BuffUI.Data.size + 4,
+            BuffUI.Data.size + 4,
             color,
             true
         )
@@ -49,8 +59,8 @@ function BuffUI.draw(player)
         if selected then
             Fx.r.rect(
                 x - 2, y - 2,
-                BuffUIDat.size + 4,
-                BuffUIDat.size + 4,
+                BuffUI.Data.size + 4,
+                BuffUI.Data.size + 4,
                 255,
                 false
             )
@@ -63,8 +73,8 @@ function BuffUI.draw(player)
         Fx.r.imageSafe(
             id, "missing",
             x, y,
-            BuffUIDat.size,
-            BuffUIDat.size 
+            BuffUI.Data.size,
+            BuffUI.Data.size 
         )
 
         -- duration
@@ -81,28 +91,28 @@ function BuffUI.draw(player)
 end
 
 function BuffUI.keypressed(player, key)
-    if not BuffUIDat.visible then return end
+    if not BuffUI.Data.visible then return end
 
     local max = #buffList
 
     if key == "left" then
-        BuffUIDat.selected = math.max(1, BuffUIDat.selected - 1)
+        BuffUI.Data.selected = math.max(1, BuffUI.Data.selected - 1)
 
     elseif key == "right" then
-        BuffUIDat.selected = math.min(max, BuffUIDat.selected + 1)
+        BuffUI.Data.selected = math.min(max, BuffUI.Data.selected + 1)
 
     elseif key == "up" then
-        BuffUIDat.selected = math.max(1, BuffUIDat.selected - BuffUIDat.cols)
+        BuffUI.Data.selected = math.max(1, BuffUI.Data.selected - BuffUI.Data.cols)
 
     elseif key == "down" then
-        BuffUIDat.selected = math.min(max, BuffUIDat.selected + BuffUIDat.cols)
+        BuffUI.Data.selected = math.min(max, BuffUI.Data.selected + BuffUI.Data.cols)
 
     elseif key == "return" then
-        local id = buffList[BuffUIDat.selected]
+        local id = buffList[BuffUI.Data.selected]
         Fx.es.apply(player, Fx.el[id])
 
     elseif key == "backspace" then
-        local id = buffList[BuffUIDat.selected]
+        local id = buffList[BuffUI.Data.selected]
         Fx.es.remove(player, id)
     end
 end
