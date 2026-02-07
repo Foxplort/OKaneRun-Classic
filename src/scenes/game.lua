@@ -20,8 +20,8 @@ local function spawnDust(x, y, z)
             x = x + math.random(-5, 5),
             y = y,
             z = z,
-            vx = math.random(-40, 40) + GameState.player.x.vel/2,
-            vy = math.random(-20, 20) + GameState.player.y.vel/3, -- movement on the ground plane
+            vx = math.random(-40, 40) + GameState.player.vel.x/2,
+            vy = math.random(-20, 20) + GameState.player.vel.y/3, -- movement on the ground plane
             vz = math.random(10, 30),  -- initial "puff" upward
             life = 1.0,
             size = math.random(2, 4)
@@ -69,7 +69,7 @@ end
 
 local function checkOnGround(tx, ty)
     local hb = Fx.cl.getPlayerHitbox()
-    hb.x, hb.y = tx + GameState.player.meta.player.hitbox.xt, ty + GameState.player.meta.player.hitbox.yt
+    hb.x, hb.y = tx + GameState.player.stat.body.hitbox.xt, ty + GameState.player.stat.body.hitbox.yt
     for _, g in ipairs(GameState.area.ground) do
         if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then return true end
     end
@@ -94,34 +94,6 @@ local function followTarget(coin, tx, ty, tz, dt)
     coin.y = coin.y - (dy / dist) * pull * dt
     --coin.z = coin.z - (dz / dist) * pull * dt
     coin.z = coin.z + (tz - coin.z) * 6 * dt
-end
-
-local function damageHandler(dt)
-    -- Fall into the pit
-    if GameState.player.z.pos <= -150 then
-        GameState.player.hp.count = GameState.player.hp.count - 1
-
-        -- Safe Teleport
-        GameState.player.x.pos = 100
-        GameState.player.y.pos = 100
-        GameState.player.z.pos = 40
-
-        -- Coins teleport
-        for i, coin in ipairs(GameState.player.coinChain) do
-            coin.x = GameState.player.x.pos
-            coin.y = GameState.player.y.pos
-            coin.z = GameState.player.z.pos
-        end
-
-        -- Effects
-        shakeAmount = shakeAmount + 3
-        uiShake = uiShake + 3
-    end
-
-    -- Getting the results
-    if GameState.player.hp.count <= 0 then
-        GameState.player.dead = true
-    end
 end
 
 local function actorRenderDepth(x, y, z)
@@ -151,6 +123,57 @@ local function actorRenderDepth(x, y, z)
     return depth
 end
 
+-- Deep copy + apply modifiers recursively
+local function applyMods(base, mod)
+    local stat = {}
+    for k, v in pairs(base) do
+        if type(v) == "table" then
+            stat[k] = applyMods(v, mod[k] or {})
+        else
+            local modValue = mod[k] or {add = 0, mul = 1}
+            stat[k] = (v + (modValue.add or 0)) * (modValue.mul or 1)
+        end
+    end
+    return stat
+end
+
+local function statPerp()
+    GameState.player.stat = applyMods(GameState.player.base, GameState.player.mod)
+end
+
+
+-- ######################### --
+-- ### SUBMAIN FUNCTIONS ### --
+-- ######################### --
+
+local function damageHandler(dt)
+    -- Fall into the pit
+    if GameState.player.pos.z <= -150 then
+        GameState.player.hp.count = GameState.player.hp.count - 1
+
+        -- Safe Teleport
+        GameState.player.pos.x = 100
+        GameState.player.pos.y = 100
+        GameState.player.pos.z = 40
+
+        -- Coins teleport
+        for i, coin in ipairs(GameState.player.coinChain) do
+            coin.x = GameState.player.pos.x
+            coin.y = GameState.player.pos.y
+            coin.z = GameState.player.pos.z
+        end
+
+        -- Effects
+        shakeAmount = shakeAmount + 3
+        uiShake = uiShake + 3
+    end
+
+    -- Getting the results
+    if GameState.player.hp.count <= 0 then
+        GameState.player.dead = true
+    end
+end
+
 -- ###################### --
 -- ### MAIN FUNCTIONS ### --
 -- ###################### --
@@ -159,30 +182,32 @@ function Scene.load()
 end
 
 function Scene.enter()
-    area = Fx.obj.world.testArea
+    area = json.decode(love.filesystem.read("src/data/levels/testLevel.json"))
 end
 
 function Scene.keypressed(k)
     if k == "space" then
-        if GameState.player.jump.cons < GameState.player.meta.jump.lim then
+        if GameState.player.jump.cons < GameState.player.stat.jump.lim then
             GameState.player.jump.cons = GameState.player.jump.cons + 1
-            GameState.player.z.vel = GameState.player.meta.jump.vel
-            GameState.player.jump.timer = GameState.player.meta.jump.cd
+            GameState.player.vel.z = GameState.player.stat.jump.vel
+            GameState.player.jump.timer = GameState.player.stat.jump.cd
             GameState.player.visual.sx = 0.7 -- Thin
             GameState.player.visual.sy = 1.4 -- Tall
             if true then -- P.S. ADD CHECK IF ON THE GROUND!
-                spawnDust(GameState.player.x.pos + 10, GameState.player.y.pos, GameState.player.z.pos)
+                spawnDust(GameState.player.pos.x + 10, GameState.player.pos.y, GameState.player.pos.z)
             end
         end
     end
 end
 
 function Scene.update(dt)
-    local lastX = GameState.player.x.pos
-    local lastY = GameState.player.y.pos
-    local lastZ = GameState.player.z.pos
+    statPerp()
+
+    local lastX = GameState.player.pos.x
+    local lastY = GameState.player.pos.y
+    local lastZ = GameState.player.pos.z
     
-    local isSubmerged = GameState.player.z.pos < 0
+    local isSubmerged = GameState.player.pos.z < 0
     local mx, my = 0, 0
 
     if not GameState.player.dead then
@@ -192,53 +217,53 @@ function Scene.update(dt)
         if Fx.i.i("s") then my = my + 1 end
     end
 
-    local targetVX = mx * GameState.player.meta.move.maxVel
-    local targetVY = my * GameState.player.meta.move.maxVel
+    local targetVX = mx * GameState.player.stat.move.maxVel
+    local targetVY = my * GameState.player.stat.move.maxVel
 
-    local accel = GameState.player.meta.move.accel
-    local decel = GameState.player.meta.move.fri
+    local accel = GameState.player.stat.move.accel
+    local decel = GameState.player.stat.move.fri
 
     -- X axis
     if targetVX ~= 0 then
-        GameState.player.x.vel = Fx.m.approach(GameState.player.x.vel, targetVX, accel * dt)
+        GameState.player.vel.x = Fx.m.approach(GameState.player.vel.x, targetVX, accel * dt)
     else
-        GameState.player.x.vel = Fx.m.approach(GameState.player.x.vel, 0, decel * dt)
+        GameState.player.vel.x = Fx.m.approach(GameState.player.vel.x, 0, decel * dt)
     end
 
     -- Y axis
     if targetVY ~= 0 then
-        GameState.player.y.vel = Fx.m.approach(GameState.player.y.vel, targetVY, accel * dt)
+        GameState.player.vel.y = Fx.m.approach(GameState.player.vel.y, targetVY, accel * dt)
     else
-        GameState.player.y.vel = Fx.m.approach(GameState.player.y.vel, 0, decel * dt)
+        GameState.player.vel.y = Fx.m.approach(GameState.player.vel.y, 0, decel * dt)
     end
 
     -- Clamp max speed
-    local speed = math.sqrt(GameState.player.x.vel^2 + GameState.player.y.vel^2)
-    if speed > GameState.player.meta.move.maxVel then
-        local s = GameState.player.meta.move.maxVel / speed
-        GameState.player.x.vel = GameState.player.x.vel * s
-        GameState.player.y.vel = GameState.player.y.vel * s
+    local speed = math.sqrt(GameState.player.vel.x^2 + GameState.player.vel.y^2)
+    if speed > GameState.player.stat.move.maxVel then
+        local s = GameState.player.stat.move.maxVel / speed
+        GameState.player.vel.x = GameState.player.vel.x * s
+        GameState.player.vel.y = GameState.player.vel.y * s
     end
 
     -- Apply X movement
-    local nextX = GameState.player.x.pos + GameState.player.x.vel * dt
+    local nextX = GameState.player.pos.x + GameState.player.vel.x * dt
     local hb = Fx.cl.getPlayerHitbox()
 
-    hb.x = nextX + GameState.player.meta.player.hitbox.xt
+    hb.x = nextX + GameState.player.stat.body.hitbox.xt
 
     for _, w in ipairs(GameState.area.walls) do
         local wh = Fx.cl.getWallHitbox(w)
 
         if Fx.m.aabb3(
             hb,
-            GameState.player.z.pos,
-            GameState.player.meta.player.hitbox.t,
+            GameState.player.pos.z,
+            GameState.player.stat.body.hitbox.t,
             wh,
             w.z or 0,
             w.t or math.huge
         ) then
-            nextX = GameState.player.x.pos
-            GameState.player.x.vel = 0
+            nextX = GameState.player.pos.x
+            GameState.player.vel.x = 0
             break
         end
     end
@@ -246,8 +271,8 @@ function Scene.update(dt)
     for _, c in ipairs(GameState.area.cores) do
         local ch = {x=c.x, y=c.y-40, w=40, h=40}
         if Fx.m.aabb(hb, ch) then
-            nextX = GameState.player.x.pos
-            GameState.player.x.vel = 0
+            nextX = GameState.player.pos.x
+            GameState.player.vel.x = 0
             if #GameState.player.coinChain > 0 then
                 GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
                 Fx.es.remove(GameState.player, "coin", #GameState.player.coinChain)
@@ -257,26 +282,26 @@ function Scene.update(dt)
         end
     end
 
-    GameState.player.x.pos = nextX
+    GameState.player.pos.x = nextX
 
     -- Apply Y movement
-    local nextY = GameState.player.y.pos + GameState.player.y.vel * dt
+    local nextY = GameState.player.pos.y + GameState.player.vel.y * dt
     hb = Fx.cl.getPlayerHitbox()
-    hb.y = nextY + GameState.player.meta.player.hitbox.yt
+    hb.y = nextY + GameState.player.stat.body.hitbox.yt
 
     for _, w in ipairs(GameState.area.walls) do
         local wh = Fx.cl.getWallHitbox(w)
 
         if Fx.m.aabb3(
             hb,
-            GameState.player.z.pos,
-            GameState.player.meta.player.hitbox.t,
+            GameState.player.pos.z,
+            GameState.player.stat.body.hitbox.t,
             wh,
             w.z or 0,
             w.t or math.huge
         ) then
-            nextY = GameState.player.y.pos
-            GameState.player.y.vel = 0
+            nextY = GameState.player.pos.y
+            GameState.player.vel.y = 0
             break
         end
     end
@@ -284,8 +309,8 @@ function Scene.update(dt)
     for _, c in ipairs(GameState.area.cores) do
         local ch = {x=c.x, y=c.y-40, w=40, h=40}
         if Fx.m.aabb(hb, ch) then
-            nextY = GameState.player.y.pos
-            GameState.player.y.vel = 0
+            nextY = GameState.player.pos.y
+            GameState.player.vel.y = 0
             if #GameState.player.coinChain > 0 then
                 GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
                 Fx.es.remove(GameState.player, "coin", #GameState.player.coinChain)
@@ -295,10 +320,10 @@ function Scene.update(dt)
         end
     end
 
-    GameState.player.y.pos = nextY
+    GameState.player.pos.y = nextY
 
     -- PIT COLLISION LOGIC
-    if GameState.player.z.pos < 0 then
+    if GameState.player.pos.z < 0 then
         local hb = Fx.cl.getPlayerHitbox()
         local touchingGround = false
         
@@ -312,24 +337,24 @@ function Scene.update(dt)
         -- If we are below ground level and touching the ground area,
         -- that means we just walked into a "wall" of the pit.
         if touchingGround then
-            GameState.player.x.pos = lastX
-            GameState.player.y.pos = lastY
+            GameState.player.pos.x = lastX
+            GameState.player.pos.y = lastY
             -- Kill velocity so they don't keep sliding into the wall
-            GameState.player.x.vel = 0
-            GameState.player.y.vel = 0
+            GameState.player.vel.x = 0
+            GameState.player.vel.y = 0
         end
     end
 
 
     -- Z physics (jump)
-    GameState.player.z.vel = GameState.player.z.vel - GameState.player.meta.jump.g * dt
-    GameState.player.z.pos = GameState.player.z.pos + GameState.player.z.vel * dt
+    GameState.player.vel.z = GameState.player.vel.z - GameState.player.stat.jump.g * dt
+    GameState.player.pos.z = GameState.player.pos.z + GameState.player.vel.z * dt
 
     -- PLATFORM / WALL TOP LANDING
-    if GameState.player.z.vel <= 0 then -- only when falling
+    if GameState.player.vel.z <= 0 then -- only when falling
         local hb = Fx.cl.getPlayerHitbox()
-        local playerBottom = GameState.player.z.pos
-        local playerTop = GameState.player.z.pos + GameState.player.meta.player.hitbox.t
+        local playerBottom = GameState.player.pos.z
+        local playerTop = GameState.player.pos.z + GameState.player.stat.body.hitbox.t
 
         for _, w in ipairs(GameState.area.walls) do
             local wh = Fx.cl.getWallHitbox(w)
@@ -340,13 +365,13 @@ function Scene.update(dt)
                 -- Did we cross the top this frame?
                 if lastZ >= wallTop and playerBottom <= wallTop then
                     -- LAND
-                    if GameState.player.z.vel < -50 then 
+                    if GameState.player.vel.z < -50 then 
                         GameState.player.visual.sx = 1.5 -- Wide
                         GameState.player.visual.sy = 0.5 -- Short
-                        spawnLandingDust(GameState.player.x.pos + 10, GameState.player.y.pos, wallTop)
+                        spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, wallTop)
                     end
-                    GameState.player.z.pos = wallTop
-                    GameState.player.z.vel = 0
+                    GameState.player.pos.z = wallTop
+                    GameState.player.vel.z = 0
                     GameState.player.jump.cons = 0
                     break
                 end
@@ -355,9 +380,9 @@ function Scene.update(dt)
     end
 
     -- CEILING / UNDERSIDE COLLISION
-    if GameState.player.z.vel > 0 then -- only when moving upward
+    if GameState.player.vel.z > 0 then -- only when moving upward
         local hb = Fx.cl.getPlayerHitbox()
-        local playerTop = GameState.player.z.pos + GameState.player.meta.player.hitbox.t
+        local playerTop = GameState.player.pos.z + GameState.player.stat.body.hitbox.t
 
         for _, w in ipairs(GameState.area.walls) do
             local wh = Fx.cl.getWallHitbox(w)
@@ -366,11 +391,11 @@ function Scene.update(dt)
             -- XY overlap?
             if Fx.m.aabb(hb, wh) then
                 -- Did we hit the underside?
-                if lastZ + GameState.player.meta.player.hitbox.t <= wallBottom
+                if lastZ + GameState.player.stat.body.hitbox.t <= wallBottom
                 and playerTop >= wallBottom then
 
-                    GameState.player.z.pos = wallBottom - GameState.player.meta.player.hitbox.t
-                    GameState.player.z.vel = 0
+                    GameState.player.pos.z = wallBottom - GameState.player.stat.body.hitbox.t
+                    GameState.player.vel.z = 0
                     break
                 end
             end
@@ -386,13 +411,13 @@ function Scene.update(dt)
 
     -- Collect coins
     for i, c in ipairs(GameState.area.coins) do
-        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) and GameState.player.z.pos < 16 then
+        if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) and GameState.player.pos.z < 16 then
             local SPACING = 10
 
             local coin = {
                 x = c.x,
                 y = c.y,
-                z = GameState.player.z.pos,
+                z = GameState.player.pos.z,
                 spacing = SPACING --* (#GameState.player.coinChain + 1)
             }
 
@@ -403,15 +428,15 @@ function Scene.update(dt)
     end
 
     -- Ground collision
-    if GameState.player.z.pos < 0 and not overPit then
+    if GameState.player.pos.z < 0 and not overPit then
         -- Detect landing
-        if GameState.player.z.vel < -50 then 
+        if GameState.player.vel.z < -50 then 
             GameState.player.visual.sx = 1.5 -- Wide
             GameState.player.visual.sy = 0.5 -- Short
-            spawnLandingDust(GameState.player.x.pos + 10, GameState.player.y.pos, 0)
+            spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, 0)
         end
-        GameState.player.z.pos = 0
-        GameState.player.z.vel = 0
+        GameState.player.pos.z = 0
+        GameState.player.vel.z = 0
         GameState.player.jump.cons = 0
     end
 
@@ -424,9 +449,9 @@ function Scene.update(dt)
         local tx, ty, tz
 
         if i == 1 then
-            tx = GameState.player.x.pos
-            ty = GameState.player.y.pos
-            tz = GameState.player.z.pos + 4
+            tx = GameState.player.pos.x
+            ty = GameState.player.pos.y
+            tz = GameState.player.pos.z + 4
         else
             local prev = GameState.player.coinChain[i - 1]
             tx = prev.x
@@ -439,8 +464,8 @@ function Scene.update(dt)
 
 
     -- Camera target (center of screen)
-    local targetX = GameState.player.x.pos + GameState.player.meta.player.w / 2 - 320 -- 320 is half-width
-    local targetY = GameState.player.y.pos + GameState.player.meta.player.h / 2 - 180 -- 180 is half-height
+    local targetX = GameState.player.pos.x + GameState.player.stat.body.w / 2 - 320 -- 320 is half-width
+    local targetY = GameState.player.pos.y + GameState.player.stat.body.h / 2 - 180 -- 180 is half-height
 
     -- Smooth follow (Lerp)
     camX = camX + (targetX - camX) * 5 * dt

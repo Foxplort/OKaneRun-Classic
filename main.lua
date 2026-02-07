@@ -2,8 +2,8 @@ Fx = {
     r = require("src.utils.renderer"), -- R - Render
     i = require("src.utils.input"), -- I - Input
     m = require("src.utils.math"), -- M - Math
-    el = require("src.game.buffs"), -- EL - Effect List
-    es = require("src.game.buffSystem"), -- ES - Effect System
+    el = require("src.game.effects"), -- EL - Effect List
+    es = require("src.game.effectSystem"), -- ES - Effect System
     dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
     obj = { -- OBJ - Renderable Objects
@@ -12,8 +12,9 @@ Fx = {
         ui = require("src.objects.ui"),
     },
     db = { -- DB - DeBug systems
-        e = require("src.game.buffUI"), -- db.E - Effects
+        e = require("src.game.effectUI"), -- db.E - Effects
     },
+    ll = require("src.utils.levelLoader"), -- LL - Level Loader
 }
 
 local config = {
@@ -39,8 +40,8 @@ scenes = {
 }
 
 GameState = require("src.game.state").new()
-GameState.player = Fx.obj.player.baseData
-GameState.area = Fx.obj.world.testArea
+GameState.player = require("src.data.player")
+GameState.area = Fx.ll.load("src/data/levels/testLevel.lua")
 
 -- layers
 L = {

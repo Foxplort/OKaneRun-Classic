@@ -1,9 +1,9 @@
-local BuffSystem = {} 
+local EffectSystem = {} 
 
 
-function BuffSystem.apply(player, buffDef)
+function EffectSystem.apply(player, buffDef)
     local id = buffDef.id
-    local entry = player.buffs[id]
+    local entry = player.effects[id]
 
     -- create entry if missing
     if not entry then
@@ -12,7 +12,7 @@ function BuffSystem.apply(player, buffDef)
             amount = 0,
             instances = {}
         }
-        player.buffs[id] = entry
+        player.effects[id] = entry
     end
 
     -- cap check
@@ -33,12 +33,12 @@ function BuffSystem.apply(player, buffDef)
     return true
 end
 
-function BuffSystem.update(player, dt)
-    for id, inst in pairs(player.buffs) do
+function EffectSystem.update(player, dt)
+    for id, inst in pairs(player.effects) do
         if inst.timeLeft then
             inst.timeLeft = inst.timeLeft - dt
             if inst.timeLeft <= 0 then
-                BuffSystem.remove(player, id)
+                EffectSystem.remove(player, id)
             end
         end
 
@@ -48,8 +48,8 @@ function BuffSystem.update(player, dt)
     end
 end
 
-function BuffSystem.remove(player, id, amount)
-    local entry = player.buffs[id]
+function EffectSystem.remove(player, id, amount)
+    local entry = player.effects[id]
     if not entry then return end
 
     amount = amount or 1
@@ -67,11 +67,11 @@ function BuffSystem.remove(player, id, amount)
 
         -- clean up if empty
         if entry.amount <= 0 then
-            player.buffs[id] = nil
+            player.effects[id] = nil
             break
         end
     end
 end
 
 
-return BuffSystem
+return EffectSystem

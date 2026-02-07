@@ -1,10 +1,10 @@
 local Collision = {}
 
 function Collision.getPlayerHitbox()
-    local hb = GameState.player.meta.player.hitbox
+    local hb = GameState.player.base.body.hitbox
     return {
-        x = GameState.player.x.pos + hb.xt,
-        y = GameState.player.y.pos + hb.yt,
+        x = GameState.player.pos.x + hb.xt,
+        y = GameState.player.pos.y + hb.yt,
         w = hb.w,
         h = hb.h,
     }
