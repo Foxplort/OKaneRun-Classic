@@ -1,6 +1,6 @@
-local buffs = {}
+local effects = {}
 
-buffs.haste = {
+effects.haste = {
     id = "haste",
     type = "buff",
     duration = nil,
@@ -15,7 +15,7 @@ buffs.haste = {
     end,
 }
 
-buffs.fatso = {
+effects.fatso = {
     id = "fatso",
     type = "debuff",
     duration = nil,
@@ -30,7 +30,7 @@ buffs.fatso = {
     end,
 }
 
-buffs.winged = {
+effects.winged = {
     id = "winged",
     type = "buff",
     duration = nil,
@@ -45,7 +45,7 @@ buffs.winged = {
     end,
 }
 
-buffs.icy = {
+effects.icy = {
     id = "icy",
     type = "debuff",
     duration = nil,
@@ -62,7 +62,7 @@ buffs.icy = {
     end,
 }
 
-buffs.coin = {
+effects.coin = {
     id = "coin",
     type = "debuff",
     duration = nil,
@@ -83,4 +83,4 @@ buffs.coin = {
     end,
 }
 
-return buffs
+return effects

@@ -8,7 +8,7 @@ local function playerRenderDepth()
         local wallMaxY = w.y
 
         local overlappingXY =
-            GameState.player.pos.x + GameState.player.base.body.w > w.x and
+            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
             GameState.player.pos.x < w.x + w.w and
             GameState.player.pos.y > wallMinY and
             GameState.player.pos.y < wallMaxY
@@ -42,7 +42,7 @@ function Player.render()
 
 
         local z = GameState.player.pos.z
-        local pm = GameState.player.base.body
+        local pm = GameState.player.stat.body
 
         -- base shadow size from player size
         local baseW = pm.w * 1.2
@@ -77,7 +77,7 @@ function Player.render()
 
     -- player
     Fx.dq.submit(L.ACTOR, playerRenderDepth(), function()
-        local pm = GameState.player.base.body
+        local pm = GameState.player.stat.body
         local vs = GameState.player.visual
         
         -- Calculate visual dimensions
@@ -92,7 +92,7 @@ function Player.render()
         if GameState.player.pos.z < 0 then
             love.graphics.stencil(function()
                 for _, g in ipairs(GameState.area.ground) do
-                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-GameState.player.base.body.h)
+                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-GameState.player.stat.body.h)
                 end
             end, "replace", 1)
             -- "notequal 1" means: Only draw where the stencil (ground) is NOT
@@ -116,7 +116,7 @@ local function playerBehindWall()
         local wallMaxY = w.y
 
         local overlappingXY =
-            GameState.player.pos.x + GameState.player.base.body.w > w.x and
+            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
             GameState.player.pos.x < w.x + w.w and
             GameState.player.pos.y > wallMinY and
             GameState.player.pos.y < wallMaxY
@@ -132,7 +132,7 @@ local function playerBehindWall()
         local wallMaxY = w.y
 
         local overlappingXY =
-            GameState.player.pos.x + GameState.player.base.body.w > w.x and
+            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
             GameState.player.pos.x < w.x + 40 and
             GameState.player.pos.y > wallMinY and
             GameState.player.pos.y < wallMaxY
@@ -150,7 +150,7 @@ end
 function Player.silhuette()
     if not playerBehindWall() then return end
 
-    local pm = GameState.player.base.body
+    local pm = GameState.player.stat.body
     local vs = GameState.player.visual
     local vw = pm.w * vs.sx
     local vh = pm.h * vs.sy
