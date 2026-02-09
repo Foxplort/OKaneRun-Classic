@@ -6,11 +6,6 @@ Fx = {
     es = require("src.game.effectSystem"), -- ES - Effect System
     dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
-    obj = { -- OBJ - Renderable Objects
-        player = require("src.objects.player"),
-        world = require("src.objects.world"),
-        ui = require("src.objects.ui"),
-    },
     db = { -- DB - DeBug systems
         e = require("src.game.effectUI"), -- db.E - Effects
     },
@@ -40,8 +35,8 @@ scenes = {
 }
 
 GameState = require("src.game.state").new()
-GameState.player = require("src.data.player")
-GameState.area = Fx.ll.load("src/data/levels/testLevel.lua")
+GameState.player = require("src.data.player").new()
+GameState.area = {}
 
 -- layers
 L = {
@@ -77,6 +72,7 @@ function love.load()
         end
     end
 
+    if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
     Fx.db.e.load()
 end
 

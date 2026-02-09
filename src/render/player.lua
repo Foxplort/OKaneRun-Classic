@@ -73,6 +73,16 @@ function Player.render()
         love.graphics.setStencilTest()
     end)
 
+    
+    -- tail (Add later with the sprite!)
+    -- Fx.dq.submit(
+    --     L.ACTOR,
+    --     playerRenderDepth()-0.01,
+    --     function()
+    --         -- 5 is the base thickness, adjust as needed
+    --         Fx.r.tail(GameState.player.tail, {255, 255, 255, 255-math.abs(math.min(0, GameState.player.pos.z*6))}, 2) 
+    --     end
+    -- )
 
 
     -- player

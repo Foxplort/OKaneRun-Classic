@@ -72,6 +72,51 @@ function Renderer.circ(x, y, w, h, c, f, s)
     love.graphics.ellipse(f, x, y, w, h, s)
 end
 
+function Renderer.line(vertices, c, width)
+    love.graphics.push("all")
+    if width then love.graphics.setLineWidth(width) end
+    setColor(c)
+    love.graphics.line(vertices)
+    love.graphics.pop()
+end
+
+function Renderer.tail(tail, color, baseWidth)
+    -- Push ALL state
+    love.graphics.push("all")
+    
+    setColor(color)
+    baseWidth = baseWidth or 5
+    
+    -- Draw segments
+    for i = 1, #tail - 1 do
+        local a = tail[i]
+        local b = tail[i+1]
+        
+        -- Tapering logic
+        local t = (i - 1) / (#tail - 1)
+        local taper = math.sqrt(1 - t * t)
+        local currWidth = baseWidth * (0.4 + 0.6 * taper)
+        
+        -- Set width for this specific segment
+        love.graphics.setLineStyle("rough")
+        love.graphics.setLineWidth(currWidth)
+        love.graphics.setLineJoin("none") -- We use circles for joins instead
+        
+        -- Draw the joint circle
+        love.graphics.circle("fill", a.x, a.y, currWidth / 2)
+        -- Draw the segment line
+        love.graphics.line(a.x, a.y, b.x, b.y)
+        
+        -- If it's the very last segment, cap the tip
+        if i == #tail - 1 then
+            love.graphics.circle("fill", b.x, b.y, currWidth / 2)
+        end
+    end
+    
+    -- Restore state
+    love.graphics.pop()
+end
+
 function Renderer.polygon(vertices, c, f)
     f = filling(f)
 
@@ -143,7 +188,7 @@ end
 
 function Renderer.unloadImage(name)
     Renderer.images[name] = nil
-    collectgarbage()
+    --collectgarbage()
 end
 
 return Renderer

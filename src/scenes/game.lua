@@ -4,68 +4,11 @@ local Scene = {}
 -- ### VARIABLES ### --
 -- ################# --
 
-local camX, camY = 0, 0
-local shakeAmount = 0
-local uiShake = 0
-
-local particles = {}
+local gameData = nil
 
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
-
-local function spawnDust(x, y, z)
-    for i = 1, 4 do -- Spawn a small cluster
-        table.insert(particles, {
-            x = x + math.random(-5, 5),
-            y = y,
-            z = z,
-            vx = math.random(-40, 40) + GameState.player.vel.x/2,
-            vy = math.random(-20, 20) + GameState.player.vel.y/3, -- movement on the ground plane
-            vz = math.random(10, 30),  -- initial "puff" upward
-            life = 1.0,
-            size = math.random(2, 4)
-        })
-    end
-end
-
-local function spawnLandingDust(x, y, z)
-    local count = 8
-    for i = 1, count do
-        local a = (i / count) * math.pi * 2
-        local r = math.random(30, 60)
-
-        table.insert(particles, {
-            x = x,
-            y = y,
-            z = z,
-            vx = math.cos(a) * r,
-            vy = math.sin(a) * r/2,
-            vz = math.random(2, 10),
-            life = 1.0,
-            size = math.random(2, 4)
-        })
-    end
-end
-
-local function updateParticles(dt)
-    for i = #particles, 1, -1 do
-        local p = particles[i]
-        
-        -- Air resistance (drag)
-        p.vx = Fx.m.approach(p.vx, 0, 100 * dt)
-        p.vy = Fx.m.approach(p.vy, 0, 100 * dt)
-        p.vz = p.vz - 20 * dt -- very light gravity for dust
-        
-        -- Move
-        p.x = p.x + p.vx * dt
-        p.y = p.y + p.vy * dt
-        p.z = p.z + p.vz * dt
-        
-        p.life = p.life - dt
-        if p.life <= 0 then table.remove(particles, i) end
-    end
-end
 
 local function checkOnGround(tx, ty)
     local hb = Fx.cl.getPlayerHitbox()
@@ -164,8 +107,8 @@ local function damageHandler(dt)
         end
 
         -- Effects
-        shakeAmount = shakeAmount + 3
-        uiShake = uiShake + 3
+        gameData.systems.camera.addShake(3)
+        gameData.systems.camera.addUIShake(3)
     end
 
     -- Getting the results
@@ -182,7 +125,25 @@ function Scene.load()
 end
 
 function Scene.enter()
-    area = json.decode(love.filesystem.read("src/data/levels/testLevel.json"))
+    GameState.area = Fx.ll.load("src/data/levels/testLevel.lua")
+
+    gameData = {
+        render = {
+            player = require("src.render.player"),
+            world = require("src.render.world"),
+            ui = require("src.render.ui"),
+        },
+        systems = {
+            camera = require("src.systems.camera"),
+            tail = require("src.systems.playerTail"),
+            particles = require("src.systems.particles"),
+        },
+    }
+end
+
+function Scene.exit()
+    gameData = nil
+    --collectgarbage()
 end
 
 function Scene.keypressed(k)
@@ -194,7 +155,13 @@ function Scene.keypressed(k)
             GameState.player.visual.sx = 0.7 -- Thin
             GameState.player.visual.sy = 1.4 -- Tall
             if true then -- P.S. ADD CHECK IF ON THE GROUND!
-                spawnDust(GameState.player.pos.x + 10, GameState.player.pos.y, GameState.player.pos.z)
+                gameData.systems.particles.spawnDust(
+                    GameState.player.pos.x + 10,
+                    GameState.player.pos.y,
+                    GameState.player.pos.z,
+                    GameState.player.vel.x, 
+                    GameState.player.vel.y
+                )
             end
         end
     end
@@ -368,7 +335,7 @@ function Scene.update(dt)
                     if GameState.player.vel.z < -50 then 
                         GameState.player.visual.sx = 1.5 -- Wide
                         GameState.player.visual.sy = 0.5 -- Short
-                        spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, wallTop)
+                        gameData.systems.particles.spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, wallTop)
                     end
                     GameState.player.pos.z = wallTop
                     GameState.player.vel.z = 0
@@ -433,7 +400,7 @@ function Scene.update(dt)
         if GameState.player.vel.z < -50 then 
             GameState.player.visual.sx = 1.5 -- Wide
             GameState.player.visual.sy = 0.5 -- Short
-            spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, 0)
+            gameData.systems.particles.spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, 0)
         end
         GameState.player.pos.z = 0
         GameState.player.vel.z = 0
@@ -462,65 +429,48 @@ function Scene.update(dt)
         followTarget(coin, tx, ty, tz, dt)
     end
 
+    gameData.systems.camera.update(dt)
 
-    -- Camera target (center of screen)
-    local targetX = GameState.player.pos.x + GameState.player.stat.body.w / 2 - 320 -- 320 is half-width
-    local targetY = GameState.player.pos.y + GameState.player.stat.body.h / 2 - 180 -- 180 is half-height
+    -- Tails Math
+    local speed = math.sqrt(
+        GameState.player.vel.x^2 +
+        GameState.player.vel.y^2
+    )
 
-    -- Smooth follow (Lerp)
-    camX = camX + (targetX - camX) * 5 * dt
-    camY = camY + (targetY - camY) * 5 * dt
+    gameData.systems.tail.updateTail(
+        GameState.player.tail,
+        GameState.player.pos.x + GameState.player.base.body.w / 2,
+        GameState.player.pos.y - GameState.player.pos.z - 6,
+        dt
+    )
 
-    -- Constrain to map bounds
-    camX = math.max(0, math.min(camX, GameState.area.mapWidth - 640))
-    camY = math.max(0, math.min(camY, GameState.area.mapHeight - 360))
+    gameData.systems.tail.applyTailWave(GameState.player.tail, speed, love.timer.getTime())
 
-    shakeAmount = Fx.m.approach(shakeAmount, 0, 40 * dt)
-    uiShake = Fx.m.approach(uiShake, 0, 40 * dt)
-
-    updateParticles(dt)
+    -- Updaters / Handlers
+    gameData.systems.particles.updateParticles(dt)
     damageHandler(dt)
 end
 
 function Scene.draw()
-    love.graphics.push()
-    love.graphics.translate(math.random(-shakeAmount, shakeAmount), math.random(-shakeAmount, shakeAmount))
-    love.graphics.translate(-math.floor(camX), -math.floor(camY))
+    gameData.systems.camera.applyWorld()
 
     -- ## BASE DRAW PART ##
 
-    Fx.obj.player.render() -- render player + shadow
+    gameData.render.player.render() -- render player + shadow
 
-    Fx.obj.world.renderWalls() -- render walls
-    Fx.obj.world.renderGround() -- render ground
-    Fx.obj.world.renderCoins() -- render coins
-    Fx.obj.world.renderCores() -- render cores
+    gameData.render.world.renderWalls() -- render walls
+    gameData.render.world.renderGround() -- render ground
+    gameData.render.world.renderCoins() -- render coins
+    gameData.render.world.renderCores() -- render cores
 
     -- Dust
-    for _, p in ipairs(particles) do
-        Fx.dq.submit(
-            L.ACTOR,
-            actorRenderDepth(p.x, p.y, p.z),
-            function()
-                local alpha = p.life * 180
-                local s = p.size * (0.5 + p.life * 0.5)
-
-                Fx.r.rect(
-                    p.x - s/2,
-                    p.y - p.z - s,
-                    s, s,
-                    {255, 255, 255, alpha}
-                )
-            end
-        )
-
-    end
+    gameData.systems.particles.draw(actorRenderDepth)
 
     -- ## END OF DRAW ##
 
     Fx.dq.draw() -- draw items in order
 
-    Fx.obj.player.silhuette() -- Player's shiluette
+    gameData.render.player.silhuette() -- Player's shiluette
 
 
     if debug then
@@ -545,22 +495,23 @@ function Scene.draw()
             local ch = {x=c.x, y=c.y-3, w=10, h=6}
             Fx.r.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
+
+        for i, s in ipairs(GameState.player.tail) do
+            Fx.r.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
+        end
     end
 
-    love.graphics.pop()
+    gameData.systems.camera.pop()
 
     -- ## USER INERTFACE ##
 
-    love.graphics.push()
-    if uiShake > 0 then
-        love.graphics.translate(math.random(-1, 1), math.random(-1, 1))
-    end
+    gameData.systems.camera.applyUI()
 
-    Fx.obj.ui.draw()
+    gameData.render.ui.draw()
 
     Fx.db.e.draw(GameState.player)
 
-    love.graphics.pop()
+    gameData.systems.camera.pop()
 
     -- ## END OF UI ##
 end
