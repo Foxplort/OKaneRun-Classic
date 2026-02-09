@@ -119,9 +119,25 @@ end
 
 function Renderer.polygon(vertices, c, f)
     f = filling(f)
-
     setColor(c)
-    love.graphics.polygon(f, vertices)
+
+    -- If we are filling, we need to handle concave shapes (like spikes)
+    if f == "fill" then
+        -- This breaks the "saw" shape into tiny triangles LÖVE can handle
+        local success, triangles = pcall(love.math.triangulate, vertices)
+        if success then
+            for i, triangle in ipairs(triangles) do
+                love.graphics.polygon("fill", triangle)
+            end
+        else
+            -- Fallback: If triangulation fails (e.g. self-intersecting), 
+            -- draw the standard polygon
+            love.graphics.polygon("fill", vertices)
+        end
+    else
+        -- Lines don't have the convex issue
+        love.graphics.polygon("line", vertices)
+    end
 end
 
 function Renderer.text(text, x, y, s, c, wrap, align)
@@ -140,7 +156,7 @@ function Renderer.text(text, x, y, s, c, wrap, align)
 end
 
 
-function Renderer.imageScaled(name, x, y, sx, sy, r, ox, oy)
+function Renderer.imageScaled(name, x, y, sx, sy, r, ox, oy, c)
     local img = Renderer.images[name]
     if not img then return end
 
@@ -150,10 +166,11 @@ function Renderer.imageScaled(name, x, y, sx, sy, r, ox, oy)
     sx = sx or 1
     sy = sy or 1
 
+    setColor(c)
     love.graphics.draw(img, x, y, r, sx, sy, ox, oy)
 end
 
-function Renderer.imageSafe(name, fallback, x, y, w, h, r, ox, oy)
+function Renderer.imageSafe(name, fallback, x, y, w, h, r, ox, oy, c)
     local img = Renderer.images[name] or Renderer.images[fallback]
     if not img then return end
 
@@ -164,13 +181,15 @@ function Renderer.imageSafe(name, fallback, x, y, w, h, r, ox, oy)
     w = w or iw
     h = h or ih
 
+    setColor(c)
     love.graphics.draw(img, x, y, r, w/iw, h/ih, ox, oy)
 end
 
-function Renderer.image(name, x, y, w, h)
+function Renderer.image(name, x, y, w, h, c)
     local img = Renderer.images[name]
     if not img then return end
 
+    setColor(c)
     local iw, ih = img:getDimensions()
     love.graphics.draw(img, x, y, 0, w/iw, h/ih)
 end
@@ -179,7 +198,9 @@ end
 -- IMAGES LOADING HANDLER
 
 function Renderer.loadImage(name, path)
-    Renderer.images[name] = love.graphics.newImage(path)
+    local img = love.graphics.newImage(path)
+    img:setFilter("nearest", "nearest")
+    Renderer.images[name] = img
 end
 
 function Renderer.getImage(name)

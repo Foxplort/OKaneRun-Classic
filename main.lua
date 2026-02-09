@@ -10,6 +10,7 @@ Fx = {
         e = require("src.game.effectUI"), -- db.E - Effects
     },
     ll = require("src.utils.levelLoader"), -- LL - Level Loader
+    t = require("src.utils.transition"), -- T - Transition
 }
 
 local config = {
@@ -28,10 +29,12 @@ local myShader
 
 debug = false
 
-local curScene = "game"
+local curScene = "intro"
 nextScene = nil
 scenes = {
     game = require("src.scenes.game"),
+    intro = require("src.scenes.intro"),
+    menu = require("src.scenes.menu"),
 }
 
 GameState = require("src.game.state").new()
@@ -61,9 +64,14 @@ function love.load()
     canvas:setFilter("nearest", "nearest")
     love.window.setIcon(love.image.newImageData("assets/images/icon.png"))
 
+    local font = love.graphics.newFont("assets/m5x7.ttf", 16)
+    font:setFilter("nearest", "nearest")
+    love.graphics.setFont(font)
+
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
+    Fx.r.loadImage("logo", "assets/images/logo-outline.png")
 
     for id, buff in pairs(Fx.el) do
         local path = "assets/images/buffs/" .. buff.id .. ".png"
@@ -92,6 +100,7 @@ function love.keypressed(k)
 end
 
 function love.update(dt)
+    Fx.t.update(dt)
     if nextScene then
         if scenes[curScene] and scenes[curScene].exit then scenes[curScene].exit() end
         if scenes[nextScene] and scenes[nextScene].enter then scenes[nextScene].enter() end
@@ -107,6 +116,8 @@ function love.draw()
     love.graphics.clear(0.01, 0.01, 0.02)
 
     if scenes[curScene] and scenes[curScene].draw then scenes[curScene].draw() end
+
+    Fx.t.draw()
 
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setCanvas()
