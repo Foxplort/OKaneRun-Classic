@@ -15,7 +15,4 @@ function love.conf(t)
     t.window.minheight = 360 -- Limits resolution (Y)
     t.window.resizable = true -- Allows resize
     t.window.msaa = 0 -- This keeps pixels sharp when scaling
-
-    -- ## Modules ##
-    t.modules.joystick = false -- Disable what you don't need
 end

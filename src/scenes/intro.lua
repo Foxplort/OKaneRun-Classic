@@ -34,7 +34,7 @@ end
 
 function Scene.update(dt)
     if state == "warning" or state == "waiting" then
-        if love.keyboard.isDown("space", "return") and state == "warning" then
+        if Fx.i.down("accept") and state == "warning" then
             hold = math.min(hold + dt, HOLD_TIME)
             if hold >= HOLD_TIME then
                 state = "waiting"

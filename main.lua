@@ -123,6 +123,11 @@ function love.load()
     Fx.r.loadImage("loading3", "assets/images/system/loading3.png")
     Fx.r.loadImage("loading4", "assets/images/system/loading4.png")
 
+    love.mouse.setCursor(love.mouse.newCursor(
+        love.image.newImageData("assets/images/system/cursor.png"),
+        0, 0
+    ))
+
     for id, buff in pairs(Fx.el) do
         local path = "assets/images/buffs/" .. buff.id .. ".png"
         if love.filesystem.getInfo(path) then
@@ -139,20 +144,36 @@ end
 function love.keypressed(k)
     if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
     
-    if k == "k" then
-        debug = not debug
-        Fx.debug.enabled = debug
-    elseif k == "f11" then
-        fullScreen = not fullScreen
-        love.window.setFullscreen(fullScreen)
-    elseif k == "b" then
+    if k == "b" then
         Fx.db.e.Data.visible = not Fx.db.e.Data.visible
     elseif Fx.db.e.Data.visible then
         Fx.db.e.keypressed(GameState.player, k)
     end
 end
 
+local function keypress()
+    if Fx.i.pressed("debug") then
+        debug = not debug
+        Fx.debug.enabled = debug
+    elseif Fx.i.pressed("fullscreen") then
+        fullScreen = not fullScreen
+        love.window.setFullscreen(fullScreen)
+    end
+end
+
+function love.joystickadded(j)
+    table.insert(Fx.i.joysticks, j)
+end
+
+function love.joystickremoved(j)
+    for i,v in ipairs(Fx.i.joysticks) do
+        if v == j then table.remove(Fx.i.joysticks, i) end
+    end
+end
+
 function love.update(dt)
+    Fx.i.update()
+    keypress()
     Fx.t.update(dt)
     Fx.bfx.update(dt)
     if nextScene then

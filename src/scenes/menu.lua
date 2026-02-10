@@ -84,14 +84,14 @@ function Scene.enter()
     MP.init(PANEL_WIDTH)
 end
 
-function Scene.keypressed(k)
+local function keypressed()
     if not pause then
         local m = menus[view]
-        if k == "w" or k == "up" or k == "a" then selection = getNextValid(-1, selection, m.options)
-        elseif k == "s" or k == "down" or k == "d" then selection = getNextValid(1, selection, m.options)
-        elseif k == "backspace" or k == "escape" then
+        if Fx.i.pressed("up") then selection = getNextValid(-1, selection, m.options)
+        elseif Fx.i.pressed("down") then selection = getNextValid(1, selection, m.options)
+        elseif Fx.i.pressed("cancel") then
             if view ~= "main" then view = "main"; selection = 1 end
-        elseif k == "space" or k == "return" then
+        elseif Fx.i.pressed("accept") then
             local o = m.options[selection]
             if o then
                 if o.link then love.system.openURL(o.link) end
@@ -102,6 +102,8 @@ function Scene.keypressed(k)
 end
 
 function Scene.update(dt)
+    keypressed()
+
     local targetSlide = (view == "main") and 0 or 100
     local targetAlpha = (view == "main") and 1 or 0.2
     slideX = Fx.m.lerp(slideX, targetSlide, dt * 10)

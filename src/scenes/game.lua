@@ -159,8 +159,17 @@ function Scene.exit()
     --collectgarbage()
 end
 
-function Scene.keypressed(k)
-    if k == "space" then
+function Scene.update(dt)
+    statPerp()
+
+    local lastX = GameState.player.pos.x
+    local lastY = GameState.player.pos.y
+    local lastZ = GameState.player.pos.z
+    
+    local isSubmerged = GameState.player.pos.z < 0
+    local mx, my = 0, 0
+
+    if Fx.i.pressed("jump") then
         if GameState.player.jump.cons < GameState.player.stat.jump.lim then
             GameState.player.jump.cons = GameState.player.jump.cons + 1
             GameState.player.vel.z = GameState.player.stat.jump.vel
@@ -178,23 +187,12 @@ function Scene.keypressed(k)
             end
         end
     end
-end
-
-function Scene.update(dt)
-    statPerp()
-
-    local lastX = GameState.player.pos.x
-    local lastY = GameState.player.pos.y
-    local lastZ = GameState.player.pos.z
-    
-    local isSubmerged = GameState.player.pos.z < 0
-    local mx, my = 0, 0
 
     if not GameState.player.dead then
-        if Fx.i.i("d") then mx = mx + 1 end
-        if Fx.i.i("a") then mx = mx - 1 end
-        if Fx.i.i("w") then my = my - 1 end
-        if Fx.i.i("s") then my = my + 1 end
+        if Fx.i.down("right") then mx = mx + 1 end
+        if Fx.i.down("left") then mx = mx - 1 end
+        if Fx.i.down("up") then my = my - 1 end
+        if Fx.i.down("down") then my = my + 1 end
     end
 
     local targetVX = mx * GameState.player.stat.move.maxVel
