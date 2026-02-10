@@ -30,6 +30,9 @@ local function randf(a)
 end
 
 function Camera.update(targetX, targetY, dt)
+    halfW = Game.width / 2
+    halfH = Game.height / 2
+
     for group in pairs(shake) do
         shake[group].amount = Fx.m.approach(shake[group].amount, 0, 40 * dt)
         shake[group].x = randf(shake[group].amount)

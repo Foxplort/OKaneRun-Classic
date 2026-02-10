@@ -3,6 +3,9 @@ function love.conf(t)
         version = "0.1.0-dev",
         width = 640,
         height = 360,
+        baseWidth = 640,
+        baseHeight = 360,
+        pixelBank = 64,
     }
     t.window.title = "OkaneRun [" .. Game.version .. "]"
     -- ## Window Settings ##

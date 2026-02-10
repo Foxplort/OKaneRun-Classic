@@ -10,16 +10,16 @@ function MP.init(pw)
     PANEL_WIDTH = pw
     for i = 1, 60 do
         particles[i] = {
-            x = math.random(PANEL_WIDTH, Game.width),
-            y = math.random(0, Game.height),
+            x = math.random(PANEL_WIDTH, Game.baseWidth+Game.pixelBank),
+            y = math.random(0, Game.baseHeight+Game.pixelBank),
             spd = math.random() * 10 + 5,
             size = math.random() * 1.5 + 0.5,
             a = math.random() * 0.4 + 0.1
         }
     end
 
-    for x = PANEL_WIDTH, Game.width, 16 do
-        for y = 0, Game.height, 16 do
+    for x = PANEL_WIDTH, Game.baseWidth+Game.pixelBank, 16 do
+        for y = 0, Game.baseHeight+Game.pixelBank, 16 do
             table.insert(dots, {x=x, y=y})
         end
     end

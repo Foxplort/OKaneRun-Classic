@@ -12,6 +12,12 @@ local HOLD_TIME = 0.8
 local textLine = 1
 local textAlpha = 255
 
+local BAR_WIDTH = 160
+local BAR_HEIGHT = 2
+local BAR_Y = 230
+
+local capH = BAR_HEIGHT + 4
+
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
@@ -67,15 +73,22 @@ function Scene.draw()
             lineText("Hold SPACE to continue")
         end
 
+
+        local cx = Game.width * 0.5
+        local progress = hold / HOLD_TIME
+        local fillW = BAR_WIDTH * progress
+        local x = cx - BAR_WIDTH / 2
+        local barY = BAR_Y + 5 - progress * 5
+        local capY = barY - 2
+        
         local a = (hold / HOLD_TIME) * 255
         if state == "warning" then
-            local w = (hold / HOLD_TIME) * 160
-            Fx.r.rect(240, 230, w, 2)
+            Fx.r.rect(x, barY, fillW, BAR_HEIGHT)
         else
-            Fx.r.rect(240, 230, 160, 2, {255, 255, 255, a})
+            Fx.r.rect(x, barY, BAR_WIDTH, BAR_HEIGHT, {255, 255, 255, a})
         end
-        Fx.r.rect(230, 228, 2, 6, {255, 255, 255, a})
-        Fx.r.rect(408, 228, 2, 6, {255, 255, 255, a})
+        Fx.r.rect(x - 10, capY, 2, capH, {255,255,255,a})
+        Fx.r.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
     elseif state == "presents" or state == "done" then
         Fx.r.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, Game.width, "center")
     end

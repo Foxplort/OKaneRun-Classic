@@ -11,6 +11,8 @@ Fx = {
     },
     ll = require("src.utils.levelLoader"), -- LL - Level Loader
     t = require("src.utils.transition"), -- T - Transition
+    bfx = require("src.systems.borderFX"),
+    debug = require("src.systems.debug"),
 }
 
 Fx.la = require("src.systems.loading") -- LA - Loading Animator
@@ -57,6 +59,47 @@ function setScene(name)
     end
 end
 
+local lastCanvasW, lastCanvasH = 0, 0
+
+local function rebuildCanvas(w, h)
+    if w == lastCanvasW and h == lastCanvasH then return end
+
+    canvas = love.graphics.newCanvas(w, h)
+    canvas:setFilter("nearest", "nearest")
+
+    Game.width  = w
+    Game.height = h
+
+    lastCanvasW = w
+    lastCanvasH = h
+end
+
+local function computeInternalResolution()
+    local screenW, screenH = love.graphics.getDimensions()
+
+    -- Integer scale only
+    local scaleX = math.floor(screenW / Game.baseWidth)
+    local scaleY = math.floor(screenH / Game.baseHeight)
+    scale = math.max(1, math.min(scaleX, scaleY))
+
+    -- Internal resolution implied by scale
+    local idealW = math.floor(screenW / scale)
+    local idealH = math.floor(screenH / scale)
+
+    -- Delta from base resolution
+    local deltaW = idealW - Game.baseWidth
+    local deltaH = idealH - Game.baseHeight
+
+    -- Clamp BOTH directions
+    deltaW = math.max(-Game.pixelBank / 2, math.min(deltaW, Game.pixelBank))
+    deltaH = math.max(-Game.pixelBank / 2, math.min(deltaH, Game.pixelBank))
+
+    return
+        Game.baseWidth + deltaW,
+        Game.baseHeight + deltaH
+end
+
+
 -- ###################### --
 -- ### MAIN FUNCTIONS ### --
 -- ###################### --
@@ -64,21 +107,21 @@ end
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
     canvas:setFilter("nearest", "nearest")
-    love.window.setIcon(love.image.newImageData("assets/images/icon.png"))
+    love.window.setIcon(love.image.newImageData("assets/images/system/icon.png"))
 
-    local font = love.graphics.newFont("assets/m5x7.ttf", 16)
+    local font = love.graphics.newFont("assets/fonts/m5x7.ttf", 16)
     font:setFilter("nearest", "nearest")
     love.graphics.setFont(font)
 
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
-    Fx.r.loadImage("logo", "assets/images/logo-outline.png")
+    Fx.r.loadImage("logo", "assets/images/ui/logo-outline.png")
 
-    Fx.r.loadImage("loading1", "assets/images/loading1.png")
-    Fx.r.loadImage("loading2", "assets/images/loading2.png")
-    Fx.r.loadImage("loading3", "assets/images/loading3.png")
-    Fx.r.loadImage("loading4", "assets/images/loading4.png")
+    Fx.r.loadImage("loading1", "assets/images/system/loading1.png")
+    Fx.r.loadImage("loading2", "assets/images/system/loading2.png")
+    Fx.r.loadImage("loading3", "assets/images/system/loading3.png")
+    Fx.r.loadImage("loading4", "assets/images/system/loading4.png")
 
     for id, buff in pairs(Fx.el) do
         local path = "assets/images/buffs/" .. buff.id .. ".png"
@@ -87,8 +130,10 @@ function love.load()
         end
     end
 
-    if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
+    Fx.bfx.init(70)
     Fx.db.e.load()
+
+    if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
 end
 
 function love.keypressed(k)
@@ -96,6 +141,7 @@ function love.keypressed(k)
     
     if k == "k" then
         debug = not debug
+        Fx.debug.enabled = debug
     elseif k == "f11" then
         fullScreen = not fullScreen
         love.window.setFullscreen(fullScreen)
@@ -108,6 +154,7 @@ end
 
 function love.update(dt)
     Fx.t.update(dt)
+    Fx.bfx.update(dt)
     if nextScene then
         if scenes[curScene] and scenes[curScene].exit then scenes[curScene].exit() end
         if scenes[nextScene] and scenes[nextScene].enter then scenes[nextScene].enter() end
@@ -119,28 +166,27 @@ end
 
 
 function love.draw()
+    local internalW, internalH = computeInternalResolution()
+    rebuildCanvas(internalW, internalH)
+    local fw, fh = love.graphics.getDimensions()
+
+    love.graphics.clear(8/255, 15/255, 20/255)
+    Fx.bfx.draw(0, 0, fw, fh, scale)
+
     love.graphics.setCanvas({canvas, stencil = true})
     love.graphics.clear(0.01, 0.01, 0.02)
 
     if scenes[curScene] and scenes[curScene].draw then scenes[curScene].draw() end
 
     Fx.t.draw()
+    Fx.debug.draw()
 
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setCanvas()
 
-    -- Calculate scale to fill the window while keeping aspect ratio
     local screenW, screenH = love.graphics.getDimensions()
-    scale = math.min(screenW / 640, screenH / 360)
-
-    -- If integer scaling is ON, we floor the scale (e.g., 2.7x becomes 2.0x)
-    if config.integerScaling then
-        scale = math.max(1, math.floor(scale))
-    end
-
-    -- Calculate shift to the center
-    screenX = math.floor((screenW - 640 * scale) / 2)
-    screenY = math.floor((screenH - 360 * scale) / 2)
+    screenX = math.floor((screenW - internalW * scale) / 2)
+    screenY = math.floor((screenH - internalH * scale) / 2)
 
     love.graphics.setShader(myShader)
     love.graphics.draw(canvas, screenX, screenY, 0, scale, scale)

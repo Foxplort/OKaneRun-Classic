@@ -141,10 +141,21 @@ function Scene.enter()
     }
 
     gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
+
+    Fx.debug.add("Player", function()
+        local p = GameState.player
+        return {
+            string.format("pos: %.1f / %.1f", p.pos.x, p.pos.y),
+            string.format("z: %.1f  vz: %.2f", p.pos.z or 0, p.vel.z or 0),
+            "grounded: " .. tostring(p.base.move.grounded),
+            "coins: " .. p.coins
+        }
+    end)
 end
 
 function Scene.exit()
     gameData = nil
+    Fx.debug.remove("player")
     --collectgarbage()
 end
 
