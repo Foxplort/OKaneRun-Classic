@@ -78,7 +78,6 @@ local function renderMenuContent(menuKey, x, alpha, isFocused)
 end
 
 function Scene.enter()
-    love.graphics.getFont():setFilter("nearest", "nearest")
     view, selection, slideX, mainAlpha = "main", 1, 0, 1
 
     MP = require("src.systems.menuParticles")

@@ -107,8 +107,8 @@ local function damageHandler(dt)
         end
 
         -- Effects
-        gameData.systems.camera.addShake(3)
-        gameData.systems.camera.addUIShake(3)
+        gameData.systems.camera.addShake("world", 3)
+        gameData.systems.camera.addShake("ui", 3)
     end
 
     -- Getting the results
@@ -139,6 +139,8 @@ function Scene.enter()
             particles = require("src.systems.particles"),
         },
     }
+
+    gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
 end
 
 function Scene.exit()
@@ -429,7 +431,11 @@ function Scene.update(dt)
         followTarget(coin, tx, ty, tz, dt)
     end
 
-    gameData.systems.camera.update(dt)
+    -- Camera
+    local camTargetX = GameState.player.pos.x + GameState.player.stat.body.w / 2
+    local camTargetY = GameState.player.pos.y + GameState.player.stat.body.h / 2
+
+    gameData.systems.camera.update(camTargetX, camTargetY, dt)
 
     -- Tails Math
     local speed = math.sqrt(
@@ -452,7 +458,7 @@ function Scene.update(dt)
 end
 
 function Scene.draw()
-    gameData.systems.camera.applyWorld()
+    gameData.systems.camera.push("world", true)
 
     -- ## BASE DRAW PART ##
 
@@ -505,7 +511,7 @@ function Scene.draw()
 
     -- ## USER INERTFACE ##
 
-    gameData.systems.camera.applyUI()
+    gameData.systems.camera.push("ui", false)
 
     gameData.render.ui.draw()
 

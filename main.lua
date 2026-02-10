@@ -13,6 +13,8 @@ Fx = {
     t = require("src.utils.transition"), -- T - Transition
 }
 
+Fx.la = require("src.systems.loading") -- LA - Loading Animator
+
 local config = {
     integerScaling = true,
     fullScreen = false,
@@ -72,6 +74,11 @@ function love.load()
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
     Fx.r.loadImage("logo", "assets/images/logo-outline.png")
+
+    Fx.r.loadImage("loading1", "assets/images/loading1.png")
+    Fx.r.loadImage("loading2", "assets/images/loading2.png")
+    Fx.r.loadImage("loading3", "assets/images/loading3.png")
+    Fx.r.loadImage("loading4", "assets/images/loading4.png")
 
     for id, buff in pairs(Fx.el) do
         local path = "assets/images/buffs/" .. buff.id .. ".png"

@@ -1,36 +1,61 @@
 local Camera = {}
 
 local camX, camY = 0, 0
-local shakeAmount = 0
-local uiShake = 0
+local halfW = Game.width / 2
+local halfH = Game.height / 2
 
-function Camera.update(dt)
-    shakeAmount = Fx.m.approach(shakeAmount, 0, 40 * dt)
-    uiShake = Fx.m.approach(uiShake, 0, 40 * dt)
+local followSpeed = 8
 
-    -- Camera target (center of screen)
-    local targetX = GameState.player.pos.x + GameState.player.stat.body.w / 2 - 320
-    local targetY = GameState.player.pos.y + GameState.player.stat.body.h / 2 - 180
+local shake = {
+    world = {
+        amount = 0,
+        x = 0,
+        y = 0,
+    },
+    ui = {
+        amount = 0,
+        x = 0,
+        y = 0,
+    },
+}
+
+local worldWidth, worldHeight
+
+function Camera.init(worldW, worldH)
+    worldWidth, worldHeight = worldW, worldH
+end
+
+local function randf(a)
+    return (love.math.random() * 2 - 1) * a
+end
+
+function Camera.update(targetX, targetY, dt)
+    for group in pairs(shake) do
+        shake[group].amount = Fx.m.approach(shake[group].amount, 0, 40 * dt)
+        shake[group].x = randf(shake[group].amount)
+        shake[group].y = randf(shake[group].amount)
+    end
 
     -- Smooth follow (Lerp)
-    camX = camX + (targetX - camX) * 5 * dt
-    camY = camY + (targetY - camY) * 5 * dt
+    local follow = 1 - math.exp(-followSpeed * dt)
+
+    camX = Fx.m.lerp(camX, targetX, follow)
+    camY = Fx.m.lerp(camY, targetY, follow)
 
     -- Clamping (limiting)
-    camX = math.max(0, math.min(camX, GameState.area.mapWidth - 640))
-    camY = math.max(0, math.min(camY, GameState.area.mapHeight - 360))
+    camX = Fx.m.clamp(camX, halfW, worldWidth - halfW)
+    camY = Fx.m.clamp(camY, halfH, worldHeight - halfH)
 end
 
-function Camera.applyWorld()
+function Camera.push(cam, move)
     love.graphics.push()
-    love.graphics.translate(math.random(-shakeAmount, shakeAmount), math.random(-shakeAmount, shakeAmount))
-    love.graphics.translate(-math.floor(camX), -math.floor(camY))
-end
 
-function Camera.applyUI()
-    love.graphics.push()
-    if uiShake > 0 then
-        love.graphics.translate(math.random(-1, 1), math.random(-1, 1))
+    if cam and shake[cam] then
+        love.graphics.translate(shake[cam].x, shake[cam].y)
+    end
+
+    if move then
+        love.graphics.translate(-math.floor(camX-halfW), -math.floor(camY-halfH))
     end
 end
 
@@ -38,12 +63,16 @@ function Camera.pop()
     love.graphics.pop()
 end
 
-function Camera.addShake(num)
-    shakeAmount = shakeAmount + num
+function Camera.addShake(cam, num)
+    if cam and shake[cam] then
+        shake[cam].amount = shake[cam].amount + num
+    end
 end
 
-function Camera.addUIShake(num)
-    uiShake = uiShake + num
+function Camera.resetShake(cam)
+    if cam and shake[cam] then
+        shake[cam].amount = 0
+    end
 end
 
 return Camera

@@ -48,10 +48,12 @@ end
 
 function T.cover(callback)
     if active then return end
+    Fx.la.start()
     active, t, covered, onCovered = true, 0, false, callback
 end
 
 function T.update(dt)
+    Fx.la.update(dt)
     if not active then return end
     t = t + dt / T.config.duration
     
@@ -59,7 +61,7 @@ function T.update(dt)
         covered = true
         if onCovered then onCovered() end
     end
-    if t >= 1 then active = false end
+    if t >= 1 then active = false; Fx.la.stop() end
 end
 
 function T.draw()
@@ -86,6 +88,8 @@ function T.draw()
             l.color, true
         )
     end
+
+    Fx.la.draw()
 end
 
 return T
