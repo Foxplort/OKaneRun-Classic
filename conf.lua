@@ -15,4 +15,5 @@ function love.conf(t)
     t.window.minheight = 360 -- Limits resolution (Y)
     t.window.resizable = true -- Allows resize
     t.window.msaa = 0 -- This keeps pixels sharp when scaling
+    --t.window.vsync = 0 -- Use this for the full FPS
 end

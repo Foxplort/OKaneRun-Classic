@@ -47,9 +47,23 @@ local function getSpikePolygon(x, width, spikeCount, depth, yShift)
 end
 
 function T.cover(callback)
-    if active then return end
+    if active and not covered then
+        onCovered = callback
+        return 
+    end
+
+    if active and covered then
+        t = 0
+        covered = false
+        onCovered = callback
+        return
+    end
+
     Fx.la.start()
-    active, t, covered, onCovered = true, 0, false, callback
+    active = true
+    t = 0
+    covered = false
+    onCovered = callback
 end
 
 function T.update(dt)
@@ -59,9 +73,12 @@ function T.update(dt)
     
     if not covered and t >= 0.5 then
         covered = true
-        if onCovered then onCovered() end
+        if onCovered then
+            onCovered()
+            onCovered = nil
+        end
     end
-    if t >= 1 then active = false; Fx.la.stop() end
+    if t >= 1 then active = false; covered = false; Fx.la.stop() end
 end
 
 function T.draw()

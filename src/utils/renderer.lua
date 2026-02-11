@@ -42,8 +42,6 @@ local function setColor(c)
     love.graphics.setColor(coloring(c))
 end
 
-
-
 local function filling(f)
     if f == nil then f = true end
     if f then f = "fill" else f = "line" end
@@ -78,6 +76,12 @@ function Renderer.line(vertices, c, width)
     setColor(c)
     love.graphics.line(vertices)
     love.graphics.pop()
+end
+
+function Renderer.arc(x, y, r, a1, a2, c, arcType, f, s)
+    if not arcType then arcType = "closed" end
+    setColor(c)
+    love.graphics.arc(filling(f), arcType, x, y, r, a1, a2, s)
 end
 
 function Renderer.tail(tail, color, baseWidth)

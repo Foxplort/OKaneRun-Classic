@@ -3,99 +3,71 @@ local Debug = {}
 Debug.enabled = false
 Debug.providers = {}
 
--- Register a provider
--- fn must return a table of strings
-function Debug.add(name, fn)
-    Debug.providers[name] = fn
-end
+local stats = {
+    fps = 0,
+    dt = 0,
+    ram = 0,
+    draws = 0,
+    canvases = 0
+}
 
-function Debug.remove(name)
-    Debug.providers[name] = nil
-end
+local timer = 0
+local updateRate = 0.2
 
-local function bytesToMB(b)
-    return string.format("%.2f MB", b / 1024 / 1024)
-end
+function Debug.add(name, fn) Debug.providers[name] = fn end
+function Debug.remove(name) Debug.providers[name] = nil end
 
 function Debug.draw()
     if not Debug.enabled then return end
 
-    local lines = {}
-
-    local function push(text)
-        table.insert(lines, text)
+    -- Smooth counter updates
+    timer = timer + love.timer.getDelta()
+    if timer >= updateRate then
+        local loveStats = love.graphics.getStats()
+        stats.fps = love.timer.getFPS()
+        stats.dt = love.timer.getDelta() * 1000
+        stats.ram = collectgarbage("count") / 1024
+        stats.draws = loveStats.drawcalls
+        stats.canvases = loveStats.canvases
+        timer = 0
     end
 
-    -- Header
-    push("OkaneRun [" .. Game.version .. "]")
-    push("DEBUG (K to close)")
-    push("----------------")
+    local lines = {
+        "OkaneRun [" .. Game.version .. "]",
+        "DEBUG (K to close)",
+        "----------------",
+        string.format("FPS: %d", stats.fps),
+        string.format("DT : %.2f ms", stats.dt),
+        string.format("RAM: %.2f MB", stats.ram),
+        string.format("DRW: %d", stats.draws),
+        string.format("CNV: %d", stats.canvases),
+        string.format("RES: %dx%d", Game.width, Game.height),
+        ""
+    }
 
-    -- Core stats
-    push("FPS: " .. love.timer.getFPS())
-    push(string.format("DT: %.2f ms", love.timer.getDelta() * 1000))
-    push("RAM: " .. string.format("%.2f MB", collectgarbage("count") / 1024))
-
-    push("")
-
-    -- Providers
     for name, fn in pairs(Debug.providers) do
         local ok, data = pcall(fn)
         if ok and data then
-            push("[" .. name .. "]")
-            for _, l in ipairs(data) do
-                push(l)
-            end
-            push("")
+            table.insert(lines, "[" .. name .. "]")
+            for _, l in ipairs(data) do table.insert(lines, l) end
+            table.insert(lines, "")
         end
     end
 
-    -- ---- DRAW ----
-
-    local x, y = 6, 6
-    local lineH = 12
-    local padding = 4
-
-    local h = #lines * lineH + padding * 2
-    local w = 0
-
-    -- measure width
+    -- Measuring and Drawing
+    local x, y, lineH, padding = 6, 6, 12, 4
     local font = love.graphics.getFont()
-    for _, l in ipairs(lines) do
-        w = math.max(w, font:getWidth(l))
-    end
+    local w = 0
+    for _, l in ipairs(lines) do w = math.max(w, font:getWidth(l)) end
     w = w + padding * 2
+    local h = #lines * lineH + padding * 2
 
-    -- background
-    Fx.r.rect(
-        x,
-        y,
-        w,
-        h,
-        {0, 0, 0, 160}
-    )
+    Fx.r.rect(x, y, w, h, {0, 0, 0, 160})
+    Fx.r.rect(x - 1, y - 1, w + 2, h + 2, {255, 255, 255, 40}, false)
 
-    -- border
-    Fx.r.rect(
-        x - 1,
-        y - 1,
-        w + 2,
-        h + 2,
-        {255, 255, 255, 40},
-        false
-    )
-
-    -- text
     for i, l in ipairs(lines) do
-        Fx.r.text(
-            l,
-            x + padding,
-            y + padding + (i - 1) * lineH,
-            1,
-            {255, 255, 255, 255}
-        )
+        Fx.r.text(l, x + padding, y + padding + (i - 1) * lineH, 1, {1, 1, 1, 1})
     end
 end
-
 
 return Debug

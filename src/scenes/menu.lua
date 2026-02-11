@@ -124,7 +124,7 @@ function Scene.draw()
 
     local logow, logoh = Fx.r.getImage("logo"):getDimensions()
     Fx.r.imageScaled("logo", PANEL_WIDTH + (Game.width - PANEL_WIDTH - logow*2) / 2, 20, 2, 2)
-    Fx.r.text("V" .. Game.version, PANEL_WIDTH, 80, 1, {255, 255, 255}, Game.width - PANEL_WIDTH, "center")
+    Fx.r.text("--- V" .. Game.version .. " ---", PANEL_WIDTH, 85, 1, {255, 255, 255}, Game.width - PANEL_WIDTH, "center")
 
     -- SIDE MENUS
     Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {0, 0, 0, 1})

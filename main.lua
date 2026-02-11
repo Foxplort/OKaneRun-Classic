@@ -57,13 +57,12 @@ end
 local lastCanvasW, lastCanvasH = 0, 0
 
 local function rebuildCanvas(w, h)
+    -- Now the canvas size matches the actual screen/window dimensions
     if w == lastCanvasW and h == lastCanvasH then return end
 
     canvas = love.graphics.newCanvas(w, h)
-    canvas:setFilter("nearest", "nearest")
-
-    Game.width  = w
-    Game.height = h
+    -- We use "linear" because we want high-res smoothness, not chunky pixels
+    canvas:setFilter("linear", "linear")
 
     lastCanvasW = w
     lastCanvasH = h
@@ -71,27 +70,22 @@ end
 
 local function computeInternalResolution()
     local screenW, screenH = love.graphics.getDimensions()
+    
+    -- 1. How much are we scaling the base resolution to fit the screen?
+    scale = math.min(screenW / Game.baseWidth, screenH / Game.baseHeight)
 
-    -- Integer scale only
-    local scaleX = math.floor(screenW / Game.baseWidth)
-    local scaleY = math.floor(screenH / Game.baseHeight)
-    scale = math.max(1, math.min(scaleX, scaleY))
+    -- 2. Calculate what the internal size WOULD be to fill the screen
+    local idealW = screenW / scale
+    local idealH = screenH / scale
 
-    -- Internal resolution implied by scale
-    local idealW = math.floor(screenW / scale)
-    local idealH = math.floor(screenH / scale)
+    -- 3. Clamp that size using your pixelBank (The "Freedom" limit)
+    -- This ensures we don't show more of the game than intended.
+    local canvasW = math.min(idealW, Game.baseWidth + (Game.pixelBank or 0))
+    local canvasH = math.min(idealH, Game.baseHeight + (Game.pixelBank or 0))
 
-    -- Delta from base resolution
-    local deltaW = idealW - Game.baseWidth
-    local deltaH = idealH - Game.baseHeight
-
-    -- Clamp BOTH directions
-    deltaW = math.max(-Game.pixelBank / 2, math.min(deltaW, Game.pixelBank))
-    deltaH = math.max(-Game.pixelBank / 2, math.min(deltaH, Game.pixelBank))
-
-    return
-        Game.baseWidth + deltaW,
-        Game.baseHeight + deltaH
+    -- 4. Return physical pixels (canvas resolution)
+    -- We multiply by scale so the canvas is native-resolution high-res
+    return math.floor(canvasW * scale), math.floor(canvasH * scale), canvasW, canvasH
 end
 
 
@@ -101,21 +95,16 @@ end
 
 function love.load()
     canvas = love.graphics.newCanvas(640, 360)
-    canvas:setFilter("nearest", "nearest")
+    canvas:setFilter("linear", "linear")
     love.window.setIcon(love.image.newImageData("assets/images/system/icon.png"))
 
-    local font = love.graphics.newFont("assets/fonts/m5x7.ttf", 16)
-    font:setFilter("nearest", "nearest")
+    local font = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, 'light', 8)
+    font:setFilter("linear", "linear")
     love.graphics.setFont(font)
 
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
-
-    Fx.r.loadImage("loading1", "assets/images/system/loading1.png")
-    Fx.r.loadImage("loading2", "assets/images/system/loading2.png")
-    Fx.r.loadImage("loading3", "assets/images/system/loading3.png")
-    Fx.r.loadImage("loading4", "assets/images/system/loading4.png")
 
     love.mouse.setCursor(love.mouse.newCursor(
         love.image.newImageData("assets/images/system/cursor.png"),
@@ -167,29 +156,46 @@ end
 
 
 function love.draw()
-    local internalW, internalH = computeInternalResolution()
-    rebuildCanvas(internalW, internalH)
-    local fw, fh = love.graphics.getDimensions()
+    -- pW/pH = Physical pixels | vW/vH = Virtual game units
+    local pW, pH, vW, vH = computeInternalResolution()
+    rebuildCanvas(pW, pH)
+    
+    -- IMPORTANT: Update your global Game object so scenes know their bounds!
+    -- This is what your Menu and UI code already use.
+    Game.width = vW
+    Game.height = vH
 
-    love.graphics.clear(8/255, 15/255, 20/255)
-    Fx.bfx.draw(0, 0, fw, fh, scale)
+    local screenW, screenH = love.graphics.getDimensions()
 
+    -- 1. Render to High-Res Canvas
     love.graphics.setCanvas({canvas, stencil = true})
     love.graphics.clear(0.01, 0.01, 0.02)
 
-    if scenes[curScene] and scenes[curScene].draw then scenes[curScene].draw() end
-
-    Fx.t.draw()
-    Fx.debug.draw()
-
-    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.push()
+        -- Scale coordinate system so 1 unit = 1 base game pixel
+        love.graphics.scale(scale, scale)
+        
+        -- Draw scene (Now Game.width is the full elastic width)
+        if scenes[curScene] and scenes[curScene].draw then 
+            scenes[curScene].draw() 
+        end
+        
+        Fx.t.draw()
+        Fx.debug.draw()
+    love.graphics.pop()
+    
     love.graphics.setCanvas()
 
-    local screenW, screenH = love.graphics.getDimensions()
-    screenX = math.floor((screenW - internalW * scale) / 2)
-    screenY = math.floor((screenH - internalH * scale) / 2)
+    -- 2. Final Presentation
+    love.graphics.clear(8/255, 15/255, 20/255)
+    Fx.bfx.draw(0, 0, screenW, screenH, scale)
 
+    -- Center the canvas on the physical screen
+    screenX = math.floor((screenW - pW) / 2)
+    screenY = math.floor((screenH - pH) / 2)
+
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader(myShader)
-    love.graphics.draw(canvas, screenX, screenY, 0, scale, scale)
+    love.graphics.draw(canvas, screenX, screenY) 
     love.graphics.setShader()
 end

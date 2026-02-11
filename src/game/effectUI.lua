@@ -2,6 +2,7 @@ local EffectUI = {}
 
 local effectList = {}
 local effectRef = nil
+local effectFun = nil
 
 EffectUI.Data = {
     visible = false,
@@ -13,8 +14,9 @@ EffectUI.Data = {
     selected = 1,
 }
 
-function EffectUI.load(el)
+function EffectUI.load(el, ef)
     effectRef = el
+    effectFun = ef
     for id in pairs(effectRef) do
         table.insert(effectList, id)
     end
@@ -111,11 +113,11 @@ function EffectUI.keypressed(player)
 
     elseif Fx.i.pressed("accept") then
         local id = effectList[EffectUI.Data.selected]
-        Fx.es.apply(player, effectRef[id])
+        effectFun.apply(player, effectRef[id])
 
     elseif Fx.i.pressed("cancel") then
         local id = effectList[EffectUI.Data.selected]
-        Fx.es.remove(player, id)
+        effectFun.remove(player, id)
     end
 end
 

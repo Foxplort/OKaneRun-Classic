@@ -147,7 +147,7 @@ function Scene.enter()
     }
 
     gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
-    gameData.game.effectUI.load(gameData.game.effects)
+    gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
 
     for id, eff in pairs(gameData.game.effects) do
         local path = "assets/images/buffs/" .. eff.id .. ".png"

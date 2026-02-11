@@ -58,7 +58,7 @@ function Camera.push(cam, move)
     end
 
     if move then
-        love.graphics.translate(-math.floor(camX-halfW), -math.floor(camY-halfH))
+        love.graphics.translate(-(camX-halfW), -(camY-halfH))
     end
 end
 
