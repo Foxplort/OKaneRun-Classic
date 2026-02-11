@@ -2,20 +2,15 @@ Fx = {
     r = require("src.utils.renderer"), -- R - Render
     i = require("src.utils.input"), -- I - Input
     m = require("src.utils.math"), -- M - Math
-    el = require("src.game.effects"), -- EL - Effect List
-    es = require("src.game.effectSystem"), -- ES - Effect System
     dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
-    db = { -- DB - DeBug systems
-        e = require("src.game.effectUI"), -- db.E - Effects
-    },
     ll = require("src.utils.levelLoader"), -- LL - Level Loader
     t = require("src.utils.transition"), -- T - Transition
     bfx = require("src.systems.borderFX"),
     debug = require("src.systems.debug"),
 }
 
-Fx.la = require("src.systems.loading") -- LA - Loading Animator
+Fx.la = require("src.systems.loading") -- LA - Loading Animator (needs renderer to work)
 
 local config = {
     integerScaling = true,
@@ -116,7 +111,6 @@ function love.load()
     myShader = love.graphics.newShader("assets/shaders/main.glsl")
 
     Fx.r.loadImage("missing", "assets/images/buffs/missing.png")
-    Fx.r.loadImage("logo", "assets/images/ui/logo-outline.png")
 
     Fx.r.loadImage("loading1", "assets/images/system/loading1.png")
     Fx.r.loadImage("loading2", "assets/images/system/loading2.png")
@@ -128,27 +122,13 @@ function love.load()
         0, 0
     ))
 
-    for id, buff in pairs(Fx.el) do
-        local path = "assets/images/buffs/" .. buff.id .. ".png"
-        if love.filesystem.getInfo(path) then
-            Fx.r.loadImage(buff.id, path)
-        end
-    end
-
     Fx.bfx.init(70)
-    Fx.db.e.load()
 
     if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
 end
 
 function love.keypressed(k)
     if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
-    
-    if k == "b" then
-        Fx.db.e.Data.visible = not Fx.db.e.Data.visible
-    elseif Fx.db.e.Data.visible then
-        Fx.db.e.keypressed(GameState.player, k)
-    end
 end
 
 local function keypress()

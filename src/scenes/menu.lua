@@ -79,9 +79,14 @@ end
 
 function Scene.enter()
     view, selection, slideX, mainAlpha = "main", 1, 0, 1
+    Fx.r.loadImage("logo", "assets/images/ui/logo-outline.png")
 
     MP = require("src.systems.menuParticles")
     MP.init(PANEL_WIDTH)
+end
+
+function Scene.exit()
+    Fx.r.unloadImage("logo")
 end
 
 local function keypressed()

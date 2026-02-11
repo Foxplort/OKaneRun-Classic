@@ -5,6 +5,7 @@ local Scene = {}
 -- ################# --
 
 local gameData = nil
+local loadedImages = {}
 
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
@@ -138,9 +139,23 @@ function Scene.enter()
             tail = require("src.systems.playerTail"),
             particles = require("src.systems.particles"),
         },
+        game = {
+            effects = require("src.game.effects"),
+            effectSys = require("src.game.effectSystem"),
+            effectUI = require("src.game.effectUI"),
+        },
     }
 
     gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
+    gameData.game.effectUI.load(gameData.game.effects)
+
+    for id, eff in pairs(gameData.game.effects) do
+        local path = "assets/images/buffs/" .. eff.id .. ".png"
+        if love.filesystem.getInfo(path) then
+            Fx.r.loadImage(eff.id, path)
+            table.insert(loadedImages, eff.id)
+        end
+    end
 
     Fx.debug.add("Player", function()
         local p = GameState.player
@@ -156,6 +171,10 @@ end
 function Scene.exit()
     gameData = nil
     Fx.debug.remove("player")
+
+    for _, eff in pairs(loadedImages) do
+        Fx.r.unloadImage(eff, path)
+    end
     --collectgarbage()
 end
 
@@ -169,30 +188,37 @@ function Scene.update(dt)
     local isSubmerged = GameState.player.pos.z < 0
     local mx, my = 0, 0
 
-    if Fx.i.pressed("jump") then
-        if GameState.player.jump.cons < GameState.player.stat.jump.lim then
-            GameState.player.jump.cons = GameState.player.jump.cons + 1
-            GameState.player.vel.z = GameState.player.stat.jump.vel
-            GameState.player.jump.timer = GameState.player.stat.jump.cd
-            GameState.player.visual.sx = 0.7 -- Thin
-            GameState.player.visual.sy = 1.4 -- Tall
-            if true then -- P.S. ADD CHECK IF ON THE GROUND!
-                gameData.systems.particles.spawnDust(
-                    GameState.player.pos.x + 10,
-                    GameState.player.pos.y,
-                    GameState.player.pos.z,
-                    GameState.player.vel.x, 
-                    GameState.player.vel.y
-                )
+    if Fx.i.pressed("debugEffect") then
+        gameData.game.effectUI.Data.visible = not gameData.game.effectUI.Data.visible
+    end
+    
+    if gameData.game.effectUI.Data.visible then
+        gameData.game.effectUI.keypressed(GameState.player)
+    else
+        if Fx.i.pressed("jump") then
+            if GameState.player.jump.cons < GameState.player.stat.jump.lim then
+                GameState.player.jump.cons = GameState.player.jump.cons + 1
+                GameState.player.vel.z = GameState.player.stat.jump.vel
+                GameState.player.jump.timer = GameState.player.stat.jump.cd
+                GameState.player.visual.sx = 0.7 -- Thin
+                GameState.player.visual.sy = 1.4 -- Tall
+                if true then -- P.S. ADD CHECK IF ON THE GROUND!
+                    gameData.systems.particles.spawnDust(
+                        GameState.player.pos.x + 10,
+                        GameState.player.pos.y,
+                        GameState.player.pos.z,
+                        GameState.player.vel.x, 
+                        GameState.player.vel.y
+                    )
+                end
             end
         end
-    end
-
-    if not GameState.player.dead then
-        if Fx.i.down("right") then mx = mx + 1 end
-        if Fx.i.down("left") then mx = mx - 1 end
-        if Fx.i.down("up") then my = my - 1 end
-        if Fx.i.down("down") then my = my + 1 end
+        if not GameState.player.dead then
+            if Fx.i.down("right") then mx = mx + 1 end
+            if Fx.i.down("left") then mx = mx - 1 end
+            if Fx.i.down("up") then my = my - 1 end
+            if Fx.i.down("down") then my = my + 1 end
+        end
     end
 
     local targetVX = mx * GameState.player.stat.move.maxVel
@@ -253,7 +279,7 @@ function Scene.update(dt)
             GameState.player.vel.x = 0
             if #GameState.player.coinChain > 0 then
                 GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
-                Fx.es.remove(GameState.player, "coin", #GameState.player.coinChain)
+                gameData.game.effectSys.remove(GameState.player, "coin", #GameState.player.coinChain)
                 GameState.player.coinChain = {}
             end
             break
@@ -291,7 +317,7 @@ function Scene.update(dt)
             GameState.player.vel.y = 0
             if #GameState.player.coinChain > 0 then
                 GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
-                Fx.es.remove(GameState.player, "coin", #GameState.player.coinChain)
+                gameData.game.effectSys.remove(GameState.player, "coin", #GameState.player.coinChain)
                 GameState.player.coinChain = {}
             end
             break
@@ -401,7 +427,7 @@ function Scene.update(dt)
 
             table.insert(GameState.player.coinChain, coin)
             table.remove(GameState.area.coins, i)
-            Fx.es.apply(GameState.player, Fx.el["coin"])
+            gameData.game.effectSys.apply(GameState.player, gameData.game.effects["coin"])
         end
     end
 
@@ -524,7 +550,7 @@ function Scene.draw()
 
     gameData.render.ui.draw()
 
-    Fx.db.e.draw(GameState.player)
+    gameData.game.effectUI.draw(GameState.player)
 
     gameData.systems.camera.pop()
 

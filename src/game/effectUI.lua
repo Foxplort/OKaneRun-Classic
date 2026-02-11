@@ -1,6 +1,7 @@
 local EffectUI = {}
 
 local effectList = {}
+local effectRef = nil
 
 EffectUI.Data = {
     visible = false,
@@ -12,8 +13,9 @@ EffectUI.Data = {
     selected = 1,
 }
 
-function EffectUI.load()
-    for id in pairs(Fx.el) do
+function EffectUI.load(el)
+    effectRef = el
+    for id in pairs(effectRef) do
         table.insert(effectList, id)
     end
     table.sort(effectList)
@@ -23,7 +25,7 @@ function EffectUI.draw(player)
     if not EffectUI.Data.visible then return end
 
     for i, id in ipairs(effectList) do
-        local buff = Fx.el[id]
+        local buff = effectRef[id]
 
         local col = (i - 1) % EffectUI.Data.cols
         local row = math.floor((i - 1) / EffectUI.Data.cols)
@@ -37,7 +39,7 @@ function EffectUI.draw(player)
         -- background
         local color = {0, 0, 0, 70}
         if active then
-            if Fx.el[id].type == "debuff" then
+            if effectRef[id].type == "debuff" then
                 color = {180, 0, 0, 110}
             else
                 color = {0, 180, 0, 110}
@@ -90,28 +92,28 @@ function EffectUI.draw(player)
     end
 end
 
-function EffectUI.keypressed(player, key)
+function EffectUI.keypressed(player)
     if not EffectUI.Data.visible then return end
 
     local max = #effectList
 
-    if key == "left" then
+    if Fx.i.pressed("left") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - 1)
 
-    elseif key == "right" then
+    elseif Fx.i.pressed("right") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + 1)
 
-    elseif key == "up" then
+    elseif Fx.i.pressed("up") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - EffectUI.Data.cols)
 
-    elseif key == "down" then
+    elseif Fx.i.pressed("down") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + EffectUI.Data.cols)
 
-    elseif key == "return" then
+    elseif Fx.i.pressed("accept") then
         local id = effectList[EffectUI.Data.selected]
-        Fx.es.apply(player, Fx.el[id])
+        Fx.es.apply(player, effectRef[id])
 
-    elseif key == "backspace" then
+    elseif Fx.i.pressed("cancel") then
         local id = effectList[EffectUI.Data.selected]
         Fx.es.remove(player, id)
     end

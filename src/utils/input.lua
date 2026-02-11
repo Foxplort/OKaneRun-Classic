@@ -13,6 +13,10 @@ Input.actions = {
         keys = { "k", "f3" },
         buttons = { "back" }
     },
+    debugEffect = {
+        keys = { "b", "f4" },
+        buttons = { "rightstick" }
+    },
     fullscreen = {
         keys = { "f11"}
     },
