@@ -57,11 +57,9 @@ end
 local lastCanvasW, lastCanvasH = 0, 0
 
 local function rebuildCanvas(w, h)
-    -- Now the canvas size matches the actual screen/window dimensions
     if w == lastCanvasW and h == lastCanvasH then return end
 
     canvas = love.graphics.newCanvas(w, h)
-    -- We use "linear" because we want high-res smoothness, not chunky pixels
     canvas:setFilter("linear", "linear")
 
     lastCanvasW = w
@@ -71,20 +69,18 @@ end
 local function computeInternalResolution()
     local screenW, screenH = love.graphics.getDimensions()
     
-    -- 1. How much are we scaling the base resolution to fit the screen?
+    -- How much are we need to scale the base resolution to fit the screen
     scale = math.min(screenW / Game.baseWidth, screenH / Game.baseHeight)
 
-    -- 2. Calculate what the internal size WOULD be to fill the screen
+    -- Calculate what the internal size would be to fill the screen
     local idealW = screenW / scale
     local idealH = screenH / scale
 
-    -- 3. Clamp that size using your pixelBank (The "Freedom" limit)
-    -- This ensures we don't show more of the game than intended.
+    -- Clamp that size using your pixelBank (The "freedom" limit)
     local canvasW = math.min(idealW, Game.baseWidth + (Game.pixelBank or 0))
     local canvasH = math.min(idealH, Game.baseHeight + (Game.pixelBank or 0))
 
-    -- 4. Return physical pixels (canvas resolution)
-    -- We multiply by scale so the canvas is native-resolution high-res
+    -- Return physical pixels (canvas resolution)
     return math.floor(canvasW * scale), math.floor(canvasH * scale), canvasW, canvasH
 end
 
@@ -156,18 +152,15 @@ end
 
 
 function love.draw()
-    -- pW/pH = Physical pixels | vW/vH = Virtual game units
     local pW, pH, vW, vH = computeInternalResolution()
     rebuildCanvas(pW, pH)
     
-    -- IMPORTANT: Update your global Game object so scenes know their bounds!
-    -- This is what your Menu and UI code already use.
     Game.width = vW
     Game.height = vH
 
     local screenW, screenH = love.graphics.getDimensions()
 
-    -- 1. Render to High-Res Canvas
+    -- Render to High-Res Canvas
     love.graphics.setCanvas({canvas, stencil = true})
     love.graphics.clear(0.01, 0.01, 0.02)
 
@@ -175,7 +168,7 @@ function love.draw()
         -- Scale coordinate system so 1 unit = 1 base game pixel
         love.graphics.scale(scale, scale)
         
-        -- Draw scene (Now Game.width is the full elastic width)
+        -- Draw scene
         if scenes[curScene] and scenes[curScene].draw then 
             scenes[curScene].draw() 
         end
@@ -186,7 +179,7 @@ function love.draw()
     
     love.graphics.setCanvas()
 
-    -- 2. Final Presentation
+    -- Final Presentation
     love.graphics.clear(8/255, 15/255, 20/255)
     Fx.bfx.draw(0, 0, screenW, screenH, scale)
 
