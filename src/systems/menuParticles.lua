@@ -7,6 +7,7 @@ local scroll = 0
 local PANEL_WIDTH
 
 function MP.init(pw)
+    particles = {}
     PANEL_WIDTH = pw
     for i = 1, 60 do
         particles[i] = {
@@ -18,6 +19,7 @@ function MP.init(pw)
         }
     end
 
+    dots = {}
     for x = PANEL_WIDTH, Game.baseWidth+Game.pixelBank, 16 do
         for y = 0, Game.baseHeight+Game.pixelBank, 16 do
             table.insert(dots, {x=x, y=y})

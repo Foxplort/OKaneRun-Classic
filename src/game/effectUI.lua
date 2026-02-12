@@ -17,6 +17,7 @@ EffectUI.Data = {
 function EffectUI.load(el, ef)
     effectRef = el
     effectFun = ef
+    effectList = {}
     for id in pairs(effectRef) do
         table.insert(effectList, id)
     end

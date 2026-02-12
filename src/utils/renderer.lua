@@ -159,6 +159,17 @@ function Renderer.text(text, x, y, s, c, wrap, align)
     end
 end
 
+function Renderer.getTextWidth(text, scale)
+    scale = scale or 1
+    local font = love.graphics.getFont()
+    return font:getWidth(text) * scale
+end
+
+function Renderer.getTextHeight(scale)
+    scale = scale or 1
+    local font = love.graphics.getFont()
+    return font:getHeight() * scale
+end
 
 function Renderer.imageScaled(name, x, y, sx, sy, r, ox, oy, c)
     local img = Renderer.images[name]

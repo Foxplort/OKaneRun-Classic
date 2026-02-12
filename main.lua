@@ -13,7 +13,6 @@ Fx = {
 Fx.la = require("src.systems.loading") -- LA - Loading Animator (needs renderer to work)
 
 local config = {
-    integerScaling = true,
     fullScreen = false,
 }
 
