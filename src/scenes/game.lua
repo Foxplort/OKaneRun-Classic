@@ -308,6 +308,9 @@ function Scene.update(dt)
                     GameState.player.pos.y,
                     0
                 )
+
+                GameState.player.visual.sx = 1.5 -- Wide
+                GameState.player.visual.sy = 0.5 -- Short
             end
 
             GameState.player.pos.z = 0
@@ -354,19 +357,6 @@ function Scene.update(dt)
                 table.remove(GameState.area.coins, i)
                 gameData.game.effectSys.apply(GameState.player, gameData.game.effects["coin"])
             end
-        end
-
-        -- Ground collision
-        if GameState.player.pos.z < 0 and not overPit then
-            -- Detect landing
-            if GameState.player.vel.z < -50 then 
-                GameState.player.visual.sx = 1.5 -- Wide
-                GameState.player.visual.sy = 0.5 -- Short
-                gameData.systems.particles.spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, 0)
-            end
-            GameState.player.pos.z = 0
-            GameState.player.vel.z = 0
-            GameState.player.jump.cons = 0
         end
 
         -- Visual recovery (bring scale back to 1)
