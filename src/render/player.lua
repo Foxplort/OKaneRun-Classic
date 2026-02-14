@@ -1,35 +1,5 @@
 local Player = {}
 
-local function playerRenderDepth()
-    local depth = GameState.player.pos.y
-
-    for _, w in ipairs(GameState.area.walls) do
-        local wallMinY = w.y - w.h - w.t
-        local wallMaxY = w.y
-
-        local overlappingXY =
-            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
-            GameState.player.pos.x < w.x + w.w and
-            GameState.player.pos.y > wallMinY and
-            GameState.player.pos.y < wallMaxY
-
-        if overlappingXY then
-            local wallTopZ = w.z + w.t
-
-            if GameState.player.pos.z >= wallTopZ then
-                -- Player stands on the wall - force in front
-                depth = math.max(depth, w.y + 1)
-            else
-                -- Player is behind the wall - force behind
-                depth = math.min(depth, w.y - 1)
-            end
-        end
-    end
-
-    return depth
-end
-
-
 function Player.render()
     -- shadow
     Fx.dq.submit(L.SHADOW, GameState.player.pos.y, function()
@@ -67,7 +37,8 @@ function Player.render()
             cy - h * 0.5 + 2,
             w,
             h,
-            {0, 0, 0, alpha}
+            {0, 0, 0, alpha},
+            true, 16
         )
 
         love.graphics.setStencilTest()
@@ -86,7 +57,7 @@ function Player.render()
 
 
     -- player
-    Fx.dq.submit(L.ACTOR, playerRenderDepth(), function()
+    Fx.dq.submit(L.ACTOR, GameState.player.pos.y, function()
         local pm = GameState.player.stat.body
         local vs = GameState.player.visual
         
@@ -118,89 +89,6 @@ function Player.render()
 
         love.graphics.setStencilTest() -- Reset stencil
     end)
-end
-
-local function playerBehindWall()
-    for _, w in ipairs(GameState.area.walls) do
-        local wallMinY = w.y - w.h - w.t
-        local wallMaxY = w.y
-
-        local overlappingXY =
-            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
-            GameState.player.pos.x < w.x + w.w and
-            GameState.player.pos.y > wallMinY and
-            GameState.player.pos.y < wallMaxY
-
-        if overlappingXY then
-            if GameState.player.pos.z < (w.z + w.t) then
-                return true
-            end
-        end
-    end
-    for _, w in ipairs(GameState.area.cores) do
-        local wallMinY = w.y - 40 - 40
-        local wallMaxY = w.y
-
-        local overlappingXY =
-            GameState.player.pos.x + GameState.player.stat.body.w > w.x and
-            GameState.player.pos.x < w.x + 40 and
-            GameState.player.pos.y > wallMinY and
-            GameState.player.pos.y < wallMaxY
-
-        if overlappingXY then
-            if GameState.player.pos.z < (40) then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-
-function Player.silhuette()
-    if not playerBehindWall() then return end
-
-    local pm = GameState.player.stat.body
-    local vs = GameState.player.visual
-    local vw = pm.w * vs.sx
-    local vh = pm.h * vs.sy
-
-    -- Write wall shapes to stencil
-    love.graphics.stencil(function()
-        for _, w in ipairs(GameState.area.walls) do
-            love.graphics.rectangle(
-                "fill",
-                w.x,
-                w.y - w.h - w.t - w.z,
-                w.w,
-                w.h + w.t
-            )
-        end
-        for _, c in ipairs(GameState.area.cores) do
-            love.graphics.rectangle(
-                "fill",
-                c.x,
-                c.y - 40 - 40,
-                40,
-                40 + 40
-            )
-        end
-    end, "replace", 1)
-
-    -- Draw ONLY where walls exist
-    love.graphics.setStencilTest("equal", 1)
-
-    -- Draw silhouette
-    Fx.r.rect(
-        GameState.player.pos.x + (pm.w - vw) / 2,
-        GameState.player.pos.y - GameState.player.pos.z - vh,
-        vw,
-        vh,
-        {0, 0, 0, 110}
-    )
-
-    -- Reset stencil
-    love.graphics.setStencilTest()
 end
 
 return Player

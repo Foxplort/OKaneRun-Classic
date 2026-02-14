@@ -59,7 +59,7 @@ function Particles.draw(depthFn)
     for _, p in ipairs(list) do
         Fx.dq.submit(
             L.ACTOR,
-            depthFn(p.x, p.y, p.z),
+            p.y,
             function()
                 local alpha = p.life * 180
                 local s = p.size * (0.5 + p.life * 0.5)

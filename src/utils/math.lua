@@ -24,15 +24,4 @@ function MathP.aabb(a, b)
            a.y + a.h > b.y
 end
 
-function MathP.aabb3(a, az, at, b, bz, bt)
-    -- X/Y overlap
-    if not MathP.aabb(a, b) then return false end
-
-    -- Z overlap
-    local aTop = az + at
-    local bTop = bz + bt
-
-    return az < bTop and bz < aTop
-end
-
 return MathP

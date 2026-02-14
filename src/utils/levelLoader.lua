@@ -5,7 +5,7 @@ local defaults = {
     walls = {z=0, t=0},
     ground = {},
     coins = {},
-    cores = {}
+    cores = {w=40,h=40},
 }
 
 -- Merge defaults
@@ -18,10 +18,10 @@ local function applyDefaults(tbl, defs)
 end
 
 -- Merge missing fields for walls
-local function fixWalls(walls)
-    for _, w in ipairs(walls) do
-        if w.z == nil then w.z = 0 end
-        if w.t == nil then w.t = 0 end
+local function fixCores(cores)
+    for _, c in ipairs(cores) do
+        if c.w == nil then c.w = 40 end
+        if c.h == nil then c.h = 40 end
     end
 end
 
@@ -34,7 +34,7 @@ function LevelLoader.load(path)
     -- Merge defaults
     applyDefaults(data, defaults)
 
-    if data.walls then fixWalls(data.walls) end
+    if data.cores then fixCores(data.cores) end
 
     return data
 end

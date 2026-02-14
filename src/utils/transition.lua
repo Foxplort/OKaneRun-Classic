@@ -2,6 +2,7 @@ local T = {}
 
 local active, covered = false, false
 local t, onCovered = 0, nil
+local la = require("src.render.loading")
 
 T.config = {
     duration = 3.0,
@@ -59,7 +60,7 @@ function T.cover(callback)
         return
     end
 
-    Fx.la.start()
+    la.start()
     active = true
     t = 0
     covered = false
@@ -67,7 +68,7 @@ function T.cover(callback)
 end
 
 function T.update(dt)
-    Fx.la.update(dt)
+    la.update(dt)
     if not active then return end
     t = t + dt / T.config.duration
     
@@ -78,7 +79,7 @@ function T.update(dt)
             onCovered = nil
         end
     end
-    if t >= 1 then active = false; covered = false; Fx.la.stop() end
+    if t >= 1 then active = false; covered = false; la.stop() end
 end
 
 function T.draw()
@@ -106,7 +107,7 @@ function T.draw()
         )
     end
 
-    Fx.la.draw()
+    la.draw()
 end
 
 return T

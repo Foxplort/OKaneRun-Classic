@@ -1,63 +1,5 @@
 local World = {}
 
-function World.renderWalls()
-    for _, i in pairs(GameState.area.walls) do
-        Fx.dq.submit(L.SHADOW, i.y, function()
-            -- Draw shadow behind the wall
-            local shadowOffsetX = i.t * 0.6
-            local shadowOffsetY = i.t * 0.35
-
-            -- Corners of the skewed shadow
-            local x1, y1 = i.x + i.z, i.y - i.h - i.z*1.5
-            local x0, y0 = i.x + i.z, i.y - i.z*1.5
-            local x2, y2 = i.x + i.w + i.z, i.y - i.z*1.5
-            local x3, y3 = i.x + i.w + shadowOffsetX + i.z, i.y - i.t + shadowOffsetY - i.z*1.5
-            local x4, y4 = i.x + i.w + shadowOffsetX + i.z, i.y - i.h - i.t + shadowOffsetY - i.z*1.5
-            local x5, y5 = i.x + shadowOffsetX + i.z, i.y - i.h - i.t + shadowOffsetY - i.z*1.5
-
-            Fx.r.polygon(
-                {x1, y1, x0, y0, x2, y2, x3, y3, x4, y4, x5, y5},
-                {0, 0, 0, 90}
-            )
-
-            -- ambient occlusion
-            if z == 0 then
-                Fx.r.rect(
-                    i.x,
-                    i.y - 2,
-                    i.w,
-                    4,
-                    {0, 0, 0, 90}
-                )
-            end
-        end)
-        Fx.dq.submit(L.ACTOR, i.y, function()
-            -- wall
-            Fx.r.rect(
-                i.x,
-                i.y - i.h - i.t - i.z,
-                i.w,
-                i.h + i.t,
-                {0,100,200}
-            )
-
-            -- roof
-            Fx.r.rect(
-                i.x,
-                i.y - i.h - i.t - i.z,
-                i.w,
-                i.h,
-                {0,50,100}
-            )
-
-            -- Highlight
-            Fx.r.rect(i.x, i.y - i.t - i.z, i.w, 1, {200, 240, 255, 60})
-            -- Shadow
-            Fx.r.rect(i.x + i.w - 1, i.y - i.t - i.z, 1, i.t, {0, 0, 0, 80}) -- Right Side
-        end)
-    end
-end
-
 function World.renderCoins()
     -- Real coins
     for _, c in ipairs(GameState.area.coins) do
@@ -65,8 +7,9 @@ function World.renderCoins()
         Fx.dq.submit(L.ACTOR, c.y, function()
             Fx.r.circ(c.x-1, c.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
             Fx.r.circ(c.x, c.y-15, 10, 15, {255, 200, 0}, true, 7) -- body
-            Fx.r.circ(c.x+3, c.y-15, 3, 15, {230, 140, 0}, true, 3) -- middle
-            Fx.r.circ(c.x+6, c.y-13, 5, 5, {255, 255, 160}, true, 5) -- highlight
+            Fx.r.circ(c.x+4, c.y-13, 2, 10, {230, 140, 0}, true, 4) -- middle
+            Fx.r.circ(c.x+6, c.y-13, 4, 5, {255, 255, 160}, true, 5) -- highlight
+            Fx.r.circ(c.x+7.5, c.y-12, 2, 3, {255, 255, 255}, true, 5) -- highlight
         end)
 
         -- Shadow
@@ -134,8 +77,9 @@ function World.renderCoins()
                 true, 7
             )
 
-            Fx.r.circ(c.x+3+2.5, c.y-c.z-15, 3, 15, {230, 140, 0, alpha}, true, 3)
-            Fx.r.circ(c.x+6+2.5, c.y-c.z-13, 5, 5, {255, 255, 160, alpha}, true, 5)
+            Fx.r.circ(c.x+4+2.5, c.y-c.z-13, 2, 10, {230, 140, 0, alpha}, true, 4)
+            Fx.r.circ(c.x+6+2.5, c.y-c.z-13, 4, 5, {255, 255, 160, alpha}, true, 5)
+            Fx.r.circ(c.x+7.5+2.5, c.y-c.z-12, 2, 3, {255, 255, 255, alpha}, true, 5)
 
             love.graphics.setStencilTest() -- Reset stencil
         end)
@@ -178,64 +122,22 @@ end
 
 function World.renderCores()
     for _, i in ipairs(GameState.area.cores) do
-        local h, w, t = 40, 40, 40
-
-        Fx.dq.submit(L.SHADOW, i.y, function()
-            -- Draw shadow behind the wall
-            local shadowOffsetX = t * 0.6
-            local shadowOffsetY = t * 0.35
-
-            -- Corners of the skewed shadow
-            local x1, y1 = i.x, i.y - h
-            local x2, y2 = i.x + w, i.y
-            local x3, y3 = i.x + w + shadowOffsetX, i.y - t + shadowOffsetY
-            local x4, y4 = i.x + w + shadowOffsetX, i.y - h - t + shadowOffsetY
-            local x5, y5 = i.x + shadowOffsetX, i.y - h - t + shadowOffsetY
-
-            Fx.r.polygon(
-                {x1, y1, x2, y2, x3, y3, x4, y4, x5, y5},
-                {0, 0, 0, 90}
-            )
-
-            -- ambient occlusion
-            Fx.r.rect(
-                i.x,
-                i.y - 2,
-                w,
-                4,
-                {0, 0, 0, 90}
-            )
-        end)
-        Fx.dq.submit(L.ACTOR, i.y, function()
+        Fx.dq.submit(L.FLOOR, i.y, function()
             -- wall
             Fx.r.rect(
                 i.x,
-                i.y - h - t,
-                w,
-                h + t,
+                i.y,
+                i.w,
+                i.h,
                 {0, 190, 80}
             )
-
-            -- roof
-            Fx.r.rect(
-                i.x,
-                i.y - h - t,
-                w,
-                h,
-                {0, 90, 60}
-            )
-
-            -- Highlight
-            Fx.r.rect(i.x, i.y - t, w, 1, {200, 255, 240, 60})
-            -- Shadow
-            Fx.r.rect(i.x + w - 1, i.y - t, 1, t, {0, 0, 0, 80}) -- Right Side
         end)
     end
 end
 
 function World.renderGround()
     for _, g in ipairs(GameState.area.ground) do
-        Fx.dq.submit(L.FLOOR, g.y+g.w, function()
+        Fx.dq.submit(L.FLOOR, g.y, function()
             -- The Floor
             Fx.r.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
 

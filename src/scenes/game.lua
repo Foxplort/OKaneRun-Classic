@@ -11,6 +11,9 @@ local deathPause = false
 local menu = nil
 local monoShader = nil
 
+local DEPOSIT_TIME = 0.8
+local DECAY_TIME = 2
+
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
@@ -44,33 +47,6 @@ local function followTarget(coin, tx, ty, tz, dt)
     coin.z = coin.z + (tz - coin.z) * 6 * dt
 end
 
-local function actorRenderDepth(x, y, z)
-    local depth = y
-
-    for _, w in ipairs(GameState.area.walls) do
-        local wallMinY = w.y - w.h - w.t
-        local wallMaxY = w.y
-
-        local overlappingXY =
-            x > w.x and
-            x < w.x + w.w and
-            y > wallMinY and
-            y < wallMaxY
-
-        if overlappingXY then
-            local wallTopZ = (w.z or 0) + (w.t or 0)
-
-            if z >= wallTopZ then
-                depth = math.max(depth, w.y + 1)
-            else
-                depth = math.min(depth, w.y - 1)
-            end
-        end
-    end
-
-    return depth
-end
-
 -- Deep copy + apply modifiers recursively
 local function applyMods(base, mod)
     local stat = {}
@@ -89,6 +65,15 @@ local function statPerp()
     GameState.player.stat = applyMods(GameState.player.base, GameState.player.mod)
 end
 
+local function getActiveCore(hb)
+    for _, c in ipairs(GameState.area.cores) do
+        local zone = { x = c.x, y = c.y, w = c.w, h = c.h }
+        if Fx.m.aabb(hb, zone) then
+            return c
+        end
+    end
+    return nil
+end
 
 -- ######################### --
 -- ### SUBMAIN FUNCTIONS ### --
@@ -172,7 +157,7 @@ function Scene.enter()
         return {
             string.format("pos: %.1f / %.1f", p.pos.x, p.pos.y),
             string.format("z: %.1f  vz: %.2f", p.pos.z or 0, p.vel.z or 0),
-            "grounded: " .. tostring(p.base.move.grounded),
+            "grounded: " .. tostring(p.grounded),
             "coins: " .. p.coins
         }
     end)
@@ -241,7 +226,7 @@ function Scene.update(dt)
                     GameState.player.jump.timer = GameState.player.stat.jump.cd
                     GameState.player.visual.sx = 0.7 -- Thin
                     GameState.player.visual.sy = 1.4 -- Tall
-                    if true then -- P.S. ADD CHECK IF ON THE GROUND!
+                    if GameState.player.grounded then
                         gameData.systems.particles.spawnDust(
                             GameState.player.pos.x + 10,
                             GameState.player.pos.y,
@@ -292,166 +277,66 @@ function Scene.update(dt)
         -- Apply X movement
         local nextX = GameState.player.pos.x + GameState.player.vel.x * dt
         local hb = Fx.cl.getPlayerHitbox()
-
         hb.x = nextX + GameState.player.stat.body.hitbox.xt
-
-        for _, w in ipairs(GameState.area.walls) do
-            local wh = Fx.cl.getWallHitbox(w)
-
-            if Fx.m.aabb3(
-                hb,
-                GameState.player.pos.z,
-                GameState.player.stat.body.hitbox.t,
-                wh,
-                w.z or 0,
-                w.t or math.huge
-            ) then
-                nextX = GameState.player.pos.x
-                GameState.player.vel.x = 0
-                break
-            end
-        end
-
-        for _, c in ipairs(GameState.area.cores) do
-            local ch = {x=c.x, y=c.y-40, w=40, h=40}
-            if Fx.m.aabb(hb, ch) then
-                nextX = GameState.player.pos.x
-                GameState.player.vel.x = 0
-                if #GameState.player.coinChain > 0 then
-                    GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
-                    gameData.game.effectSys.remove(GameState.player, "coin", #GameState.player.coinChain)
-                    GameState.player.coinChain = {}
-                end
-                break
-            end
-        end
-
         GameState.player.pos.x = nextX
 
         -- Apply Y movement
         local nextY = GameState.player.pos.y + GameState.player.vel.y * dt
         hb = Fx.cl.getPlayerHitbox()
         hb.y = nextY + GameState.player.stat.body.hitbox.yt
-
-        for _, w in ipairs(GameState.area.walls) do
-            local wh = Fx.cl.getWallHitbox(w)
-
-            if Fx.m.aabb3(
-                hb,
-                GameState.player.pos.z,
-                GameState.player.stat.body.hitbox.t,
-                wh,
-                w.z or 0,
-                w.t or math.huge
-            ) then
-                nextY = GameState.player.pos.y
-                GameState.player.vel.y = 0
-                break
-            end
-        end
-
-        for _, c in ipairs(GameState.area.cores) do
-            local ch = {x=c.x, y=c.y-40, w=40, h=40}
-            if Fx.m.aabb(hb, ch) then
-                nextY = GameState.player.pos.y
-                GameState.player.vel.y = 0
-                if #GameState.player.coinChain > 0 then
-                    GameState.player.coins = GameState.player.coins + #GameState.player.coinChain
-                    gameData.game.effectSys.remove(GameState.player, "coin", #GameState.player.coinChain)
-                    GameState.player.coinChain = {}
-                end
-                break
-            end
-        end
-
         GameState.player.pos.y = nextY
 
-        -- PIT COLLISION LOGIC
-        if GameState.player.pos.z < 0 then
-            local hb = Fx.cl.getPlayerHitbox()
-            local touchingGround = false
-            
-            for _, g in ipairs(GameState.area.ground) do
-                if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then
-                    touchingGround = true
-                    break
-                end
-            end
-
-            -- If we are below ground level and touching the ground area,
-            -- that means we just walked into a "wall" of the pit.
-            if touchingGround then
-                GameState.player.pos.x = lastX
-                GameState.player.pos.y = lastY
-                -- Kill velocity so they don't keep sliding into the wall
-                GameState.player.vel.x = 0
-                GameState.player.vel.y = 0
-            end
-        end
-
-
-        -- Z physics (jump)
+        -- Z physics
         GameState.player.vel.z = GameState.player.vel.z - GameState.player.stat.jump.g * dt
         GameState.player.pos.z = GameState.player.pos.z + GameState.player.vel.z * dt
 
-        -- PLATFORM / WALL TOP LANDING
-        if GameState.player.vel.z <= 0 then -- only when falling
-            local hb = Fx.cl.getPlayerHitbox()
-            local playerBottom = GameState.player.pos.z
-            local playerTop = GameState.player.pos.z + GameState.player.stat.body.hitbox.t
+        -- Ground resolution
+        local hb = Fx.cl.getPlayerHitbox()
+        local touchingGround = false
 
-            for _, w in ipairs(GameState.area.walls) do
-                local wh = Fx.cl.getWallHitbox(w)
-                local wallTop = (w.z or 0) + (w.t or 0)
-
-                -- XY overlap?
-                if Fx.m.aabb(hb, wh) then
-                    -- Did we cross the top this frame?
-                    if lastZ >= wallTop and playerBottom <= wallTop then
-                        -- LAND
-                        if GameState.player.vel.z < -50 then 
-                            GameState.player.visual.sx = 1.5 -- Wide
-                            GameState.player.visual.sy = 0.5 -- Short
-                            gameData.systems.particles.spawnLandingDust(GameState.player.pos.x + 10, GameState.player.pos.y, wallTop)
-                        end
-                        GameState.player.pos.z = wallTop
-                        GameState.player.vel.z = 0
-                        GameState.player.jump.cons = 0
-                        break
-                    end
-                end
-            end
-        end
-
-        -- CEILING / UNDERSIDE COLLISION
-        if GameState.player.vel.z > 0 then -- only when moving upward
-            local hb = Fx.cl.getPlayerHitbox()
-            local playerTop = GameState.player.pos.z + GameState.player.stat.body.hitbox.t
-
-            for _, w in ipairs(GameState.area.walls) do
-                local wh = Fx.cl.getWallHitbox(w)
-                local wallBottom = (w.z or 0)
-
-                -- XY overlap?
-                if Fx.m.aabb(hb, wh) then
-                    -- Did we hit the underside?
-                    if lastZ + GameState.player.stat.body.hitbox.t <= wallBottom
-                    and playerTop >= wallBottom then
-
-                        GameState.player.pos.z = wallBottom - GameState.player.stat.body.hitbox.t
-                        GameState.player.vel.z = 0
-                        break
-                    end
-                end
-            end
-        end
-
-        local overPit = true
         for _, g in ipairs(GameState.area.ground) do
-            if Fx.m.aabb(Fx.cl.getPlayerHitbox(), Fx.cl.getGroundHitbox(g)) then
-                overPit = false
+            if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then
+                touchingGround = true
+                break
             end
         end
+
+        if touchingGround and GameState.player.pos.z <= 0 then
+            if GameState.player.vel.z < -50 then
+                gameData.systems.particles.spawnLandingDust(
+                    GameState.player.pos.x + 10,
+                    GameState.player.pos.y,
+                    0
+                )
+            end
+
+            GameState.player.pos.z = 0
+            GameState.player.vel.z = 0
+            GameState.player.jump.cons = 0
+        end
+
+        local hb = Fx.cl.getPlayerHitbox()
+        GameState.player.grounded = touchingGround and GameState.player.vel.z == 0
+        local core = getActiveCore(hb)
+
+        if core and GameState.player.grounded and #GameState.player.coinChain > 0 then
+            GameState.player.coreProgress =
+                math.min(DEPOSIT_TIME, GameState.player.coreProgress + dt)
+
+            if GameState.player.coreProgress >= DEPOSIT_TIME then
+                GameState.player.coreProgress = 0
+
+                -- Deposit ONE coin
+                table.remove(GameState.player.coinChain, 1)
+                GameState.player.coins = GameState.player.coins + 1
+                gameData.game.effectSys.remove(GameState.player, "coin", 1)
+            end
+        else
+            -- Decay progress
+            GameState.player.coreProgress =
+                math.max(0, GameState.player.coreProgress - dt * (DEPOSIT_TIME / DECAY_TIME))
+        end
+
 
         -- Collect coins
         for i, c in ipairs(GameState.area.coins) do
@@ -544,19 +429,16 @@ function Scene.draw()
 
     gameData.render.player.render() -- render player + shadow
 
-    gameData.render.world.renderWalls() -- render walls
     gameData.render.world.renderGround() -- render ground
     gameData.render.world.renderCoins() -- render coins
     gameData.render.world.renderCores() -- render cores
 
     -- Dust
-    gameData.systems.particles.draw(actorRenderDepth)
+    gameData.systems.particles.draw()
 
     -- ## END OF DRAW ##
 
     Fx.dq.draw() -- draw items in order
-
-    gameData.render.player.silhuette() -- Player's shiluette
 
 
     if debug then
@@ -568,13 +450,8 @@ function Scene.draw()
         local hb = Fx.cl.getPlayerHitbox()
         Fx.r.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
 
-        for _, w in ipairs(GameState.area.walls) do
-            local wh = Fx.cl.getWallHitbox(w)
-            Fx.r.rect(wh.x, wh.y, wh.w, wh.h, {0,255,0}, false)
-        end
-
         for _, c in ipairs(GameState.area.cores) do
-            Fx.r.rect(c.x, c.y-40, 40, 40, {0,255,0}, false)
+            Fx.r.rect(c.x, c.y, c.w, c.h, {0,255,0}, false)
         end
 
         for _, c in ipairs(GameState.area.coins) do

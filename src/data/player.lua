@@ -35,6 +35,7 @@ function Player.new()
 
         coins = 0,
         dead = false,
+        coreProgress = 0,
 
         visual = {
             sx = 1,

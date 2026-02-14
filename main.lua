@@ -10,8 +10,6 @@ Fx = {
     debug = require("src.systems.debug"),
 }
 
-Fx.la = require("src.systems.loading") -- LA - Loading Animator (needs renderer to work)
-
 local config = {
     fullScreen = false,
 }
@@ -27,7 +25,7 @@ local myShader
 
 debug = false
 
-local curScene = "intro"
+local curScene = "menu"
 nextScene = nil
 scenes = {
     game = require("src.scenes.game"),
