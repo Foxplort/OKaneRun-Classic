@@ -78,10 +78,20 @@ function Renderer.line(vertices, c, width)
     love.graphics.pop()
 end
 
-function Renderer.arc(x, y, r, a1, a2, c, arcType, f, s)
+function Renderer.arc(x, y, r, a1, a2, c, arcType, f, s, width)
     if not arcType then arcType = "closed" end
+
+    love.graphics.push("all")
+
+    if width then
+        love.graphics.setLineWidth(width)
+        love.graphics.setLineStyle("rough")
+    end
+
     setColor(c)
     love.graphics.arc(filling(f), arcType, x, y, r, a1, a2, s)
+
+    love.graphics.pop()
 end
 
 function Renderer.tail(tail, color, baseWidth)

@@ -122,7 +122,7 @@ end
 
 function World.renderCores()
     for _, i in ipairs(GameState.area.cores) do
-        Fx.dq.submit(L.FLOOR, i.y, function()
+        Fx.dq.submit(L.SHADOW, i.y, function()
             -- wall
             Fx.r.rect(
                 i.x,

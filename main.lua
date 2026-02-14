@@ -25,7 +25,7 @@ local myShader
 
 debug = false
 
-local curScene = "menu"
+local curScene = "intro"
 nextScene = nil
 scenes = {
     game = require("src.scenes.game"),

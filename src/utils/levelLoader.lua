@@ -2,9 +2,9 @@ local LevelLoader = {}
 
 -- Default values for fields
 local defaults = {
-    walls = {z=0, t=0},
     ground = {},
     coins = {},
+    spawn = {x=150, y=150},
     cores = {w=40,h=40},
 }
 
@@ -35,6 +35,7 @@ function LevelLoader.load(path)
     applyDefaults(data, defaults)
 
     if data.cores then fixCores(data.cores) end
+    if not data.spawn then data.spawn = defaults.spawn end
 
     return data
 end

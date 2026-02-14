@@ -85,8 +85,8 @@ local function damageHandler(dt)
         GameState.player.hp.count = GameState.player.hp.count - 1
 
         -- Safe Teleport
-        GameState.player.pos.x = 100
-        GameState.player.pos.y = 100
+        GameState.player.pos.x = GameState.area.spawn.x - GameState.player.base.body.hitbox.w/2
+        GameState.player.pos.y = GameState.area.spawn.y - GameState.player.base.body.hitbox.h/2
         GameState.player.pos.z = 40
 
         -- Coins teleport
@@ -112,16 +112,18 @@ end
 -- ###################### --
 
 function Scene.enter()
+    -- LOAD THE LEVEL
+    local levelList = require("src.data.levels")
+    GameState.area = Fx.ll.load("src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
+    --GameState.area = Fx.ll.load("src/data/levels/cheezeLand.lua")
+
     -- RESET VARIABLES
     pause = false
     deathPause = false
-    GameState.player.pos.x = 120
-    GameState.player.pos.y = 120
+    GameState.player.pos.x = GameState.area.spawn.x - GameState.player.base.body.hitbox.w/2
+    GameState.player.pos.y = GameState.area.spawn.y - GameState.player.base.body.hitbox.h/2
     GameState.player.pos.z = 40
     GameState.player.coinChain = {}
-
-    -- LOAD THE DATA
-    GameState.area = Fx.ll.load("src/data/levels/testLevel.lua")
 
     gameData = {
         render = {
@@ -333,6 +335,9 @@ function Scene.update(dt)
                 table.remove(GameState.player.coinChain, 1)
                 GameState.player.coins = GameState.player.coins + 1
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
+                if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
+                    Fx.t.cover(function() setScene("menu") end)
+                end
             end
         else
             -- Decay progress
