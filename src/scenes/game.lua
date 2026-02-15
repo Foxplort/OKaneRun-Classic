@@ -336,7 +336,7 @@ function Scene.update(dt)
                 GameState.player.coins = GameState.player.coins + 1
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
-                    Fx.t.cover(function() setScene("menu") end)
+                    Fx.t.cover(function() setScene("shop") end)
                 end
             end
         else

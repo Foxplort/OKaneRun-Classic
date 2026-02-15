@@ -31,6 +31,7 @@ scenes = {
     game = require("src.scenes.game"),
     intro = require("src.scenes.intro"),
     menu = require("src.scenes.menu"),
+    shop = require("src.scenes.shop"),
 }
 
 GameState = require("src.game.state").new()
