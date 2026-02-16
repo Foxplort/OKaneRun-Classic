@@ -9,13 +9,20 @@ local PANEL_WIDTH
 function MP.init(pw)
     particles = {}
     PANEL_WIDTH = pw
-    for i = 1, 60 do
+
+    for i = 1, 80 do
+        local z = math.random() -- depth
+
         particles[i] = {
-            x = math.random(PANEL_WIDTH, Game.baseWidth+Game.pixelBank),
-            y = math.random(0, Game.baseHeight+Game.pixelBank),
-            spd = math.random() * 10 + 5,
-            size = math.random() * 1.5 + 0.5,
-            a = math.random() * 0.4 + 0.1
+            x = math.random(PANEL_WIDTH, Game.baseWidth + Game.pixelBank),
+            y = math.random(0, Game.baseHeight + Game.pixelBank),
+            z = z,
+
+            spd = 10 + z * 40,          -- deeper = faster
+            drift = (math.random()-0.5) * (10 + z*20),
+
+            size = 0.5 + z * 1.5,
+            a = 0.1 + z * 0.4
         }
     end
 
@@ -28,30 +35,42 @@ function MP.init(pw)
 end
 
 function MP.update(dt)
+    local wind = math.sin(love.timer.getTime() * 0.6) * 10
+
     for _, p in ipairs(particles) do
         p.y = p.y + p.spd * dt
-        if p.y > Game.height then
-            p.y = -5
-            p.x = math.random(PANEL_WIDTH, Game.width)
+        p.x = p.x + (p.drift + wind * p.z) * dt
+
+        if p.y > Game.baseHeight + 10 + Game.pixelBank then
+            p.y = -10
+            p.x = math.random(PANEL_WIDTH, Game.baseWidth)
+        end
+
+        if p.x < PANEL_WIDTH then
+            p.x = Game.baseWidth
+        elseif p.x > Game.baseWidth + Game.pixelBank then
+            p.x = PANEL_WIDTH
         end
     end
+
     scroll = (scroll + dt * 5) % 16
 end
 
-function MP.draw()
-    for _, p in ipairs(particles) do
-        love.graphics.setColor(1, 1, 1, p.a)
-        love.graphics.rectangle("fill", math.floor(p.x), math.floor(p.y), p.size, p.size)
-    end
+function MP.drawBack()
+    for _, d in ipairs(dots) do Fx.r.rect(d.x, d.y + scroll, 1, 1, {255, 255, 255, 20}) end
 
-    love.graphics.setColor(1, 1, 1, 0.06)
-    for _, d in ipairs(dots) do
-        love.graphics.rectangle(
-            "fill",
-            math.floor(d.x),
-            math.floor(d.y + scroll),
-            1, 1
-        )
+    for _, p in ipairs(particles) do
+        if p.z < 0.5 then
+            Fx.r.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
+        end
+    end
+end
+
+function MP.drawFront()
+    for _, p in ipairs(particles) do
+        if p.z >= 0.5 then
+            Fx.r.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
+        end
     end
 end
 

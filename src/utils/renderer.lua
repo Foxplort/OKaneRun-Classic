@@ -222,9 +222,10 @@ end
 
 -- IMAGES LOADING HANDLER
 
-function Renderer.loadImage(name, path)
+function Renderer.loadImage(name, path, imgtype)
     local img = love.graphics.newImage(path)
-    img:setFilter("nearest", "nearest")
+    imgtype = imgtype or "nearest" 
+    img:setFilter(imgtype, imgtype)
     Renderer.images[name] = img
 end
 

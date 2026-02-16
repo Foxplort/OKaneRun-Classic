@@ -196,6 +196,7 @@ function Scene.update(dt)
         pause = true
     end
     if pause then
+        if Fx.i.pressed("cancel") then pause = false end
         menuStack:input()
         menuStack:update(dt)
     else
@@ -238,7 +239,7 @@ function Scene.update(dt)
                 if Fx.i.down("left") then mx = mx - 1 end
                 if Fx.i.down("up") then my = my - 1 end
                 if Fx.i.down("down") then my = my + 1 end
-                if Fx.i.pressed("cancel") then pause = true end
+                if Fx.i.pressed("cancel") then pause = true; menu:resetAnimation() end
             end
         end
 

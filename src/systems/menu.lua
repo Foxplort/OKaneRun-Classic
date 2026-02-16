@@ -9,30 +9,6 @@ local PANEL_W = 220
 local PANEL_X = 0
 local PANEL_TOP = 60
 
-local blurShader = love.graphics.newShader [[
-extern number strength;
-
-vec4 effect(vec4 color, Image tex, vec2 tc, vec2 px)
-{
-    vec2 offset = strength / vec2(love_ScreenSize.xy);
-    
-    // 9-sample Gaussian-like blur
-    vec4 sum = vec4(0.0);
-
-    sum += Texel(tex, tc) * 0.2270270270;
-    sum += Texel(tex, tc + vec2(offset.x, 0.0)) * 0.1945945946;
-    sum += Texel(tex, tc - vec2(offset.x, 0.0)) * 0.1945945946;
-    sum += Texel(tex, tc + vec2(2.0*offset.x, 0.0)) * 0.1216216216;
-    sum += Texel(tex, tc - vec2(2.0*offset.x, 0.0)) * 0.1216216216;
-    sum += Texel(tex, tc + vec2(3.0*offset.x, 0.0)) * 0.0540540541;
-    sum += Texel(tex, tc - vec2(3.0*offset.x, 0.0)) * 0.0540540541;
-    sum += Texel(tex, tc + vec2(4.0*offset.x, 0.0)) * 0.0162162162;
-    sum += Texel(tex, tc - vec2(4.0*offset.x, 0.0)) * 0.0162162162;
-
-    return sum * color;
-}
-]]
-
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
@@ -61,6 +37,15 @@ local function drawZigZagPanel(x, y, w, h, scroll, c)
     pts[#pts+1] = y + h
 
     Fx.r.polygon(pts, c)
+end
+
+function Menu:findFirstSelectable()
+    for i, opt in ipairs(self.options) do
+        if not opt.isLabel and not opt.disabled then
+            return i
+        end
+    end
+    return 1
 end
 
 -- #################### --
@@ -98,7 +83,12 @@ function Menu:update(dt, focused)
     self.spikeScroll = (self.spikeScroll + dt * 20) % 48
 
     -- MENU slides LEFT when inactive
-    self.slideX = Fx.m.lerp(self.slideX, focused and 0 or 1, dt * 8)
+    if focused then
+        self.slideX = Fx.m.lerp(self.slideX, 0, dt * 12)
+    else
+        self.slideX = Fx.m.lerp(self.slideX, 1, dt * 12)
+
+    end
     self.alpha  = Fx.m.lerp(self.alpha,  focused and 1 or 0.15, dt * 10)
 
     for i, opt in ipairs(self.options) do
@@ -110,7 +100,7 @@ function Menu:update(dt, focused)
 
     local opt = self.options[self.selection]
     local hasDesc = focused and opt and opt.desc
-    self.commentT = Fx.m.lerp(self.commentT, hasDesc and 1 or 0, dt * 10)
+    self.commentT = Fx.m.lerp(self.commentT, hasDesc and 1 or 0, dt * 8)
     if hasDesc then self.comment = opt.desc end
 end
 
@@ -131,13 +121,19 @@ function Menu:activate(stack)
     if o.action then o.action() end
 end
 
+function Menu:resetAnimation()
+    self.slideX = 1
+    self.alpha  = 0
+    self.selection = self:findFirstSelectable()
+end
+
 -- ###################### --
 -- ### DRAW FUNCTIONS ### --
 -- ###################### --
 
 function Menu:drawContent(focused)
     local xOffset = -self.slideX * 60
-    local x = PANEL_X + 80 + xOffset
+    local x = PANEL_X + 40 + xOffset
     local y = PANEL_TOP
     local a = self.alpha
 
@@ -184,14 +180,14 @@ function Menu:drawDescription()
 
     local x = freeX + freeW/2 - self.commentW/2
     local y = Game.height - self.commentH - 20
-              + (1-self.commentT)*40
+              + (1-self.commentT)*60
 
-    local a = self.commentT
+    local a = self.commentT * 0.627
 
     -- shadow
-    Fx.r.rect(x+2, y+2, self.commentW, self.commentH, {1,1,1,a*0.15})
+    Fx.r.rect(x, y, self.commentW, self.commentH, {0,0,0,a})
     -- background
-    Fx.r.rect(x,   y,   self.commentW, self.commentH, {0,0,0,a})
+    Fx.r.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
 
     Fx.r.text(
         self.comment,
@@ -218,13 +214,16 @@ function MenuStack.new(root)
 end
 
 function MenuStack:push(menu)
-    menu.slideX = 1
-    menu.alpha  = 0
+    menu:resetAnimation()
     table.insert(self.stack, menu)
 end
 
 function MenuStack:pop()
-    if #self.stack > 1 then table.remove(self.stack) end
+    if #self.stack > 1 then
+        table.remove(self.stack)
+        local top = self.stack[#self.stack]
+        top:resetAnimation()
+    end
 end
 
 function MenuStack:update(dt)
@@ -237,17 +236,8 @@ function MenuStack:draw()
     for i, m in ipairs(self.stack) do
         local focused = (i == #self.stack)
 
-        if not focused then
-            --m:drawContent(false)
-
-            love.graphics.setShader(blurShader)
-            blurShader:send("strength", 8)
-            m:drawContent(false)
-            love.graphics.setShader()
-        else
-            m:drawContent(true)
-            m:drawDescription()
-        end
+        m:drawContent(focused)
+        if focused then m:drawDescription() end
     end
 end
 
