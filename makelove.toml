@@ -1,8 +1,0 @@
-name = "OkaneRun"
-default_targets = ["win32", "win64", "appimage"]
-build_directory = "builds"
-
-love_files = [
-    "::git-ls-tree::",
-    "-*/.*",
-]
