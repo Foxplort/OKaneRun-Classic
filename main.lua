@@ -92,7 +92,7 @@ function love.load()
     canvas:setFilter("linear", "linear")
     love.window.setIcon(love.image.newImageData("assets/images/system/icon.png"))
 
-    local font = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, 'light', 8)
+    local font = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, 'normal', 4)
     font:setFilter("linear", "linear")
     love.graphics.setFont(font)
 

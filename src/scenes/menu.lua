@@ -1,4 +1,3 @@
--- SceneMainMenu.lua
 local Scene = {}
 
 local MenuSystem = require("src.systems.menu")
@@ -13,6 +12,7 @@ local MP
 
 local timer = 1
 local fogXShift, fogYShift = 0, 0
+local logoY = 0
 
 local glitchShader = love.graphics.newShader("assets/shaders/menu_glitch.glsl")
 
@@ -69,7 +69,7 @@ local function createMenus()
 end
 
 function Scene.enter()
-    Fx.r.loadImage("logo", "assets/images/ui/logo-outline.png")
+    Fx.r.loadImage("logo", "assets/images/ui/logo-smooth.png", "linear")
     Fx.r.loadImage("menu_portrait", "assets/images/ui/menu_portrait.png", "linear")
     Fx.r.loadImage("menu_fog", "assets/images/ui/menu_fog.png", "linear")
 
@@ -94,9 +94,10 @@ function Scene.update(dt)
 
     timer = timer + dt
     glitchShader:send("time", timer)
-    glitchShader:send("intensity", 0.002)
+    glitchShader:send("intensity", 0.003)
     fogXShift = math.sin(timer / 3) * 20
     fogYShift = math.sin(timer) * 4 + 4
+    logoY = math.sin(timer / 2) * 4
 end
 
 function Scene.draw()
@@ -143,15 +144,15 @@ function Scene.draw()
     local logow, logoh = Fx.r.getImage("logo"):getDimensions()
     Fx.r.imageScaled(
         "logo",
-        PANEL_WIDTH + (Game.width - PANEL_WIDTH - logow*2) / 2,
-        20,
-        2, 2
+        PANEL_WIDTH + (Game.width - PANEL_WIDTH - logow*0.5) / 2,
+        20 + logoY,
+        0.5, 0.5
     )
 
     Fx.r.text(
         "--- V" .. Game.version .. " ---",
         PANEL_WIDTH,
-        85,
+        85 + logoY,
         1,
         {255,255,255},
         Game.width - PANEL_WIDTH,

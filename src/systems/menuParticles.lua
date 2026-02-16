@@ -18,10 +18,10 @@ function MP.init(pw)
             y = math.random(0, Game.baseHeight + Game.pixelBank),
             z = z,
 
-            spd = 10 + z * 40,          -- deeper = faster
-            drift = (math.random()-0.5) * (10 + z*20),
+            spd = 10 + z * 30,          -- deeper = faster
+            drift = (math.random()-0.5) * (5 + z*20),
 
-            size = 0.5 + z * 1.5,
+            size = math.random(0.4, 0.8) + z * 1.5,
             a = 0.1 + z * 0.4
         }
     end

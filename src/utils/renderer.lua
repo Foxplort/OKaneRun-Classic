@@ -5,6 +5,12 @@ local Renderer = {}
 Renderer.images = {}
 Renderer.debugColor = {255, 0, 255}
 
+Renderer.fonts = {
+    small = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
+    medium = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
+    large = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
+}
+
 -- INNER FUNCTIONS
 
 local function coloring(c)
@@ -160,6 +166,13 @@ function Renderer.text(text, x, y, s, c, wrap, align)
     local sx = s[1] or 1
     local sy = s[2] or s[1]
     align = align or "left"
+
+    local font = "small"
+    local fontScale = math.max(sx, sy)
+    if fontScale < 1.5 then font = "small"
+    elseif fontScale < 2.5 then font = "medium"
+    else font = "large" end 
+    love.graphics.setFont(Renderer.fonts[font])
 
     setColor(c)
     if wrap then
