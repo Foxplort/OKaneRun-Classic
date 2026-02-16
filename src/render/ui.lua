@@ -82,7 +82,7 @@ local function drawHealthIndicator()
     Fx.r.text(
         hp .. "/" .. maxHp,
         10,
-        Game.height - 18,
+        Game.height - 28,
         1,
         255,
         90,

@@ -1,34 +1,76 @@
 local Scene = {}
 
+-- ################# --
+-- ### VARIABLES ### --
+-- ################# --
+
 local EffectSystem = require("src.game.effectSystem")
-local Effects = require("src.game.effects")
+local Effects      = require("src.game.effects")
 
--- ======================
--- CONFIG
--- ======================
+-- layout
 
-local PANEL_Y = Game.height * 0.45
-local OPTION_Y = PANEL_Y + 40
-local LINE_H = 28
+local PANEL_W = 240
+local LINE_W  = 2
 
--- ======================
--- STATE
--- ======================
-
-local view = "root" -- root / speak / buy
-local selection = 1
-local lockInput = false
-local message = nil
+-- state
 
 local speakOptions = {}
-local buyOptions = {}
-local bought = {}
+local buyOptions   = {}
+local bought       = {}
 
 local appliedDebuff = nil
 
--- ======================
--- UTILS
--- ======================
+local MenuSys = require("src.systems.menu")
+local Menu    = MenuSys.Menu
+local Stack   = MenuSys.Stack
+
+-- ################# --
+-- ### FUNCTIONS ### --
+-- ################# --
+
+local function speakMenu()
+    return Menu.new{
+        title = "Merchant",
+        dialogue = speakOptions[love.math.random(#speakOptions)],
+        options = {
+            { txt = "Back", pop = true }
+        }
+    }
+end
+
+local function buyMenu()
+    local opts = {}
+
+    for _, o in ipairs(buyOptions) do
+        opts[#opts+1] = {
+            txt = o.def.id.." - "..o.price.."c",
+            desc = o.def.desc,
+            disabled = bought[o.def.id],
+            action = function()
+                local p = GameState.player
+                if p.coins < o.price then return end
+                if EffectSystem.apply(p, o.def) then
+                    p.coins = p.coins - o.price
+                    bought[o.def.id] = true
+                end
+            end
+        }
+    end
+
+    opts[#opts+1] = { txt = "Back", pop = true }
+    return Menu.new{ title = "Buy", options = opts }
+end
+
+menuStack = Stack.new(
+    Menu.new{
+        title = "Shop",
+        options = {
+            { txt="Speak", desc="Talk to the merchant.", push = speakMenu },
+            { txt="Buy", desc="Purchase items.", push = buyMenu },
+            { txt="Leave", action = function() setScene("game") end }
+        }
+    }
+)
 
 local function shuffle(t)
     for i = #t, 2, -1 do
@@ -39,7 +81,7 @@ end
 
 local function pickRandom(list, n)
     local t = {}
-    for k, v in pairs(list) do t[#t+1] = v end
+    for _, v in pairs(list) do t[#t+1] = v end
     shuffle(t)
     local r = {}
     for i = 1, math.min(n, #t) do r[#r+1] = t[i] end
@@ -54,53 +96,22 @@ local function allByType(t)
     return r
 end
 
--- ======================
--- ENTER
--- ======================
+-- ######################### --
+-- ### MENU CONSTRUCTORS ### --
+-- ######################### --
 
-function Scene.enter()
-    selection = 1
-    view = "root"
-    lockInput = false
-    message = nil
-    bought = {}
-
-    local player = GameState.player
-
-    -- Apply RANDOM DEBUFF
-    local debuffs = allByType("debuff")
-    appliedDebuff = pickRandom(debuffs, 1)[1]
-    EffectSystem.apply(player, appliedDebuff)
-
-    -- SPEAK OPTIONS
-    speakOptions = {
-        "It's dangerous out there.",
-        "Everything has a price.",
-        "You look tired."
-    }
-    shuffle(speakOptions)
-
-    -- BUY OPTIONS
-    local buffs = pickRandom(allByType("buff"), 3)
-    buyOptions = {}
-
-    for _, b in ipairs(buffs) do
-        buyOptions[#buyOptions+1] = {
-            def = b,
-            price = love.math.random(1, 3)
-        }
-    end
-end
-
--- ======================
--- INPUT
--- ======================
-
-local function currentOptions()
-    if view == "root" then
-        return {
-            { txt = "Speak", action = function() view = "speak"; selection = 1 end },
-            { txt = "Buy",   action = function() view = "buy";   selection = 1 end },
+local function buildRootMenu()
+    return Menu.new{
+        title = "Shop",
+        options = {
+            { txt = "Speak", desc = "lol", action = function()
+                view = "speak"
+                menuSub = buildSpeakMenu()
+            end },
+            { txt = "Buy", action = function()
+                view = "buy"
+                menuSub = buildBuyMenu()
+            end },
             { txt = "Leave", action = function()
                 lockInput = true
                 message = "See you next time!"
@@ -109,108 +120,108 @@ local function currentOptions()
                 end)
             end },
         }
-    elseif view == "speak" then
-        local t = {}
-        for _, s in ipairs(speakOptions) do
-            t[#t+1] = { txt = s, isLabel = true }
-        end
-        t[#t+1] = { txt = "Back", action = function() view = "root"; selection = 1 end }
-        return t
-    elseif view == "buy" then
-        local t = {}
-        for _, o in ipairs(buyOptions) do
-            local id = o.def.id
-            local owned = bought[id]
+    }
+end
 
-            t[#t+1] = {
-                txt = o.def.id .. " - " .. o.price .. "c",
-                disabled = owned,
-                desc = o.def.desc,
+function buildSpeakMenu()
+    local text = speakOptions[love.math.random(#speakOptions)]
+
+    return Menu.new{
+        title = "Merchant",
+        dialogue = text,
+        options = {
+            {
+                txt = "Back",
                 action = function()
-                    local p = GameState.player
-                    if p.coins < o.price then return end
-
-                    if EffectSystem.apply(p, o.def) then
-                        p.coins = p.coins - o.price
-                        bought[id] = true
-                    end
+                    view = "root"
+                    menuSub = nil
                 end
             }
-        end
-        t[#t+1] = { txt = "Back", action = function() view = "root"; selection = 1 end }
-        return t
-    end
+        }
+    }
 end
 
-local function keypressed()
-    if lockInput then return end
+function buildBuyMenu()
+    local opts = {}
 
-    local opts = currentOptions()
+    for _, o in ipairs(buyOptions) do
+        local id = o.def.id
+        local owned = bought[id]
 
-    if Fx.i.pressed("up") then
-        selection = (selection - 2) % #opts + 1
-    elseif Fx.i.pressed("down") then
-        selection = selection % #opts + 1
-    elseif Fx.i.pressed("cancel") then
-        if view ~= "root" then view = "root"; selection = 1 end
-    elseif Fx.i.pressed("accept") then
-        local o = opts[selection]
-        if o and o.action and not o.disabled then
-            o.action()
-        end
+        opts[#opts+1] = {
+            txt = id .. " - " .. o.price .. "c",
+            disabled = owned,
+            desc = o.def.desc,
+            action = function()
+                local p = GameState.player
+                if p.coins < o.price then return end
+
+                if EffectSystem.apply(p, o.def) then
+                    p.coins = p.coins - o.price
+                    bought[id] = true
+                    menuSub = buildBuyMenu()
+                end
+            end
+        }
     end
+
+    opts[#opts+1] = {
+        txt = "Back",
+        action = function()
+            view = "root"
+        end
+    }
+
+    return Menu.new{ title = "Buy", options = opts }
 end
 
--- ======================
--- UPDATE
--- ======================
+-- ###################### --
+-- ### MAIN FUNCTIONS ### --
+-- ###################### --
+
+function Scene.enter()
+    view, selection, lockInput = "root", 1, false
+    slideX, mainAlpha = 0, 1
+    message = nil
+    bought  = {}
+
+    local player = GameState.player
+
+    local debuffs = allByType("debuff")
+    appliedDebuff = pickRandom(debuffs, 1)[1]
+    EffectSystem.apply(player, appliedDebuff)
+
+    speakOptions = {
+        "Something is wrong?",
+        "I am waiting for you to do your job.",
+        "You look tired."
+    }
+    shuffle(speakOptions)
+
+    buyOptions = {}
+    for _, b in ipairs(pickRandom(allByType("buff"), 3)) do
+        buyOptions[#buyOptions+1] = {
+            def = b,
+            price = love.math.random(1, 3)
+        }
+    end
+
+    menuMain = buildRootMenu()
+    menuSub  = nil
+end
 
 function Scene.update(dt)
-    keypressed()
+    menuStack:input()
+    menuStack:update(dt)
 end
-
--- ======================
--- DRAW
--- ======================
 
 function Scene.draw()
-    -- BACKGROUND
-    Fx.r.rect(0, 0, Game.width, Game.height, {10, 14, 18})
+    Fx.r.rect(PANEL_W, 0, Game.width-PANEL_W, Game.height, {8,15,20})
+    menuStack:draw()
 
-    -- TOP (ART PLACEHOLDER)
-    Fx.r.text("???", Game.width/2, 80, 3, {80, 80, 80}, nil, "center")
-
-    -- DEBUFF DISPLAY (TOP RIGHT)
-    Fx.r.text(
-        "Cursed: " .. appliedDebuff.id,
-        Game.width - 20,
-        20,
-        1,
-        {255, 80, 80},
-        nil,
-        "right"
-    )
-
-    -- SHOP PANEL
-    Fx.r.rect(0, PANEL_Y, Game.width, Game.height - PANEL_Y, {0, 0, 0, 200})
-
-    local opts = currentOptions()
-
-    for i, o in ipairs(opts) do
-        local y = OPTION_Y + (i-1) * LINE_H
-        local col = {200, 200, 200}
-
-        if i == selection then col = {255, 255, 255} end
-        if o.disabled then col = {90, 90, 90} end
-        if o.isLabel then col = {160, 160, 120} end
-
-        Fx.r.text(o.txt, 40, y, 1, col)
-    end
-
-    -- MESSAGE
-    if message then
-        Fx.r.text(message, Game.width/2, Game.height - 40, 1.5, {255,255,255}, nil, "center")
-    end
+    Fx.r.text( "Cursed: " .. appliedDebuff.id, Game.width - 220, 20, 1, {255, 80, 80}, 200, "right" )
+    Fx.r.text( "Money: " .. GameState.player.coins, Game.width - 220, 32, 1, {255, 255, 80}, 200, "right" )
 end
+
 
 return Scene

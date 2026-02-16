@@ -64,7 +64,7 @@ effects.icy = {
 
 effects.coin = {
     id = "coin",
-    type = "debuff",
+    type = "special_debuff",
     duration = nil,
     maxAmount = 1023,
     

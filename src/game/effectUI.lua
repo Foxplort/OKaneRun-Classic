@@ -43,9 +43,11 @@ function EffectUI.draw(player)
         local color = {0, 0, 0, 70}
         if active then
             if effectRef[id].type == "debuff" then
-                color = {180, 0, 0, 110}
+                color = {220, 50, 0, 110}
+            elseif effectRef[id].type == "buff" then
+                color = {0, 210, 90, 110}
             else
-                color = {0, 180, 0, 110}
+                color = {180, 0, 180, 110}
             end
         end
 

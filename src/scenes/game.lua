@@ -9,6 +9,7 @@ local loadedImages = {}
 local pause = false
 local deathPause = false
 local menu = nil
+local menuStack = nil
 local monoShader = nil
 
 local DEPOSIT_TIME = 0.8
@@ -17,15 +18,6 @@ local DECAY_TIME = 2
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
-
-local function checkOnGround(tx, ty)
-    local hb = Fx.cl.getPlayerHitbox()
-    hb.x, hb.y = tx + GameState.player.stat.body.hitbox.xt, ty + GameState.player.stat.body.hitbox.yt
-    for _, g in ipairs(GameState.area.ground) do
-        if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then return true end
-    end
-    return false
-end
 
 local function followTarget(coin, tx, ty, tz, dt)
     local dx = coin.x - tx
@@ -164,15 +156,20 @@ function Scene.enter()
         }
     end)
 
-    menu = require("src.systems.menu").new{
+    local MenuSys = require("src.systems.menu")
+
+    menu = MenuSys.Menu.new{
         title = "PAUSED",
+        style = "spikes",  -- optional: "plain" or "spikes"
         options = {
             {txt="Resume", action=function() pause = false end},
-            --{txt="Restart", action=function() setScene("game") end},
             {txt="Main Menu", action=function() Fx.t.cover(function() setScene("menu") end) end},
             {txt="Quit", action=function() love.event.quit() end},
         }
     }
+
+    menuStack = MenuSys.Stack.new(menu)  -- wrap in a stack
+
 
     monoShader = love.graphics.newShader("assets/shaders/pause.glsl")
     monoShader:send("levels", 128)
@@ -199,11 +196,8 @@ function Scene.update(dt)
         pause = true
     end
     if pause then
-        if Fx.i.pressed("up") then menu:move(-1) end
-        if Fx.i.pressed("down") then menu:move(1) end
-        if Fx.i.pressed("accept") then menu:activate() end
-        if Fx.i.pressed("cancel") then pause = false end
-        menu:update(dt, true)
+        menuStack:input()
+        menuStack:update(dt)
     else
         statPerp()
 
@@ -472,7 +466,7 @@ function Scene.draw()
     if pause then
         love.graphics.setShader()
         --Fx.r.rect(0,0,Game.width,Game.height,{0,0,0,90})
-        menu:draw(1, true)
+        menuStack:draw()
     end
 
     gameData.systems.camera.pop()
