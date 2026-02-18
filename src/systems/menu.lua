@@ -189,7 +189,7 @@ function Menu:drawDescription()
     -- background
     Fx.r.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
 
-    Fx.r.text(
+    Fx.r.textEx(
         self.comment,
         x+12, y+12,
         1,

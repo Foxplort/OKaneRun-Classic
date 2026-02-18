@@ -14,7 +14,7 @@ local timer = 1
 local fogXShift, fogYShift = 0, 0
 local logoY = 0
 
-local glitchShader = love.graphics.newShader("assets/shaders/menu_glitch.glsl")
+local breathShader = love.graphics.newShader("assets/shaders/menu_breathing.glsl")
 
 local function createMenus()
     local main, play, credits, exit
@@ -29,7 +29,13 @@ local function createMenus()
                         setScene("game")
                     end)
                 end,
-                desc = "Base gamemode.\nCollect coins, get upgrades at the shop, get cursed,\nand try getting as far as you can!"
+                desc = [[
+                [c=255,255,255,255]Base gamemode.[/c]
+                Collect coins, buy upgrades, and survive the curses.[br]
+                [c=255,100,0]DEVELOPMENT NOTICE:[/c]
+                The core systems are playable, but [c=255,0,0]70% [/c]of the intended
+                content and gameplay loop is currently missing.
+                ]]
             },
             { txt = "Coming Soon...", disabled = true },
             { txt = "---", isLabel = true },
@@ -75,6 +81,12 @@ function Scene.enter()
 
     MP = require("src.systems.menuParticles")
     MP.init(PANEL_WIDTH)
+    
+    breathShader:send("b_intensity", 0.0028)
+    breathShader:send("b_speed", 1.6)
+    breathShader:send("b_ysize", 5)
+    breathShader:send("s_speed", 0.5)
+    breathShader:send("s_intensity", 0.004)
 
     local root = createMenus()
     stack = Stack.new(root)
@@ -93,8 +105,7 @@ function Scene.update(dt)
     MP.update(dt)
 
     timer = timer + dt
-    glitchShader:send("time", timer)
-    glitchShader:send("intensity", 0.003)
+    breathShader:send("time", timer)
     fogXShift = math.sin(timer / 3) * 20
     fogYShift = math.sin(timer) * 4 + 4
     logoY = math.sin(timer / 2) * 4
@@ -113,7 +124,7 @@ function Scene.draw()
     local x = PANEL_WIDTH + areaW / 2
     local y = Game.height
 
-    love.graphics.setShader(glitchShader)
+    love.graphics.setShader(breathShader)
     Fx.r.imageScaled(
         "menu_portrait",
         x,
@@ -124,6 +135,7 @@ function Scene.draw()
         iw / 2,
         ih
     )
+    love.graphics.setShader()
 
     iw, ih = Fx.r.getImage("menu_fog"):getDimensions()
     Fx.r.imageScaled(
@@ -137,8 +149,6 @@ function Scene.draw()
         ih,
         {255, 255, 255, 90}
     )
-
-    love.graphics.setShader()
 
     -- logo
     local logow, logoh = Fx.r.getImage("logo"):getDimensions()
