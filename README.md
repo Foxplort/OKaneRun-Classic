@@ -1,4 +1,4 @@
-![Logo](assets/images/ui/logo-github.png)
+![Logo](assets/images/ui/logo-smooth.png)
 
 OkaneRun is a small action game built with **LÖVE (Love2D)**.
 
