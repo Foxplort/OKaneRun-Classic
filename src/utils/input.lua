@@ -17,6 +17,9 @@ Input.actions = {
         keys = { "b", "f4" },
         buttons = { "rightstick" }
     },
+    debugRestart = {
+        keys = { "f6" }
+    },
     fullscreen = {
         keys = { "f11"}
     },

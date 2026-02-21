@@ -121,6 +121,8 @@ local function keypress()
     elseif Fx.i.pressed("fullscreen") then
         fullScreen = not fullScreen
         love.window.setFullscreen(fullScreen)
+    elseif Fx.i.pressed("debugRestart") then
+        love.event.quit("restart")
     end
 end
 
