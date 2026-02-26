@@ -67,7 +67,7 @@ menuStack = Stack.new(
         options = {
             { txt="Speak", desc="Talk to the merchant.", push = speakMenu },
             { txt="Buy", desc="Purchase items.", push = buyMenu },
-            { txt="Leave", action = function() setScene("game") end }
+            { txt="Leave", action = function() Fx.t.cover(function() setScene("game") end) end }
         }
     }
 )

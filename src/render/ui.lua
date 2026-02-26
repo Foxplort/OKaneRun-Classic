@@ -94,7 +94,18 @@ function UI.draw()
     drawHealthIndicator()
 
     -- coin count
-    Fx.r.text(tostring(GameState.player.coins) .. "c", Game.width-80, 35, 1, 255, 80, "center")
+    local text = ""
+    if false then -- If playing the Arcade -- OLD
+        text = tostring(GameState.player.coins) .. "c"
+    else
+        if #GameState.area.coins > 0 then
+            text = #GameState.area.coins .. " left"
+        else
+            text = "Deposit!"
+        end
+    end
+    
+    Fx.r.text(text, Game.width-80, 35, 1, 255, 80, "center")
 
     drawCoinIndicator()
 end

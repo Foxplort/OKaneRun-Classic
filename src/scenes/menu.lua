@@ -17,39 +17,16 @@ local logoY = 0
 local breathShader = love.graphics.newShader("assets/shaders/menu_breathing.glsl")
 
 local function createMenus()
-    local main, play, credits, exit
-
-    play = Menu.new{
-        title = "MODE",
-        options = {
-            {
-                txt = "Arcade",
-                action = function()
-                    Fx.t.cover(function()
-                        setScene("game")
-                    end)
-                end,
-                desc = [[
-                [c=255,255,255,255]Base gamemode.[/c]
-                Collect coins, buy upgrades, and survive the curses.[br]
-                [c=255,100,0]DEVELOPMENT NOTICE:[/c]
-                The core systems are playable, but [c=255,0,0]70% [/c]of the intended
-                content and gameplay loop is currently missing.
-                ]]
-            },
-            { txt = "Coming Soon...", disabled = true },
-            { txt = "---", isLabel = true },
-            { txt = "Back", pop = true }
-        }
-    }
+    local main, credits, exit
 
     credits = Menu.new{
         title = "CREDITS",
         options = {
             { txt = "--- CREW ---", isLabel = true },
-            { txt = "Dev: Foxplort", link = "https://github.com/foxplort" },
-            { txt = "Engine: LÖVE", link = "https://love2d.org/" },
-            { txt = "---", isLabel = true },
+            { txt = "Foxplort", link = "https://github.com/foxplort", },
+            { txt = "--- TECH ---", isLabel = true },
+            { txt = "LÖVE Framework", link = "https://love2d.org/" },
+            { txt = "--- ---- ---", isLabel = true },
             { txt = "Back", pop = true }
         }
     }
@@ -65,7 +42,14 @@ local function createMenus()
     main = Menu.new{
         title = "MAIN MENU",
         options = {
-            { txt = "Play",    push = function() return play end },
+            {
+                txt = "Play",
+                action = function()
+                    Fx.t.cover(function()
+                        setScene("game")
+                    end)
+                end,
+            },
             { txt = "Credits", push = function() return credits end },
             { txt = "Exit",    push = function() return exit end },
         }
