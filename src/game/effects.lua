@@ -83,4 +83,21 @@ effects.coin = {
     end,
 }
 
+effects.healthy = {
+    id = "healthy",
+    type = "buff",
+    duration = nil,
+    maxAmount = 9,
+    
+    onApply = function(player)
+        player.hp.count = player.hp.count + 1
+        player.hp.max = player.hp.max + 1
+    end,
+
+    onRemove = function(player)
+        player.hp.count = player.hp.count - 1
+        player.hp.max = player.hp.max - 1
+    end,
+}
+
 return effects

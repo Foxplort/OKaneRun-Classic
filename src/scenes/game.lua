@@ -405,6 +405,7 @@ function Scene.update(dt)
         -- Updaters / Handlers
         gameData.systems.particles.updateParticles(dt)
         damageHandler(dt)
+        gameData.render.ui.update(dt)
     end
 end
 
