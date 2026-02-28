@@ -107,14 +107,51 @@ function love.load()
     ))
 
     Fx.bfx.init(70)
+
+    -- Init Sounds
     Fx.s.init()
     Fx.s.loadSound("select", "assets/sounds/ui/select.wav", "ui")
     Fx.s.loadSound("accept", "assets/sounds/ui/accept.wav", "ui")
 
+    -- Init DEBUG
+    Fx.debug.add("Scene", function()
+        local data = {}
+        table.insert(data, string.format("Scene - %s", curScene))
+        if nextScene then table.insert(data, string.format("-> %s", nextScene)) end -- visible on long scene loads
+        
+        -- Add scene-specific debug if available
+        if scenes[curScene] and scenes[curScene].debug then
+            local sceneData = scenes[curScene].debug()
+            for _, item in ipairs(sceneData) do
+                table.insert(data, item)
+            end
+        end
+        return data
+    end)
+    
+    Fx.debug.add("Input", function()
+        local data = {}
+        local mx, my = love.mouse.getPosition()
+        local gameX = (mx - screenX) / scale
+        local gameY = (my - screenY) / scale
+        
+        table.insert(data, string.format("Mouse: %d,%d (game: %.1f,%.1f)", mx, my, gameX, gameY))
+        table.insert(data, string.format("Joysticks: %d", #Fx.i.joysticks))
+        
+        return data
+    end)
+
+    -- Load the Scenes
     if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
 end
 
 function love.keypressed(k)
+    Fx.debug.keypressed(k)
+
+    if k == "k" or k == "tab" or k == "lshift" or k == "=" or k == "-" then
+        return
+    end
+    
     if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
 end
 
@@ -147,6 +184,7 @@ function love.update(dt)
     Fx.bfx.update(dt)
     Fx.s.update()
     Fx.s.updateFades()
+    Fx.debug.update()
     if nextScene then
         if scenes[curScene] and scenes[curScene].exit then scenes[curScene].exit() end
         if scenes[nextScene] and scenes[nextScene].enter then scenes[nextScene].enter() end
@@ -197,6 +235,10 @@ function love.draw()
     love.graphics.setShader(myShader)
     love.graphics.draw(canvas, screenX, screenY) 
     love.graphics.setShader()
+
+    if Fx.debug.enabled then
+        Fx.debug.dc = love.graphics.getStats().drawcalls
+    end
 end
 
 function love.quit()

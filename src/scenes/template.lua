@@ -12,7 +12,7 @@ end
 function Scene.exit()
 end
 
--- Action on key just pressed.
+-- Action on key just pressed. !!deprecated!!
 function Scene.keypressed(k)
 end
 
@@ -22,6 +22,10 @@ end
 
 -- Every frame update.
 function Scene.draw()
+end
+
+-- Provide more info into the Scene category of debug. Must return table of strings.
+function Scene.debug()
 end
 
 return Scene

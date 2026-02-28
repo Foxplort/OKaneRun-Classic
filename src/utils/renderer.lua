@@ -153,13 +153,76 @@ function Renderer.tail(tail, color, baseWidth)
     love.graphics.pop()
 end
 
+function Renderer.graph(points, x, y, w, h, color, min, max, target)
+    -- Draw graph background
+    Renderer.rect(x, y, w, h, {20, 20, 20, 200})
+    Renderer.rect(x - 1, y - 1, w + 2, h + 2, {255, 255, 255, 40}, false)
+    
+    if not points or #points < 2 then return end
+    
+    -- Find min/max if not provided
+    local mn, mx = min or math.huge, max or -math.huge
+    if not min or not max then
+        for _, v in ipairs(points) do
+            if v < mn then mn = v end
+            if v > mx then mx = v end
+        end
+    end
+    local range = math.max(mx - mn, 0.001)
+    
+    -- Draw target line if provided
+    if target then
+        local targetY = y + h - ((target - mn) / range) * h
+        targetY = math.max(y, math.min(y + h, targetY))
+        Renderer.line({x, targetY, x + w, targetY}, {100, 255, 100, 100}, 1)
+    end
+    
+    -- Draw graph line
+    local vertices = {}
+    for i, value in ipairs(points) do
+        local px = x + (i-1)/(#points-1) * w
+        local py = y + h - ((value - mn) / range) * h
+        py = math.max(y, math.min(y + h, py))
+        table.insert(vertices, px)
+        table.insert(vertices, py)
+    end
+    Renderer.line(vertices, color, 1)
+    
+    -- Draw min/max labels
+    Renderer.text(string.format("%.1f", mx), x + w - 35, y - 15, 0.7, {200, 200, 200})
+    Renderer.text(string.format("%.1f", mn), x + w - 35, y + h + 2, 0.7, {200, 200, 200})
+end
+
+function Renderer.sparkline(points, x, y, w, h, color)
+    if not points or #points < 2 then return end
+    
+    -- Find min/max
+    local mn, mx = math.huge, -math.huge
+    for _, v in ipairs(points) do
+        if v < mn then mn = v end
+        if v > mx then mx = v end
+    end
+    local range = math.max(mx - mn, 0.001)
+    
+    -- Draw the line
+    local vertices = {}
+    for i, value in ipairs(points) do
+        local px = x + (i-1)/(#points-1) * w
+        local py = y + h - ((value - mn) / range) * h
+        py = math.max(y, math.min(y + h, py))
+        table.insert(vertices, px)
+        table.insert(vertices, py)
+    end
+    Renderer.line(vertices, color, 1.5)
+end
+
 function Renderer.polygon(vertices, c, f)
     f = filling(f)
     setColor(c)
 
-    -- If we are filling, we need to handle concave shapes (like spikes)
+    -- If we are filling, we need to handle concave shapes
     if f == "fill" then
-        -- This breaks the "saw" shape into tiny triangles LÖVE can handle
+        -- This breaks the shape into tiny triangles LÖVE can handle
         local success, triangles = pcall(love.math.triangulate, vertices)
         if success then
             for i, triangle in ipairs(triangles) do
@@ -171,7 +234,6 @@ function Renderer.polygon(vertices, c, f)
             love.graphics.polygon("fill", vertices)
         end
     else
-        -- Lines don't have the convex issue
         love.graphics.polygon("line", vertices)
     end
 end

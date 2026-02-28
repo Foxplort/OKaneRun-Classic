@@ -103,4 +103,8 @@ function Scene.draw()
     textLine = 1
 end
 
+function Scene.debug()
+    return { "State - " .. state }
+end
+
 return Scene
