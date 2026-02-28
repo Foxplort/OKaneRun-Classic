@@ -23,9 +23,25 @@ local function createMenus()
         title = "CREDITS",
         options = {
             { txt = "--- CREW ---", isLabel = true },
-            { txt = "Foxplort", link = "https://github.com/foxplort", },
+            {
+                txt = "Foxplort",
+                link = "https://github.com/foxplort",
+                desc = [[
+                Director, Code, Music, Sounds.[br]
+                Hello! I hope you enjoy this little project
+                and have a great day <3
+                ]]
+            },
             { txt = "--- TECH ---", isLabel = true },
-            { txt = "LÖVE Framework", link = "https://love2d.org/" },
+            {
+                txt = "LÖVE Framework",
+                link = "https://love2d.org/",
+                desc = [[
+                Thanks to all LÖVE developers & contributors
+                for this wonderful framework that makes
+                game development so fun and accessible![br]
+                ]]
+            },
             { txt = "--- ---- ---", isLabel = true },
             { txt = "Back", pop = true }
         }
@@ -63,6 +79,9 @@ function Scene.enter()
     Fx.r.loadImage("menu_portrait", "assets/images/ui/menu_portrait.png", "linear")
     Fx.r.loadImage("menu_fog", "assets/images/ui/menu_fog.png", "linear")
 
+    Fx.s.loadSound("menu_music", "assets/sounds/music/001.wav", "music")
+    Fx.s.fadeIn("menu_music", 2.0, nil, {loop = true})
+
     MP = require("src.systems.menuParticles")
     MP.init(PANEL_WIDTH)
     
@@ -80,6 +99,9 @@ end
 
 function Scene.exit()
     Fx.r.unloadImage("logo")
+    Fx.r.unloadImage("menu_portrait")
+    Fx.r.unloadImage("menu_fog")
+    Fx.s.fadeOutAndUnload("menu_music", 2.0)
 end
 
 

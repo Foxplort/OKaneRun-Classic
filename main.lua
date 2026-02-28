@@ -1,5 +1,6 @@
 Fx = {
     r = require("src.utils.renderer"), -- R - Render
+    s = require("src.utils.soundManager"), -- S - Sound Manager
     i = require("src.utils.input"), -- I - Input
     m = require("src.utils.math"), -- M - Math
     dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
@@ -106,6 +107,9 @@ function love.load()
     ))
 
     Fx.bfx.init(70)
+    Fx.s.init()
+    Fx.s.loadSound("select", "assets/sounds/ui/select.wav", "ui")
+    Fx.s.loadSound("accept", "assets/sounds/ui/accept.wav", "ui")
 
     if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
 end
@@ -141,6 +145,8 @@ function love.update(dt)
     keypress()
     Fx.t.update(dt)
     Fx.bfx.update(dt)
+    Fx.s.update()
+    Fx.s.updateFades()
     if nextScene then
         if scenes[curScene] and scenes[curScene].exit then scenes[curScene].exit() end
         if scenes[nextScene] and scenes[nextScene].enter then scenes[nextScene].enter() end
@@ -191,4 +197,9 @@ function love.draw()
     love.graphics.setShader(myShader)
     love.graphics.draw(canvas, screenX, screenY) 
     love.graphics.setShader()
+end
+
+function love.quit()
+    Fx.s.shutdown(1.0)
+    love.timer.sleep(0.1)
 end

@@ -42,6 +42,7 @@ function Debug.draw()
         string.format("DRW: %d", stats.draws),
         string.format("CNV: %d", stats.canvases),
         string.format("RES: %dx%d", Game.width, Game.height),
+        string.format("AUD: %d", Fx.s.getStats().loaded),
         ""
     }
 

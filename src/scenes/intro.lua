@@ -32,6 +32,12 @@ end
 -- ### MAIN FUNCTIONS ### --
 -- ###################### --
 
+function Scene.enter()
+    Fx.s.loadSound("warning", "assets/sounds/ui/warning.wav", "ui")
+    Fx.s.loadSound("intro", "assets/sounds/ui/intro.wav", "ui")
+    Fx.s.playAndForget("warning")
+end
+
 function Scene.update(dt)
     if state == "warning" or state == "waiting" then
         if Fx.i.down("accept") and state == "warning" then
@@ -43,6 +49,7 @@ function Scene.update(dt)
             hold = math.max(hold - dt * 3, 0) -- decay
             if state == "waiting" and hold == 0 then
                 state = "presents"
+                Fx.s.playAndForget("intro")
                 timer = 1.5
             end
         end

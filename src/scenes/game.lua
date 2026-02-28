@@ -178,7 +178,7 @@ end
 
 function Scene.exit()
     gameData = nil
-    Fx.debug.remove("player")
+    Fx.debug.remove("Player")
 
     for _, eff in pairs(loadedImages) do
         Fx.r.unloadImage(eff, path)

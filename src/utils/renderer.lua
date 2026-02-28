@@ -277,7 +277,7 @@ function Renderer.textAdvanced(text, x, y, s, c, wrap, align)
 end
 
 function Renderer.textEx(text, x, y, s, c, wrap, align)
-    if type(text) == "string" and text:find("%[c=") then
+    if type(text) == "string" and text:find("%[c=") or text:find("%[br") then
         return Renderer.textAdvanced(text, x, y, s, c, wrap, align)
     else
         return Renderer.text(text, x, y, s, c, wrap, align)

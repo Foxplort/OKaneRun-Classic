@@ -106,6 +106,10 @@ end
 
 function Menu:move(dir)
     local i = self.selection
+    Fx.s.play("select", {
+        volume = 0.08,
+        pitch = 1.0 + math.random(-10, 10)/100
+    })
     repeat
         i = (i + dir - 1) % #self.options + 1
     until not self.options[i].isLabel and not self.options[i].disabled
@@ -115,6 +119,9 @@ end
 function Menu:activate(stack)
     local o = self.options[self.selection]
     if not o or o.disabled then return end
+    Fx.s.play("accept", {
+        pitch = 1.0 + math.random(-3, 3)/100
+    })
     if o.link then love.system.openURL(o.link) end
     if o.push then stack:push(o.push()) return end
     if o.pop then stack:pop() return end
