@@ -48,6 +48,16 @@ function Menu:findFirstSelectable()
     return 1
 end
 
+local function getTextX(align, panelX, panelW, textWidth)
+    if align == "center" then
+        return panelX + (panelW - textWidth) / 2
+    elseif align == "right" then
+        return panelX + panelW - textWidth
+    else -- "left"
+        return panelX + 20  -- Add left padding
+    end
+end
+
 -- #################### --
 -- ### MENU OBJECTS ### --
 -- #################### --
@@ -60,6 +70,7 @@ function Menu.new(def)
     m.selection = def.selection or 1
     m.dialogue  = def.dialogue
     m.style     = def.style or "plain"
+    m.align     = def.align or "left"
 
     m.underline = {}
     for i = 1, #m.options do m.underline[i] = 0 end
@@ -119,8 +130,13 @@ end
 function Menu:activate(stack)
     local o = self.options[self.selection]
     if not o or o.disabled then return end
+    Fx.s.play("accept_alt", {
+        pitch = 1.0 + math.random(43, 48)/100,
+        volume = 0.1
+    })
     Fx.s.play("accept", {
-        pitch = 1.0 + math.random(-3, 3)/100
+        pitch = 1.0 + math.random(-3, 3)/100,
+        volume = 0.4
     })
     if o.link then love.system.openURL(o.link) end
     if o.push then stack:push(o.push()) return end
@@ -140,7 +156,8 @@ end
 
 function Menu:drawContent(focused)
     local xOffset = -self.slideX * 60
-    local x = PANEL_X + 40 + xOffset
+    local panelX = PANEL_X + 40 + xOffset - 15
+    local panelW = PANEL_W - 40
     local y = PANEL_TOP
     local a = self.alpha
 
@@ -155,7 +172,9 @@ function Menu:drawContent(focused)
         )
     end
 
-    Fx.r.text(self.title, x, y, 2, {1,1,1,a})
+    local titleWidth = Fx.r.getTextWidth(self.title, 2)
+    local titleX = getTextX(self.align, panelX, panelW, titleWidth)
+    Fx.r.text(self.title, titleX, y, 2, {1,1,1,a})
 
     for i, opt in ipairs(self.options) do
         local yy = y + 60 + (i-1)*30
@@ -165,12 +184,24 @@ function Menu:drawContent(focused)
         elseif opt.isLabel then c = {0.7,0.7,0.4,a}
         elseif opt.disabled then c = {0.2,0.2,0.2,a} end
 
-        Fx.r.text(opt.txt, x, yy, 1, c)
+        -- Calculate text width
+        local textWidth = Fx.r.getTextWidth(opt.txt, 1)
+        local textX = getTextX(self.align, panelX, panelW, textWidth)
 
+        Fx.r.text(opt.txt, textX, yy, 1, c)
+
+        -- Underline positioned based on alignment
         local u = self.underline[i]
         if u > 0.01 then
-            local tw = Fx.r.getTextWidth(opt.txt, 1)
-            Fx.r.rect(x + (tw*(1-u))/2, yy+14, tw*u, 2, {1,1,1,a*u})
+            local underlineX
+            if self.align == "center" then
+                underlineX = panelX + (panelW - textWidth * u) / 2
+            elseif self.align == "right" then
+                underlineX = panelX + panelW - textWidth * u
+            else -- left
+                underlineX = panelX + 20
+            end
+            Fx.r.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,a*u})
         end
     end
 end

@@ -66,6 +66,7 @@ local function createMenus()
                     end)
                 end,
             },
+            { txt = "Options", disabled = true },
             { txt = "Credits", push = function() return credits end },
             { txt = "Exit",    push = function() return exit end },
         }

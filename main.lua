@@ -112,6 +112,7 @@ function love.load()
     Fx.s.init()
     Fx.s.loadSound("select", "assets/sounds/ui/select.wav", "ui")
     Fx.s.loadSound("accept", "assets/sounds/ui/accept.wav", "ui")
+    Fx.s.loadSound("accept_alt", "assets/sounds/ui/accept_alt.wav", "ui")
 
     -- Init DEBUG
     Fx.debug.add("Scene", function()
@@ -148,7 +149,7 @@ end
 function love.keypressed(k)
     Fx.debug.keypressed(k)
 
-    if k == "k" or k == "tab" or k == "lshift" or k == "=" or k == "-" then
+    if k == "k" or k == "tab" or k == "rshift" or k == "=" or k == "-" then
         return
     end
     
