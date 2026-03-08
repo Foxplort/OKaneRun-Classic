@@ -84,7 +84,7 @@ function Scene.enter()
     Fx.s.fadeIn("menu_music", 2.0, nil, {loop = true})
 
     MP = require("src.systems.menuParticles")
-    MP.init(PANEL_WIDTH)
+    MP.init(0)
     
     breathShader:send("b_intensity", 0.0028)
     breathShader:send("b_speed", 1.6)
@@ -176,10 +176,12 @@ function Scene.draw()
         "center"
     )
 
+    Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {5, 35, 35})
+
     MP.drawFront()
 
     -- side panel
-    Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {0,0,0,1})
+    Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {0,0,0,0.7})
     Fx.r.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, Game.height, {1,1,1,1})
 
     -- menus

@@ -34,8 +34,8 @@ GameState.area = {}
 
 -- layers
 L = {
-    FLOOR      = 0,
-    FLOOR_DEC  = 1,
+    FLOOR_DEC  = 0,
+    FLOOR      = 1,
     SHADOW     = 2,
     ACTOR      = 3,
 }
