@@ -1,4 +1,4 @@
-![Logo](game/assets/images/ui/logo-smooth.png)
+![Logo](assets/images/ui/logo-smooth.png)
 
 OkaneRun is a small action game built with **LÖVE (Love2D)**.
 
@@ -51,7 +51,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
 - Game code - non-commercial license
 - Game assets - All Rights Reserved
-- FÖRE engine - GPLv3
+- FÖRE engine - MPL-2.0
 
 See the LICENSE files in each directory for details.  
 See the [`LICENSE.md`](LICENSE.md) file for general information.
