@@ -29,7 +29,7 @@ local Stack   = MenuSys.Stack
 -- ################# --
 
 local function speakMenu()
-    return Menu.new{
+    return Menu:new{
         title = "Merchant",
         dialogue = speakOptions[love.math.random(#speakOptions)],
         options = {
@@ -58,11 +58,11 @@ local function buyMenu()
     end
 
     opts[#opts+1] = { txt = "Back", pop = true }
-    return Menu.new{ title = "Buy", options = opts }
+    return Menu:new{ title = "Buy", options = opts }
 end
 
 menuStack = Stack.new(
-    Menu.new{
+    Menu:new{
         title = "Shop",
         options = {
             { txt="Speak", desc="Talk to the merchant.", push = speakMenu },
@@ -101,7 +101,7 @@ end
 -- ######################### --
 
 local function buildRootMenu()
-    return Menu.new{
+    return Menu:new{
         title = "Shop",
         options = {
             { txt = "Speak", desc = "lol", action = function()
@@ -126,7 +126,7 @@ end
 function buildSpeakMenu()
     local text = speakOptions[love.math.random(#speakOptions)]
 
-    return Menu.new{
+    return Menu:new{
         title = "Merchant",
         dialogue = text,
         options = {
@@ -172,7 +172,7 @@ function buildBuyMenu()
         end
     }
 
-    return Menu.new{ title = "Buy", options = opts }
+    return Menu:new{ title = "Buy", options = opts }
 end
 
 -- ###################### --

@@ -62,7 +62,7 @@ end
 -- ### MENU OBJECTS ### --
 -- #################### --
 
-function Menu.new(def)
+function Menu:new(def)
     local m = setmetatable({}, Menu)
 
     m.title     = def.title or ""
@@ -87,33 +87,47 @@ function Menu.new(def)
 
     m.spikeScroll = 0
 
+    self.animTime = 0
+    self.lastFocused = false
+
     return m
 end
 
 function Menu:update(dt, focused)
     self.spikeScroll = (self.spikeScroll + dt * 20) % 48
-
-    -- MENU slides LEFT when inactive
-    if focused then
-        self.slideX = Fx.m.lerp(self.slideX, 0, dt * 12)
+    
+    -- Track focus state with time
+    if self.lastFocused ~= focused then
+        self.animTime = 0  -- Reset timer on focus change
+        self.lastFocused = focused
     else
-        self.slideX = Fx.m.lerp(self.slideX, 1, dt * 12)
-
+        self.animTime = self.animTime + dt
     end
-    self.alpha  = Fx.m.lerp(self.alpha,  focused and 1 or 0.15, dt * 10)
-
+    
+    -- MENU slides LEFT when inactive
+    local targetSlide = focused and 0 or 1
+    local slideSpeed = 12
+    self.slideX = Fx.m.lerp(self.slideX, targetSlide, math.min(dt * slideSpeed, 1))
+    
+    -- Alpha based on focus and time
+    local targetAlpha = focused and 1 or 0.15
+    self.alpha = Fx.m.lerp(self.alpha, targetAlpha, math.min(dt * 10, 1))
+    
+    -- Underline and description use the same pattern
     for i, opt in ipairs(self.options) do
-        local t = focused and i == self.selection
-            and not opt.isLabel and not opt.disabled
-            and 1 or 0
-        self.underline[i] = Fx.m.lerp(self.underline[i], t, dt * 12)
+        local targetUnderline = focused and i == self.selection 
+            and not opt.isLabel and not opt.disabled and 1 or 0
+        self.underline[i] = Fx.m.lerp(self.underline[i], targetUnderline, math.min(dt * 12, 1))
     end
-
+    
+    -- Description
     local opt = self.options[self.selection]
     local hasDesc = focused and opt and opt.desc
-    self.commentT = Fx.m.lerp(self.commentT, hasDesc and 1 or 0, dt * 8)
+    local targetComment = hasDesc and 1 or 0
+    self.commentT = Fx.m.lerp(self.commentT, targetComment, math.min(dt * 8, 1))
     if hasDesc then self.comment = opt.desc end
 end
+
 
 function Menu:move(dir)
     local i = self.selection
@@ -281,10 +295,10 @@ end
 
 function MenuStack:input()
     local m = self.stack[#self.stack]
-    if Fx.i.pressed("up") then m:move(-1) end
-    if Fx.i.pressed("down") then m:move(1) end
-    if Fx.i.pressed("cancel") then self:pop() end
-    if Fx.i.pressed("accept") then m:activate(self) end
+    if Fx.i:pressed("up") then m:move(-1) end
+    if Fx.i:pressed("down") then m:move(1) end
+    if Fx.i:pressed("cancel") then self:pop() end
+    if Fx.i:pressed("accept") then m:activate(self) end
 end
 
 return {

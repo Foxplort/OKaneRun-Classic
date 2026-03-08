@@ -1,27 +1,29 @@
-# OkaneRun License
+# Repository License Overview
 
 Copyright (c) 2026 foxplort
 
-## Code License (Non-Commercial)
+This repository contains multiple components with different licenses.
 
-You are permitted to:
-- View, study, and modify the source code
-- Use the code for personal, educational, or non-commercial projects
-- Share modified versions for free, with attribution
+## OkaneRun Game Code
 
-You are NOT permitted to:
-- Sell this game or modified versions of it
-- Use this code in commercial products without explicit permission
-- Re-upload this project or derivatives as paid games or asset packs
+Location: `src/`
 
-Commercial use requires explicit permission from the author.
+Licensed under a **non-commercial license**.
 
-## Assets
+See `src/LICENSE.md` for details.
 
-All game assets (art, sound, music, UI, etc.) are **All Rights Reserved**, unless stated otherwise.
+## OkaneRun Assets
 
-You may not reuse, redistribute, or modify the assets outside of this project.
+Location: `assets/`
 
-## Commercial Licensing
+All assets are **All Rights Reserved**, unless stated otherwise.
 
-If you want to use the code or project commercially, contact the author to discuss licensing.
+See `assets/LICENSE.md` for details.
+
+## FÖRE Engine
+
+Location: `engine/`
+
+Licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
+
+See `engine/LICENSE` for the full license text.

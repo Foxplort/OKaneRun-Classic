@@ -1,15 +1,17 @@
 Fx = {
-    r = require("src.utils.renderer"), -- R - Render
-    s = require("src.utils.soundManager"), -- S - Sound Manager
-    i = require("src.utils.input"), -- I - Input
-    m = require("src.utils.math"), -- M - Math
-    dq = require("src.utils.drawqueue"), -- DQ - Draw Queue
+    r = require("engine.utils.renderer"), -- R - Render
+    s = require("engine.utils.soundManager"), -- S - Sound Manager
+    i = require("engine.utils.input"):new(), -- I - Input
+    m = require("engine.utils.math"), -- M - Math
+    dq = require("engine.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
     ll = require("src.utils.levelLoader"), -- LL - Level Loader
     t = require("src.utils.transition"), -- T - Transition
     bfx = require("src.systems.borderFX"),
     debug = require("src.systems.debug"),
 }
+
+local SM = require("engine.core.sceneManager"):new()
 
 local config = {
     fullScreen = false,
@@ -26,15 +28,6 @@ local myShader
 
 debug = false
 
-local curScene = "intro"
-nextScene = nil
-scenes = {
-    game = require("src.scenes.game"),
-    intro = require("src.scenes.intro"),
-    menu = require("src.scenes.menu"),
-    shop = require("src.scenes.shop"),
-}
-
 GameState = require("src.game.state").new()
 GameState.player = require("src.data.player").new()
 GameState.area = {}
@@ -48,9 +41,7 @@ L = {
 }
 
 function setScene(name)
-    if name ~= curScene then
-        nextScene = name
-    end
+    SM:goTo(name)
 end
 
 local lastCanvasW, lastCanvasH = 0, 0
@@ -114,15 +105,68 @@ function love.load()
     Fx.s.loadSound("accept", "assets/sounds/ui/accept.wav", "ui")
     Fx.s.loadSound("accept_alt", "assets/sounds/ui/accept_alt.wav", "ui")
 
+    Fx.i:registerAll({
+        accept = {
+            keys = { "space", "return" },
+            buttons = { "a" }
+        },
+        cancel = {
+            keys = { "backspace", "escape" },
+            buttons = { "b" }
+        },
+        
+        debugEffect = {
+            keys = { "b", "f4" },
+            buttons = { "rightstick" }
+        },
+        jump = {
+            keys = { "space", "up" },
+            buttons = { "a" }
+        },
+        dash = {
+            keys = { "lshift", "rshift" },
+            buttons = { "b" }
+        },
+        attack = {
+            keys = { "e", "z" },
+            buttons = { "x" }
+        },
+        left = {
+            keys = { "a", "left" },
+            buttons = { "dpleft" },
+            axes = { { axis = "leftx", dir = -1 } }
+        },
+        right = {
+            keys = { "d", "right" },
+            buttons = { "dpright" },
+            axes = { { axis = "leftx", dir = 1 } }
+        },
+        up = {
+            keys = { "w", "up" },
+            buttons = { "dpup" },
+            axes = { { axis = "lefty", dir = -1 } }
+        },
+        down = {
+            keys = { "s", "down" },
+            buttons = { "dpdown" },
+            axes = { { axis = "lefty", dir = 1 } }
+        },
+    })
+
+    SM:reg("game", "src.scenes.game")
+    SM:reg("intro", "src.scenes.intro")
+    SM:reg("menu", "src.scenes.menu")
+    SM:reg("shop", "src.scenes.shop")
+    SM:goTo("intro")
+
     -- Init DEBUG
     Fx.debug.add("Scene", function()
         local data = {}
-        table.insert(data, string.format("Scene - %s", curScene))
-        if nextScene then table.insert(data, string.format("-> %s", nextScene)) end -- visible on long scene loads
+        if SM.next then table.insert(data, string.format("-> %s", SM.next)) end -- visible on long scene loads
         
         -- Add scene-specific debug if available
-        if scenes[curScene] and scenes[curScene].debug then
-            local sceneData = scenes[curScene].debug()
+        if SM.current and SM.current.debug then
+            local sceneData = SM.current.debug()
             for _, item in ipairs(sceneData) do
                 table.insert(data, item)
             end
@@ -141,9 +185,6 @@ function love.load()
         
         return data
     end)
-
-    -- Load the Scenes
-    if scenes[curScene] and scenes[curScene].enter then scenes[curScene].enter() end
 end
 
 function love.keypressed(k)
@@ -153,33 +194,32 @@ function love.keypressed(k)
         return
     end
     
-    if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
+    --if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
+    SM:keypressed(k)
 end
 
 local function keypress()
-    if Fx.i.pressed("debug") then
+    if Fx.i:pressed("debug") then
         debug = not debug
         Fx.debug.enabled = debug
-    elseif Fx.i.pressed("fullscreen") then
+    elseif Fx.i:pressed("fullscreen") then
         fullScreen = not fullScreen
         love.window.setFullscreen(fullScreen)
-    elseif Fx.i.pressed("debugRestart") then
+    elseif Fx.i:pressed("debugRestart") then
         love.event.quit("restart")
     end
 end
 
 function love.joystickadded(j)
-    table.insert(Fx.i.joysticks, j)
+    Fx.i:addJoystick(j)
 end
 
 function love.joystickremoved(j)
-    for i,v in ipairs(Fx.i.joysticks) do
-        if v == j then table.remove(Fx.i.joysticks, i) end
-    end
+    Fx.i:removeJoystick(j)
 end
 
 function love.update(dt)
-    Fx.i.update()
+    Fx.i:update()
     keypress()
     Fx.t.update(dt)
     Fx.bfx.update(dt)
@@ -192,7 +232,8 @@ function love.update(dt)
         curScene = nextScene
         nextScene = nil
     end
-    if scenes[curScene] and scenes[curScene].update then scenes[curScene].update(dt) end
+    --if scenes[curScene] and scenes[curScene].update then scenes[curScene].update(dt) end
+    SM:update(dt)
 end
 
 
@@ -214,9 +255,10 @@ function love.draw()
         love.graphics.scale(scale, scale)
         
         -- Draw scene
-        if scenes[curScene] and scenes[curScene].draw then 
-            scenes[curScene].draw() 
-        end
+        -- if scenes[curScene] and scenes[curScene].draw then 
+        --     scenes[curScene].draw() 
+        -- end
+        SM:draw()
         
         Fx.t.draw()
         Fx.debug.draw()

@@ -102,23 +102,23 @@ function EffectUI.keypressed(player)
 
     local max = #effectList
 
-    if Fx.i.pressed("left") then
+    if Fx.i:pressed("left") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - 1)
 
-    elseif Fx.i.pressed("right") then
+    elseif Fx.i:pressed("right") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + 1)
 
-    elseif Fx.i.pressed("up") then
+    elseif Fx.i:pressed("up") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - EffectUI.Data.cols)
 
-    elseif Fx.i.pressed("down") then
+    elseif Fx.i:pressed("down") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + EffectUI.Data.cols)
 
-    elseif Fx.i.pressed("accept") then
+    elseif Fx.i:pressed("accept") then
         local id = effectList[EffectUI.Data.selected]
         effectFun.apply(player, effectRef[id])
 
-    elseif Fx.i.pressed("cancel") then
+    elseif Fx.i:pressed("cancel") then
         local id = effectList[EffectUI.Data.selected]
         effectFun.remove(player, id)
     end

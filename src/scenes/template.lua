@@ -1,9 +1,5 @@
 local Scene = {}
 
--- Load assets with the game's launch.
-function Scene.load()
-end
-
 -- Whatever should happen when the scene gets loaded.
 function Scene.enter()
 end

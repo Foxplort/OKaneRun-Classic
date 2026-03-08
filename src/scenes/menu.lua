@@ -19,7 +19,7 @@ local breathShader = love.graphics.newShader("assets/shaders/menu_breathing.glsl
 local function createMenus()
     local main, credits, exit
 
-    credits = Menu.new{
+    credits = Menu:new{
         title = "CREDITS",
         options = {
             { txt = "--- CREW ---", isLabel = true },
@@ -47,7 +47,7 @@ local function createMenus()
         }
     }
 
-    exit = Menu.new{
+    exit = Menu:new{
         title = "QUIT?",
         options = {
             { txt = "Confirm", action = function() love.event.quit() end },
@@ -55,7 +55,7 @@ local function createMenus()
         }
     }
 
-    main = Menu.new{
+    main = Menu:new{
         title = "MAIN MENU",
         options = {
             {

@@ -158,7 +158,7 @@ function Scene.enter()
 
     local MenuSys = require("src.systems.menu")
 
-    menu = MenuSys.Menu.new{
+    menu = MenuSys.Menu:new{
         title = "PAUSED",
         style = "spikes",  -- optional: "plain" or "spikes"
         options = {
@@ -196,7 +196,7 @@ function Scene.update(dt)
         pause = true
     end
     if pause then
-        if Fx.i.pressed("cancel") then pause = false end
+        if Fx.i:pressed("cancel") then pause = false end
         menuStack:input()
         menuStack:update(dt)
     else
@@ -209,14 +209,14 @@ function Scene.update(dt)
         local isSubmerged = GameState.player.pos.z < 0
         local mx, my = 0, 0
 
-        if Fx.i.pressed("debugEffect") then
+        if Fx.i:pressed("debugEffect") then
             gameData.game.effectUI.Data.visible = not gameData.game.effectUI.Data.visible
         end
         
         if gameData.game.effectUI.Data.visible then
             gameData.game.effectUI.keypressed(GameState.player)
         else
-            if Fx.i.pressed("jump") then
+            if Fx.i:pressed("jump") then
                 if GameState.player.jump.cons < GameState.player.stat.jump.lim then
                     GameState.player.jump.cons = GameState.player.jump.cons + 1
                     GameState.player.vel.z = GameState.player.stat.jump.vel
@@ -235,11 +235,11 @@ function Scene.update(dt)
                 end
             end
             if not GameState.player.dead then
-                if Fx.i.down("right") then mx = mx + 1 end
-                if Fx.i.down("left") then mx = mx - 1 end
-                if Fx.i.down("up") then my = my - 1 end
-                if Fx.i.down("down") then my = my + 1 end
-                if Fx.i.pressed("cancel") then pause = true; menu:resetAnimation() end
+                if Fx.i:down("right") then mx = mx + 1 end
+                if Fx.i:down("left") then mx = mx - 1 end
+                if Fx.i:down("up") then my = my - 1 end
+                if Fx.i:down("down") then my = my + 1 end
+                if Fx.i:pressed("cancel") then pause = true; menu:resetAnimation() end
             end
         end
 

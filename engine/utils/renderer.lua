@@ -13,37 +13,6 @@ Renderer.fonts = {
 
 -- INNER FUNCTIONS
 
-local function coloring(c)
-    -- default: white
-    if c == nil then
-        return 1, 1, 1, 1
-    end
-
-    -- grayscale number (0–255)
-    if type(c) == "number" then
-        local v = c > 1 and c / 255 or c
-        return v, v, v, 1
-    end
-
-    -- table color
-    if type(c) == "table" then
-        local r = c[1] or 255
-        local g = c[2] or 255
-        local b = c[3] or 255
-        local a = c[4] or 255
-
-        -- auto-detect format
-        if r > 1 or g > 1 or b > 1 or a > 1 then
-            return r/255, g/255, b/255, a/255
-        else
-            return r, g, b, a
-        end
-    end
-
-    -- fallback
-    return 1, 1, 1, 1
-end
-
 local function coloring(c, pA)
     pA = pA or 1
     if not c then return 1, 1, 1, pA end
