@@ -1,17 +1,30 @@
+---@class Scene
+---@field enter? fun() Called when scene becomes active
+---@field exit? fun() Called when scene becomes inactive
+---@field update? fun(dt: number) Called every frame with delta time
+---@field draw? fun() Called every frame for rendering
+---@field keypressed? fun(key: string) Called on key press
+
 ---@class SceneManager
 ---@field scenes table
----@field current table?
+---@field current Scene?
 ---@field next string?
+---@field minDT number?
 
 local SceneManager = {}
 
 ---Create new scene manager
+---@param minDT? number|boolean delta time threshold to switch to the fixed timestep system to avoid math issues. (default 1/20)
 ---@return SceneManager
-function SceneManager.new()
+function SceneManager.new(minDT)
+    if minDT == nil or minDT == true then minDT = 1/20
+    elseif minDT == false or minDT == 0 then minDT = nil end
+
     return setmetatable({
         scenes = {},
         current = nil,
         next = nil,
+        minDT = minDT,
     }, { __index = SceneManager })
 end
 
@@ -44,7 +57,16 @@ function SceneManager:update(dt)
         end
     end
 
-    if self.current and self.current.update then self.current.update(dt) end
+    if self.current and self.current.update then
+        -- if framerate is too low - switch to fixed timestep system
+        if self.minDT and dt > self.minDT then
+            for i=1, math.floor(dt/self.minDT) do
+                self.current.update(self.minDT)
+                dt = dt - self.minDT
+            end
+        end
+        self.current.update(dt)
+    end
 end
 
 ---Draw current scene

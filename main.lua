@@ -1,7 +1,7 @@
 Fx = {
     r = require("engine.utils.renderer"), -- R - Render
     s = require("engine.utils.soundManager"), -- S - Sound Manager
-    i = require("engine.utils.input"):new(), -- I - Input
+    i = require("engine.utils.input").new(), -- I - Input
     m = require("engine.utils.math"), -- M - Math
     dq = require("engine.utils.drawqueue"), -- DQ - Draw Queue
     cl = require("src.utils.collision"), -- Cl - Collision
@@ -11,7 +11,7 @@ Fx = {
     debug = require("src.systems.debug"),
 }
 
-local SM = require("engine.core.sceneManager"):new()
+local SM = require("engine.core.sceneManager").new()
 
 local config = {
     fullScreen = false,
