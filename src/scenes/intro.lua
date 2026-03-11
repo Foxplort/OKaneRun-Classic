@@ -24,7 +24,7 @@ local capH = BAR_HEIGHT + 4
 
 local function lineText(text)
     c = {255, 255, 255, textAlpha}
-    Fx.r.text(text, 0, 115 + 15 * (textLine-1), 1, c, Game.width, "center")
+    Fx.r.text(text, 0, 115 + 15 * (textLine-1), 1, c, fore.conf.width, "center")
     textLine = textLine+1
 end
 
@@ -70,7 +70,7 @@ function Scene.draw()
         textAlpha = 255 - (hold / HOLD_TIME) * 255
 
         if state == "warning" then
-            Fx.r.text("WARNING", 0, 80, 2, {255,0,0, textAlpha}, Game.width/2, "center")
+            Fx.r.text("WARNING", 0, 80, 2, {255,0,0, textAlpha}, fore.conf.width/2, "center")
             lineText("This is an early version of the game")
             lineText("Many assets are still a work in progress")
             lineText("Expect changes to gameplay and code as development progresses")
@@ -81,7 +81,7 @@ function Scene.draw()
         end
 
 
-        local cx = Game.width * 0.5
+        local cx = fore.conf.width * 0.5
         local progress = hold / HOLD_TIME
         local fillW = BAR_WIDTH * progress
         local x = cx - BAR_WIDTH / 2
@@ -97,7 +97,7 @@ function Scene.draw()
         Fx.r.rect(x - 10, capY, 2, capH, {255,255,255,a})
         Fx.r.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
     elseif state == "presents" or state == "done" then
-        Fx.r.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, Game.width, "center")
+        Fx.r.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.conf.width, "center")
     end
 
     textLine = 1

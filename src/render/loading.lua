@@ -18,8 +18,8 @@ end
 function Loading.draw()
     if not active then return end
 
-    local x = Game.width - RADIUS - 20
-    local y = Game.height - RADIUS - 20
+    local x = fore.conf.width - RADIUS - 20
+    local y = fore.conf.height - RADIUS - 20
 
     love.graphics.setLineWidth(THICKNESS)
     

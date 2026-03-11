@@ -22,8 +22,8 @@ See `assets/LICENSE.md` for details.
 
 ## FÖRE Engine
 
-Location: `engine/`
+Location: `fore/`
 
 Licensed under the **Mozilla Public License 2.0 (MPL-2.0)**.
 
-See `engine/LICENSE` for the full license text.
+See `fore/LICENSE` for the full license text.

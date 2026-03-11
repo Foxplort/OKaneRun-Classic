@@ -216,11 +216,11 @@ function Scene.update(dt)
 end
 
 function Scene.draw()
-    Fx.r.rect(PANEL_W, 0, Game.width-PANEL_W, Game.height, {8,15,20})
+    Fx.r.rect(PANEL_W, 0, fore.conf.width-PANEL_W, fore.conf.height, {8,15,20})
     menuStack:draw()
 
-    Fx.r.text( "Cursed: " .. appliedDebuff.id, Game.width - 220, 20, 1, {255, 80, 80}, 200, "right" )
-    Fx.r.text( "Money: " .. GameState.player.coins, Game.width - 220, 32, 1, {255, 255, 80}, 200, "right" )
+    Fx.r.text( "Cursed: " .. appliedDebuff.id, fore.conf.width - 220, 20, 1, {255, 80, 80}, 200, "right" )
+    Fx.r.text( "Money: " .. GameState.player.coins, fore.conf.width - 220, 32, 1, {255, 255, 80}, 200, "right" )
 end
 
 

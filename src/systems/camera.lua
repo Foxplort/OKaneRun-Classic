@@ -1,8 +1,8 @@
 local Camera = {}
 
 local camX, camY = 0, 0
-local halfW = Game.width / 2
-local halfH = Game.height / 2
+local halfW = fore.conf.width / 2
+local halfH = fore.conf.height / 2
 
 local followSpeed = 8
 
@@ -30,8 +30,8 @@ local function randf(a)
 end
 
 function Camera.update(targetX, targetY, dt)
-    halfW = Game.width / 2
-    halfH = Game.height / 2
+    halfW = fore.conf.width / 2
+    halfH = fore.conf.height / 2
 
     for group in pairs(shake) do
         shake[group].amount = Fx.m.approach(shake[group].amount, 0, 40 * dt)

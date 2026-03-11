@@ -180,7 +180,7 @@ function Menu:drawContent(focused)
             PANEL_X + xOffset,
             0,
             PANEL_W,
-            Game.height,
+            fore.conf.height,
             self.spikeScroll,
             {0,0,0,a}
         )
@@ -228,10 +228,10 @@ function Menu:drawDescription()
     if self.commentT < 0.01 then return end
 
     local freeX = PANEL_W
-    local freeW = Game.width - PANEL_W
+    local freeW = fore.conf.width - PANEL_W
 
     local x = freeX + freeW/2 - self.commentW/2
-    local y = Game.height - self.commentH - 20
+    local y = fore.conf.height - self.commentH - 20
               + (1-self.commentT)*60
 
     local a = self.commentT * 0.627
@@ -261,7 +261,7 @@ MenuStack.__index = MenuStack
 function MenuStack.new(root)
     return setmetatable({
         stack = { root },
-        canvas = love.graphics.newCanvas(Game.width, Game.height)
+        canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
     }, MenuStack)
 end
 

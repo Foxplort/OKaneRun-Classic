@@ -44,10 +44,10 @@ local function drawCoinIndicator()
     local coins = GameState.area.coins
     local full = #coins > 0
     local coinText = full and (#coins .. " left") or "Deposit!"
-    Fx.r.text(coinText, Game.width-80, 35, 1, 255, 80, "center")
+    Fx.r.text(coinText, fore.conf.width-80, 35, 1, 255, 80, "center")
 
     if full then
-        local centerX, centerY = Game.width - 40, 40
+        local centerX, centerY = fore.conf.width - 40, 40
         local radius, baseThick = 20, 3
         local time = love.timer.getTime()
         
@@ -99,7 +99,7 @@ local function drawHealthIndicator()
     local maxHp = GameState.player.hp.max
     if maxHp <= 0 then return end
     
-    local startX, y = 0, Game.height - 45
+    local startX, y = 0, fore.conf.height - 45
     local size, spacing = 20, 24
     local perRow = 6
     local rows = math.ceil(maxHp / perRow)

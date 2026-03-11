@@ -18,8 +18,8 @@ T.config = {
 }
 
 local function getSpikePolygon(x, width, spikeCount, depth, yShift)
-    local h, verts = Game.height, {}
-    local overdraw, step = 300, Game.height / spikeCount
+    local h, verts = fore.conf.height, {}
+    local overdraw, step = 300, fore.conf.height / spikeCount
     local loopedShift = yShift % (step * 2)
 
     -- Right Edge
@@ -85,7 +85,7 @@ end
 function T.draw()
     if not active then return end
 
-    local sw, c = Game.width, T.config
+    local sw, c = fore.conf.width, T.config
     local shapeW = sw * c.widthMult
     local buffer = 120 + c.xOffset
     local startX, endX = -shapeW - buffer, sw + buffer

@@ -2,7 +2,7 @@ local BorderFX = {}
 
 local particles = {}
 
-local height = Game.height
+local height = fore.conf.height
 
 function BorderFX.init(count)
     particles = {}
@@ -18,7 +18,7 @@ end
 
 function BorderFX.update(dt)
     for _, p in ipairs(particles) do
-        p.y = (p.y + dt * p.spd / height * Game.baseHeight * 0.01) % 1
+        p.y = (p.y + dt * p.spd / height * fore.conf.baseHeight * 0.01) % 1
     end
 end
 

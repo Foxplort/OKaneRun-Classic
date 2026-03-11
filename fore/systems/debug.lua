@@ -115,9 +115,11 @@ function Debug.draw()
     local lines = {}
     
     -- Header
-    local hdr = string.format("OkaneRun [%s] | %d/%d | Lv%d", Game.version, Debug.page, Debug.maxPages, Debug.detailLevel)
+    local hdr = string.format(fore.conf.name .. " [%s] | %d/%d", fore.conf.version, Debug.page, Debug.maxPages)
+    local ehdr = string.format("Fore Engine [%s] | Lv%d", fore.version, Debug.detailLevel)
     table.insert(lines, hdr)
-    table.insert(lines, string.rep("-", #hdr))
+    table.insert(lines, ehdr)
+    table.insert(lines, string.rep("-", math.max(#hdr, #ehdr)))
     
     -- Page 1: Performance
     if Debug.page == 1 then
@@ -135,7 +137,7 @@ function Debug.draw()
         if Debug.detailLevel >= 3 then
             table.insert(lines, string.format("min:%.1f max:%.1f avg:%.1fms",
                 stats.frameMin, stats.frameMax, stats.frameAvg))
-            table.insert(lines, string.format("GC:%.0f | %dx%d", stats.gcCount, Game.width, Game.height))
+            table.insert(lines, string.format("GC:%.0f | %dx%d", stats.gcCount, fore.conf.width, fore.conf.height))
         end
         
     -- Page 2: Providers

@@ -120,16 +120,16 @@ end
 
 function Scene.draw()
     -- background
-    Fx.r.rect(PANEL_WIDTH, 0, Game.width - PANEL_WIDTH, Game.height, {8,15,20})
+    Fx.r.rect(PANEL_WIDTH, 0, fore.conf.width - PANEL_WIDTH, fore.conf.height, {8,15,20})
     MP.drawBack()
 
     local iw, ih = Fx.r.getImage("menu_portrait"):getDimensions()
 
     local areaX = PANEL_WIDTH
-    local areaW = Game.width - PANEL_WIDTH
+    local areaW = fore.conf.width - PANEL_WIDTH
 
     local x = PANEL_WIDTH + areaW / 2
-    local y = Game.height
+    local y = fore.conf.height
 
     love.graphics.setShader(breathShader)
     Fx.r.imageScaled(
@@ -147,8 +147,8 @@ function Scene.draw()
     iw, ih = Fx.r.getImage("menu_fog"):getDimensions()
     Fx.r.imageScaled(
         "menu_fog",
-        PANEL_WIDTH + (Game.width - PANEL_WIDTH)/2 + fogXShift,
-        Game.height + fogYShift,
+        PANEL_WIDTH + (fore.conf.width - PANEL_WIDTH)/2 + fogXShift,
+        fore.conf.height + fogYShift,
         0.4,
         0.4,
         0,
@@ -161,28 +161,28 @@ function Scene.draw()
     local logow, logoh = Fx.r.getImage("logo"):getDimensions()
     Fx.r.imageScaled(
         "logo",
-        PANEL_WIDTH + (Game.width - PANEL_WIDTH - logow*0.5) / 2,
+        PANEL_WIDTH + (fore.conf.width - PANEL_WIDTH - logow*0.5) / 2,
         20 + logoY,
         0.5, 0.5
     )
 
     Fx.r.text(
-        "--- V" .. Game.version .. " ---",
+        "--- V" .. fore.conf.version .. " ---",
         PANEL_WIDTH,
         85 + logoY,
         1,
         {255,255,255},
-        Game.width - PANEL_WIDTH,
+        fore.conf.width - PANEL_WIDTH,
         "center"
     )
 
-    Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {5, 35, 35})
+    Fx.r.rect(0, 0, PANEL_WIDTH, fore.conf.height, {5, 35, 35})
 
     MP.drawFront()
 
     -- side panel
-    Fx.r.rect(0, 0, PANEL_WIDTH, Game.height, {0,0,0,0.7})
-    Fx.r.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, Game.height, {1,1,1,1})
+    Fx.r.rect(0, 0, PANEL_WIDTH, fore.conf.height, {0,0,0,0.7})
+    Fx.r.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.conf.height, {1,1,1,1})
 
     -- menus
     stack:draw()

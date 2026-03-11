@@ -1,21 +1,15 @@
-Fx = {
-    r = require("engine.utils.renderer"), -- R - Render
-    s = require("engine.utils.soundManager"), -- S - Sound Manager
-    i = require("engine.utils.input").new(), -- I - Input
-    m = require("engine.utils.math"), -- M - Math
-    dq = require("engine.utils.drawqueue"), -- DQ - Draw Queue
-    cl = require("src.utils.collision"), -- Cl - Collision
-    ll = require("src.utils.levelLoader"), -- LL - Level Loader
-    t = require("src.utils.transition"), -- T - Transition
-    bfx = require("src.systems.borderFX"),
-    debug = require("src.systems.debug"),
-}
+fore = require("fore.core.init").init({
+    startScene = "menu",
+    name = "OkaneRun",
+    version = "0.1.0-dev",
+})
 
-local SM = require("engine.core.sceneManager").new()
+Fx = fore.Fx
 
-local config = {
-    fullScreen = false,
-}
+Fx.cl = require("src.utils.collision") -- Cl - Collision
+Fx.ll = require("src.utils.levelLoader") -- LL - Level Loader
+Fx.t = require("src.utils.transition") -- T - Transition
+Fx.bfx = require("src.systems.borderFX")
 
 local canvas
 local scale
@@ -41,7 +35,7 @@ L = {
 }
 
 function setScene(name)
-    SM:goTo(name)
+    fore.SceneManager:goTo(name)
 end
 
 local lastCanvasW, lastCanvasH = 0, 0
@@ -60,15 +54,15 @@ local function computeInternalResolution()
     local screenW, screenH = love.graphics.getDimensions()
     
     -- How much are we need to scale the base resolution to fit the screen
-    scale = math.min(screenW / Game.baseWidth, screenH / Game.baseHeight)
+    scale = math.min(screenW / fore.conf.baseWidth, screenH / fore.conf.baseHeight)
 
     -- Calculate what the internal size would be to fill the screen
     local idealW = screenW / scale
     local idealH = screenH / scale
 
     -- Clamp that size using your pixelBank (The "freedom" limit)
-    local canvasW = math.min(idealW, Game.baseWidth + (Game.pixelBank or 0))
-    local canvasH = math.min(idealH, Game.baseHeight + (Game.pixelBank or 0))
+    local canvasW = math.min(idealW, fore.conf.baseWidth + (fore.conf.pixelBank or 0))
+    local canvasH = math.min(idealH, fore.conf.baseHeight + (fore.conf.pixelBank or 0))
 
     -- Return physical pixels (canvas resolution)
     return math.floor(canvasW * scale), math.floor(canvasH * scale), canvasW, canvasH
@@ -153,20 +147,20 @@ function love.load()
         },
     })
 
-    SM:reg("game", "src.scenes.game")
-    SM:reg("intro", "src.scenes.intro")
-    SM:reg("menu", "src.scenes.menu")
-    SM:reg("shop", "src.scenes.shop")
-    SM:goTo("intro")
+    fore.SceneManager:reg("game", "src.scenes.game")
+    fore.SceneManager:reg("intro", "src.scenes.intro")
+    fore.SceneManager:reg("menu", "src.scenes.menu")
+    fore.SceneManager:reg("shop", "src.scenes.shop")
+    fore.SceneManager:goTo("intro")
 
     -- Init DEBUG
     Fx.debug.add("Scene", function()
         local data = {}
-        if SM.next then table.insert(data, string.format("-> %s", SM.next)) end -- visible on long scene loads
+        if fore.SceneManager.next then table.insert(data, string.format("-> %s", fore.SceneManager.next)) end -- visible on long scene loads
         
         -- Add scene-specific debug if available
-        if SM.current and SM.current.debug then
-            local sceneData = SM.current.debug()
+        if fore.SceneManager.current and fore.SceneManager.current.debug then
+            local sceneData = fore.SceneManager.current.debug()
             for _, item in ipairs(sceneData) do
                 table.insert(data, item)
             end
@@ -195,7 +189,7 @@ function love.keypressed(k)
     end
     
     --if scenes[curScene] and scenes[curScene].keypressed then scenes[curScene].keypressed(k) end
-    SM:keypressed(k)
+    fore.SceneManager:keypressed(k)
 end
 
 local function keypress()
@@ -233,7 +227,7 @@ function love.update(dt)
         nextScene = nil
     end
     --if scenes[curScene] and scenes[curScene].update then scenes[curScene].update(dt) end
-    SM:update(dt)
+    fore.SceneManager:update(dt)
 end
 
 
@@ -241,8 +235,8 @@ function love.draw()
     local pW, pH, vW, vH = computeInternalResolution()
     rebuildCanvas(pW, pH)
     
-    Game.width = vW
-    Game.height = vH
+    fore.conf.width = vW
+    fore.conf.height = vH
 
     local screenW, screenH = love.graphics.getDimensions()
 
@@ -258,7 +252,7 @@ function love.draw()
         -- if scenes[curScene] and scenes[curScene].draw then 
         --     scenes[curScene].draw() 
         -- end
-        SM:draw()
+        fore.SceneManager:draw()
         
         Fx.t.draw()
         Fx.debug.draw()
@@ -288,3 +282,5 @@ function love.quit()
     Fx.s.shutdown(1.0)
     love.timer.sleep(0.1)
 end
+
+

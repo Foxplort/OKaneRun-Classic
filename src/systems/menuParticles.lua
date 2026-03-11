@@ -14,8 +14,8 @@ function MP.init(pw)
         local z = math.random() -- depth
 
         particles[i] = {
-            x = math.random(PANEL_WIDTH, Game.baseWidth + Game.pixelBank),
-            y = math.random(0, Game.baseHeight + Game.pixelBank),
+            x = math.random(PANEL_WIDTH, fore.conf.baseWidth + fore.conf.pixelBank),
+            y = math.random(0, fore.conf.baseHeight + fore.conf.pixelBank),
             z = z,
 
             spd = 10 + z * 30,          -- deeper = faster
@@ -27,8 +27,8 @@ function MP.init(pw)
     end
 
     dots = {}
-    for x = PANEL_WIDTH, Game.baseWidth+Game.pixelBank, 16 do
-        for y = 0, Game.baseHeight+Game.pixelBank, 16 do
+    for x = PANEL_WIDTH, fore.conf.baseWidth+fore.conf.pixelBank, 16 do
+        for y = 0, fore.conf.baseHeight+fore.conf.pixelBank, 16 do
             table.insert(dots, {x=x, y=y})
         end
     end
@@ -41,14 +41,14 @@ function MP.update(dt)
         p.y = p.y + p.spd * dt
         p.x = p.x + (p.drift + wind * p.z) * dt
 
-        if p.y > Game.baseHeight + 10 + Game.pixelBank then
+        if p.y > fore.conf.baseHeight + 10 + fore.conf.pixelBank then
             p.y = -10
-            p.x = math.random(PANEL_WIDTH, Game.baseWidth)
+            p.x = math.random(PANEL_WIDTH, fore.conf.baseWidth)
         end
 
         if p.x < PANEL_WIDTH then
-            p.x = Game.baseWidth
-        elseif p.x > Game.baseWidth + Game.pixelBank then
+            p.x = fore.conf.baseWidth
+        elseif p.x > fore.conf.baseWidth + fore.conf.pixelBank then
             p.x = PANEL_WIDTH
         end
     end
