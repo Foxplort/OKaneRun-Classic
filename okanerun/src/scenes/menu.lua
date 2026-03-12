@@ -1,6 +1,6 @@
 local Scene = {}
 
-local MenuSystem = require("src.systems.menu")
+local MenuSystem = require("okanerun.src.systems.menu")
 local Menu = MenuSystem.Menu
 local Stack = MenuSystem.Stack
 
@@ -14,7 +14,7 @@ local timer = 1
 local fogXShift, fogYShift = 0, 0
 local logoY = 0
 
-local breathShader = love.graphics.newShader("assets/shaders/menu_breathing.glsl")
+local breathShader = love.graphics.newShader("okanerun/assets/shaders/menu_breathing.glsl")
 
 local function createMenus()
     local main, credits, exit
@@ -33,6 +33,13 @@ local function createMenus()
                 ]]
             },
             { txt = "--- TECH ---", isLabel = true },
+            {
+                txt = "FÖRE Engine",
+                link = "https://github.com/Foxplort/OkaneRun",
+                desc = [[
+                Initially part of the game's code[br]
+                ]]
+            },
             {
                 txt = "LÖVE Framework",
                 link = "https://love2d.org/",
@@ -62,7 +69,7 @@ local function createMenus()
                 txt = "Play",
                 action = function()
                     Fx.t.cover(function()
-                        setScene("game")
+                        fore.scenes:goTo("game")
                     end)
                 end,
             },
@@ -76,14 +83,14 @@ local function createMenus()
 end
 
 function Scene.enter()
-    Fx.r.loadImage("logo", "assets/images/ui/logo-smooth.png", "linear")
-    Fx.r.loadImage("menu_portrait", "assets/images/ui/menu_portrait.png", "linear")
-    Fx.r.loadImage("menu_fog", "assets/images/ui/menu_fog.png", "linear")
+    fore.graphics.loadImage("logo", "okanerun/assets/images/ui/logo-smooth.png", "linear")
+    fore.graphics.loadImage("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
+    fore.graphics.loadImage("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
 
-    Fx.s.loadSound("menu_music", "assets/sounds/music/001.wav", "music")
-    Fx.s.fadeIn("menu_music", 2.0, nil, {loop = true})
+    fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.wav", "music")
+    fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
 
-    MP = require("src.systems.menuParticles")
+    MP = require("okanerun.src.systems.menuParticles")
     MP.init(0)
     
     breathShader:send("b_intensity", 0.0028)
@@ -95,14 +102,14 @@ function Scene.enter()
     local root = createMenus()
     stack = Stack.new(root)
 
-    GameState.player = require("src.data.player").new()
+    GameState.player = require("okanerun.src.data.player").new()
 end
 
 function Scene.exit()
-    Fx.r.unloadImage("logo")
-    Fx.r.unloadImage("menu_portrait")
-    Fx.r.unloadImage("menu_fog")
-    Fx.s.fadeOutAndUnload("menu_music", 2.0)
+    fore.graphics.unloadImage("logo")
+    fore.graphics.unloadImage("menu_portrait")
+    fore.graphics.unloadImage("menu_fog")
+    fore.audio.fadeOutAndUnload("menu_music", 2.0)
 end
 
 
@@ -120,19 +127,19 @@ end
 
 function Scene.draw()
     -- background
-    Fx.r.rect(PANEL_WIDTH, 0, fore.conf.width - PANEL_WIDTH, fore.conf.height, {8,15,20})
+    fore.graphics.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {8,15,20})
     MP.drawBack()
 
-    local iw, ih = Fx.r.getImage("menu_portrait"):getDimensions()
+    local iw, ih = fore.graphics.getImage("menu_portrait"):getDimensions()
 
     local areaX = PANEL_WIDTH
-    local areaW = fore.conf.width - PANEL_WIDTH
+    local areaW = fore.data.width - PANEL_WIDTH
 
     local x = PANEL_WIDTH + areaW / 2
-    local y = fore.conf.height
+    local y = fore.data.height
 
     love.graphics.setShader(breathShader)
-    Fx.r.imageScaled(
+    fore.graphics.imageScaled(
         "menu_portrait",
         x,
         y,
@@ -144,11 +151,11 @@ function Scene.draw()
     )
     love.graphics.setShader()
 
-    iw, ih = Fx.r.getImage("menu_fog"):getDimensions()
-    Fx.r.imageScaled(
+    iw, ih = fore.graphics.getImage("menu_fog"):getDimensions()
+    fore.graphics.imageScaled(
         "menu_fog",
-        PANEL_WIDTH + (fore.conf.width - PANEL_WIDTH)/2 + fogXShift,
-        fore.conf.height + fogYShift,
+        PANEL_WIDTH + (fore.data.width - PANEL_WIDTH)/2 + fogXShift,
+        fore.data.height + fogYShift,
         0.4,
         0.4,
         0,
@@ -158,31 +165,31 @@ function Scene.draw()
     )
 
     -- logo
-    local logow, logoh = Fx.r.getImage("logo"):getDimensions()
-    Fx.r.imageScaled(
+    local logow, logoh = fore.graphics.getImage("logo"):getDimensions()
+    fore.graphics.imageScaled(
         "logo",
-        PANEL_WIDTH + (fore.conf.width - PANEL_WIDTH - logow*0.5) / 2,
+        PANEL_WIDTH + (fore.data.width - PANEL_WIDTH - logow*0.5) / 2,
         20 + logoY,
         0.5, 0.5
     )
 
-    Fx.r.text(
+    fore.graphics.text(
         "--- V" .. fore.conf.version .. " ---",
         PANEL_WIDTH,
         85 + logoY,
         1,
         {255,255,255},
-        fore.conf.width - PANEL_WIDTH,
+        fore.data.width - PANEL_WIDTH,
         "center"
     )
 
-    Fx.r.rect(0, 0, PANEL_WIDTH, fore.conf.height, {5, 35, 35})
+    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {5, 35, 35})
 
     MP.drawFront()
 
     -- side panel
-    Fx.r.rect(0, 0, PANEL_WIDTH, fore.conf.height, {0,0,0,0.7})
-    Fx.r.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.conf.height, {1,1,1,1})
+    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {0,0,0,0.7})
+    fore.graphics.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.data.height, {1,1,1,1})
 
     -- menus
     stack:draw()

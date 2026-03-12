@@ -31,7 +31,7 @@ local function followTarget(coin, tx, ty, tz, dt)
     local diff = dist - desired
 
     -- Soft clamp
-    local pull = Fx.m.clamp(diff * 8, -200, 200)
+    local pull = fore.math.clamp(diff * 8, -200, 200)
 
     coin.x = coin.x - (dx / dist) * pull * dt
     coin.y = coin.y - (dy / dist) * pull * dt
@@ -60,7 +60,7 @@ end
 local function getActiveCore(hb)
     for _, c in ipairs(GameState.area.cores) do
         local zone = { x = c.x, y = c.y, w = c.w, h = c.h }
-        if Fx.m.aabb(hb, zone) then
+        if fore.math.aabb(hb, zone) then
             return c
         end
     end
@@ -105,9 +105,9 @@ end
 
 function Scene.enter()
     -- LOAD THE LEVEL
-    local levelList = require("src.data.levels")
-    GameState.area = Fx.ll.load("src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
-    --GameState.area = Fx.ll.load("src/data/levels/cheezeLand.lua")
+    local levelList = require("okanerun.src.data.levels")
+    GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
+    --GameState.area = Fx.ll.load("okanerun.src/data/levels/cheezeLand.lua")
 
     -- RESET VARIABLES
     pause = false
@@ -119,19 +119,19 @@ function Scene.enter()
 
     gameData = {
         render = {
-            player = require("src.render.player"),
-            world = require("src.render.world"),
-            ui = require("src.render.ui"),
+            player = require("okanerun.src.render.player"),
+            world = require("okanerun.src.render.world"),
+            ui = require("okanerun.src.render.ui"),
         },
         systems = {
-            camera = require("src.systems.camera"),
-            tail = require("src.systems.playerTail"),
-            particles = require("src.systems.particles"),
+            camera = require("okanerun.src.systems.camera"),
+            tail = require("okanerun.src.systems.playerTail"),
+            particles = require("okanerun.src.systems.particles"),
         },
         game = {
-            effects = require("src.game.effects"),
-            effectSys = require("src.game.effectSystem"),
-            effectUI = require("src.game.effectUI"),
+            effects = require("okanerun.src.game.effects"),
+            effectSys = require("okanerun.src.game.effectSystem"),
+            effectUI = require("okanerun.src.game.effectUI"),
         },
     }
 
@@ -139,14 +139,14 @@ function Scene.enter()
     gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
 
     for id, eff in pairs(gameData.game.effects) do
-        local path = "assets/images/buffs/" .. eff.id .. ".png"
+        local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
         if love.filesystem.getInfo(path) then
-            Fx.r.loadImage(eff.id, path)
+            fore.graphics.loadImage(eff.id, path)
             table.insert(loadedImages, eff.id)
         end
     end
 
-    Fx.debug.add("Player", function()
+    fore.debug.add("Player", function()
         local p = GameState.player
         return {
             string.format("pos: %.1f / %.1f", p.pos.x, p.pos.y),
@@ -156,14 +156,14 @@ function Scene.enter()
         }
     end)
 
-    local MenuSys = require("src.systems.menu")
+    local MenuSys = require("okanerun.src.systems.menu")
 
     menu = MenuSys.Menu:new{
         title = "PAUSED",
         style = "spikes",  -- optional: "plain" or "spikes"
         options = {
             {txt="Resume", action=function() pause = false end},
-            {txt="Main Menu", action=function() Fx.t.cover(function() setScene("menu") end) end},
+            {txt="Main Menu", action=function() Fx.t.cover(function() fore.scenes:goTo("menu") end) end},
             {txt="Quit", action=function() love.event.quit() end},
         }
     }
@@ -171,17 +171,17 @@ function Scene.enter()
     menuStack = MenuSys.Stack.new(menu)  -- wrap in a stack
 
 
-    monoShader = love.graphics.newShader("assets/shaders/pause.glsl")
+    monoShader = love.graphics.newShader("okanerun/assets/shaders/pause.glsl")
     monoShader:send("levels", 128)
     monoShader:send("strength", 0.9)
 end
 
 function Scene.exit()
     gameData = nil
-    Fx.debug.remove("Player")
+    fore.debug.remove("Player")
 
     for _, eff in pairs(loadedImages) do
-        Fx.r.unloadImage(eff, path)
+        fore.graphics.unloadImage(eff, path)
     end
     --collectgarbage()
 end
@@ -196,7 +196,7 @@ function Scene.update(dt)
         pause = true
     end
     if pause then
-        if Fx.i:pressed("cancel") then pause = false end
+        if fore.input:pressed("cancel") then pause = false end
         menuStack:input()
         menuStack:update(dt)
     else
@@ -209,14 +209,14 @@ function Scene.update(dt)
         local isSubmerged = GameState.player.pos.z < 0
         local mx, my = 0, 0
 
-        if Fx.i:pressed("debugEffect") then
+        if fore.input:pressed("debugEffect") then
             gameData.game.effectUI.Data.visible = not gameData.game.effectUI.Data.visible
         end
         
         if gameData.game.effectUI.Data.visible then
             gameData.game.effectUI.keypressed(GameState.player)
         else
-            if Fx.i:pressed("jump") then
+            if fore.input:pressed("jump") then
                 if GameState.player.jump.cons < GameState.player.stat.jump.lim then
                     GameState.player.jump.cons = GameState.player.jump.cons + 1
                     GameState.player.vel.z = GameState.player.stat.jump.vel
@@ -235,11 +235,11 @@ function Scene.update(dt)
                 end
             end
             if not GameState.player.dead then
-                if Fx.i:down("right") then mx = mx + 1 end
-                if Fx.i:down("left") then mx = mx - 1 end
-                if Fx.i:down("up") then my = my - 1 end
-                if Fx.i:down("down") then my = my + 1 end
-                if Fx.i:pressed("cancel") then pause = true; menu:resetAnimation() end
+                if fore.input:down("right") then mx = mx + 1 end
+                if fore.input:down("left") then mx = mx - 1 end
+                if fore.input:down("up") then my = my - 1 end
+                if fore.input:down("down") then my = my + 1 end
+                if fore.input:pressed("cancel") then pause = true; menu:resetAnimation() end
             end
         end
 
@@ -251,16 +251,16 @@ function Scene.update(dt)
 
         -- X axis
         if targetVX ~= 0 then
-            GameState.player.vel.x = Fx.m.approach(GameState.player.vel.x, targetVX, accel * dt)
+            GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, targetVX, accel * dt)
         else
-            GameState.player.vel.x = Fx.m.approach(GameState.player.vel.x, 0, decel * dt)
+            GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, 0, decel * dt)
         end
 
         -- Y axis
         if targetVY ~= 0 then
-            GameState.player.vel.y = Fx.m.approach(GameState.player.vel.y, targetVY, accel * dt)
+            GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, targetVY, accel * dt)
         else
-            GameState.player.vel.y = Fx.m.approach(GameState.player.vel.y, 0, decel * dt)
+            GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, 0, decel * dt)
         end
 
         -- Clamp max speed
@@ -292,7 +292,7 @@ function Scene.update(dt)
         local touchingGround = false
 
         for _, g in ipairs(GameState.area.ground) do
-            if Fx.m.aabb(hb, Fx.cl.getGroundHitbox(g)) then
+            if fore.math.aabb(hb, Fx.cl.getGroundHitbox(g)) then
                 touchingGround = true
                 break
             end
@@ -331,7 +331,7 @@ function Scene.update(dt)
                 GameState.player.coins = GameState.player.coins + 1
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
-                    Fx.t.cover(function() setScene("shop") end)
+                    Fx.t.cover(function() fore.scenes:goTo("shop") end)
                 end
             end
         else
@@ -343,7 +343,7 @@ function Scene.update(dt)
 
         -- Collect coins
         for i, c in ipairs(GameState.area.coins) do
-            if Fx.m.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) and GameState.player.pos.z < 16 then
+            if fore.math.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) and GameState.player.pos.z < 16 then
                 local SPACING = 10
 
                 local coin = {
@@ -360,8 +360,8 @@ function Scene.update(dt)
         end
 
         -- Visual recovery (bring scale back to 1)
-        GameState.player.visual.sx = Fx.m.approach(GameState.player.visual.sx, 1, 2 * dt)
-        GameState.player.visual.sy = Fx.m.approach(GameState.player.visual.sy, 1, 2 * dt)
+        GameState.player.visual.sx = fore.math.approach(GameState.player.visual.sx, 1, 2 * dt)
+        GameState.player.visual.sy = fore.math.approach(GameState.player.visual.sy, 1, 2 * dt)
 
         -- Trail
         for i, coin in ipairs(GameState.player.coinChain) do
@@ -429,29 +429,29 @@ function Scene.draw()
 
     -- ## END OF DRAW ##
 
-    Fx.dq.draw() -- draw items in order
+    fore.queuer.draw() -- draw items in order
 
 
-    if debug then
+    if fore.debug.enabled then
         for _, g in ipairs(GameState.area.ground) do
             local gh = Fx.cl.getGroundHitbox(g)
-            Fx.r.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
+            fore.graphics.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
         end
 
         local hb = Fx.cl.getPlayerHitbox()
-        Fx.r.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
+        fore.graphics.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
 
         for _, c in ipairs(GameState.area.cores) do
-            Fx.r.rect(c.x, c.y, c.w, c.h, {0,255,0}, false)
+            fore.graphics.rect(c.x, c.y, c.w, c.h, {0,255,0}, false)
         end
 
         for _, c in ipairs(GameState.area.coins) do
             local ch = {x=c.x, y=c.y-3, w=10, h=6}
-            Fx.r.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
+            fore.graphics.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 
         for i, s in ipairs(GameState.player.tail) do
-            Fx.r.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
+            fore.graphics.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
         end
     end
 
@@ -467,7 +467,7 @@ function Scene.draw()
 
     if pause then
         love.graphics.setShader()
-        --Fx.r.rect(0,0,Game.width,Game.height,{0,0,0,90})
+        --fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
         menuStack:draw()
     end
 

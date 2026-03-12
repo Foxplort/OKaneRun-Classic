@@ -41,8 +41,8 @@ function Particles.updateParticles(dt)
         local p = list[i]
         
         -- Air resistance (drag)
-        p.vx = Fx.m.approach(p.vx, 0, 100 * dt)
-        p.vy = Fx.m.approach(p.vy, 0, 100 * dt)
+        p.vx = fore.math.approach(p.vx, 0, 100 * dt)
+        p.vy = fore.math.approach(p.vy, 0, 100 * dt)
         p.vz = p.vz - 20 * dt -- very light gravity for dust
         
         -- Move
@@ -57,14 +57,14 @@ end
 
 function Particles.draw(depthFn)
     for _, p in ipairs(list) do
-        Fx.dq.submit(
+        fore.queuer.submit(
             L.ACTOR,
             p.y,
             function()
                 local alpha = p.life * 180
                 local s = p.size * (0.5 + p.life * 0.5)
 
-                Fx.r.rect(
+                fore.graphics.rect(
                     p.x - s/2,
                     p.y - p.z - s,
                     s, s,

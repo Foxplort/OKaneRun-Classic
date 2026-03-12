@@ -34,7 +34,7 @@ function Camera.update(targetX, targetY, dt)
     halfH = fore.conf.height / 2
 
     for group in pairs(shake) do
-        shake[group].amount = Fx.m.approach(shake[group].amount, 0, 40 * dt)
+        shake[group].amount = fore.math.approach(shake[group].amount, 0, 40 * dt)
         shake[group].x = randf(shake[group].amount)
         shake[group].y = randf(shake[group].amount)
     end
@@ -42,12 +42,12 @@ function Camera.update(targetX, targetY, dt)
     -- Smooth follow (Lerp)
     local follow = 1 - math.exp(-followSpeed * dt)
 
-    camX = Fx.m.lerp(camX, targetX, follow)
-    camY = Fx.m.lerp(camY, targetY, follow)
+    camX = fore.math.lerp(camX, targetX, follow)
+    camY = fore.math.lerp(camY, targetY, follow)
 
     -- Clamping (limiting)
-    camX = Fx.m.clamp(camX, halfW, worldWidth - halfW)
-    camY = Fx.m.clamp(camY, halfH, worldHeight - halfH)
+    camX = fore.math.clamp(camX, halfW, worldWidth - halfW)
+    camY = fore.math.clamp(camY, halfH, worldHeight - halfH)
 end
 
 function Camera.push(cam, move)

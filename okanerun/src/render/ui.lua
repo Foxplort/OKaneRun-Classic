@@ -44,14 +44,14 @@ local function drawCoinIndicator()
     local coins = GameState.area.coins
     local full = #coins > 0
     local coinText = full and (#coins .. " left") or "Deposit!"
-    Fx.r.text(coinText, fore.conf.width-80, 35, 1, 255, 80, "center")
+    fore.graphics.text(coinText, fore.data.width-80, 35, 1, 255, 80, "center")
 
     if full then
-        local centerX, centerY = fore.conf.width - 40, 40
+        local centerX, centerY = fore.data.width - 40, 40
         local radius, baseThick = 20, 3
         local time = love.timer.getTime()
         
-        Fx.r.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
+        fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
 
         for coin, t in pairs(coinTrackers) do
             if t.fade > 0 then
@@ -80,13 +80,13 @@ local function drawCoinIndicator()
                 local alpha = 255 * t.fade
                 
                 if arcSize > 0.01 then
-                    Fx.r.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
+                    fore.graphics.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
                         {r, g, b, alpha}, "open", false, math.max(4, math.floor(arcSize*4)), thickness)
                 end
                 
                 if t.fill > 0.5 then
                     local pulse = (math.sin(time * 5) + 1) / 2 * t.fill
-                    Fx.r.arc(centerX, centerY, radius + 2, angle - arcSize/2 - 0.05, angle + arcSize/2 + 0.05,
+                    fore.graphics.arc(centerX, centerY, radius + 2, angle - arcSize/2 - 0.05, angle + arcSize/2 + 0.05,
                         {255, 200, 0, 100 * pulse * t.fade}, "open", false, 8, thickness + 2)
                 end
             end
@@ -99,7 +99,7 @@ local function drawHealthIndicator()
     local maxHp = GameState.player.hp.max
     if maxHp <= 0 then return end
     
-    local startX, y = 0, fore.conf.height - 45
+    local startX, y = 0, fore.data.height - 45
     local size, spacing = 20, 24
     local perRow = 6
     local rows = math.ceil(maxHp / perRow)
@@ -116,8 +116,8 @@ local function drawHealthIndicator()
         startX + totalWidth + 16, bgBottom,
         startX - 16, bgBottom + 2,
     }
-    Fx.r.polygon(bgPoints, {0,0,0,180}, true)
-    Fx.r.polygon(bgPoints, {255,255,255,40}, false)
+    fore.graphics.polygon(bgPoints, {0,0,0,180}, true)
+    fore.graphics.polygon(bgPoints, {255,255,255,40}, false)
 
     startX = startX + 15
     y = y - 5
@@ -136,7 +136,7 @@ local function drawHealthIndicator()
             
             local isActive = i <= hp or (i+1) <= hp
             local lineColor = isActive and {255,200,255,60} or {80,80,100,30}
-            Fx.r.line({cx1 + size/3, cy1, cx2 - size/3, cy2}, lineColor, 1.5)
+            fore.graphics.line({cx1 + size/3, cy1, cx2 - size/3, cy2}, lineColor, 1.5)
         end
     end
     
@@ -163,18 +163,18 @@ local function drawHealthIndicator()
             if isActive then
                 if isLast then
                     local glow = 0.7 + 0.3 * (math.sin(healthWave * 3 + i) + 1) / 2
-                    Fx.r.polygon(points, {255, 100 * glow, 200 * glow}, true)
-                    Fx.r.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
+                    fore.graphics.polygon(points, {255, 100 * glow, 200 * glow}, true)
+                    fore.graphics.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
                         {255,255,255,150}, true)
                 else
-                    Fx.r.polygon(points, {255, 80, 180}, true)
-                    Fx.r.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
+                    fore.graphics.polygon(points, {255, 80, 180}, true)
+                    fore.graphics.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
                         {200,220,255,100}, true)
                 end
-                Fx.r.polygon(points, {255,255,255,80}, false)
+                fore.graphics.polygon(points, {255,255,255,80}, false)
             else
-                Fx.r.polygon(points, {30,30,50}, true)
-                Fx.r.polygon(points, {60,60,80,80}, false)
+                fore.graphics.polygon(points, {30,30,50}, true)
+                fore.graphics.polygon(points, {60,60,80,80}, false)
             end
         end
     end

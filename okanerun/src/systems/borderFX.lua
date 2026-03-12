@@ -18,7 +18,7 @@ end
 
 function BorderFX.update(dt)
     for _, p in ipairs(particles) do
-        p.y = (p.y + dt * p.spd / height * fore.conf.baseHeight * 0.01) % 1
+        p.y = (p.y + dt * p.spd / height * fore.conf.height * 0.01) % 1
     end
 end
 

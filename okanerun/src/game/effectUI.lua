@@ -51,7 +51,7 @@ function EffectUI.draw(player)
             end
         end
 
-        Fx.r.rect(
+        fore.graphics.rect(
             x - 2, y - 2,
             EffectUI.Data.size + 4,
             EffectUI.Data.size + 4,
@@ -61,10 +61,10 @@ function EffectUI.draw(player)
 
         local entry = player.effects[id]
         local amountApplied = entry and entry.amount or 0
-        Fx.r.text(tostring(amountApplied), x+2, 100, 1)
+        fore.graphics.text(tostring(amountApplied), x+2, 100, 1)
 
         if selected then
-            Fx.r.rect(
+            fore.graphics.rect(
                 x - 2, y - 2,
                 EffectUI.Data.size + 4,
                 EffectUI.Data.size + 4,
@@ -72,12 +72,12 @@ function EffectUI.draw(player)
                 false
             )
 
-            Fx.r.text(tostring(id), 10, 110, 1)
+            fore.graphics.text(tostring(id), 10, 110, 1)
         end
 
         -- icon (safe)
         love.graphics.setColor(1, 1, 1, 1)
-        Fx.r.imageSafe(
+        fore.graphics.imageSafe(
             id, "missing",
             x, y,
             EffectUI.Data.size,
@@ -102,23 +102,23 @@ function EffectUI.keypressed(player)
 
     local max = #effectList
 
-    if Fx.i:pressed("left") then
+    if fore.input:pressed("left") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - 1)
 
-    elseif Fx.i:pressed("right") then
+    elseif fore.input:pressed("right") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + 1)
 
-    elseif Fx.i:pressed("up") then
+    elseif fore.input:pressed("up") then
         EffectUI.Data.selected = math.max(1, EffectUI.Data.selected - EffectUI.Data.cols)
 
-    elseif Fx.i:pressed("down") then
+    elseif fore.input:pressed("down") then
         EffectUI.Data.selected = math.min(max, EffectUI.Data.selected + EffectUI.Data.cols)
 
-    elseif Fx.i:pressed("accept") then
+    elseif fore.input:pressed("accept") then
         local id = effectList[EffectUI.Data.selected]
         effectFun.apply(player, effectRef[id])
 
-    elseif Fx.i:pressed("cancel") then
+    elseif fore.input:pressed("cancel") then
         local id = effectList[EffectUI.Data.selected]
         effectFun.remove(player, id)
     end

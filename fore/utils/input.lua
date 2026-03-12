@@ -5,14 +5,13 @@
 ---@field axes table<string, number>
 ---@field joysticks table
 ---@field deadzone number
-
 local Input = {}
 Input.__index = Input
 
 ---Create new input handler
 ---@param deadzone number? Analog deadzone (default 0.4)
 ---@return Input
-function Input.new(deadzone)
+function Input.init(deadzone)
     local self = setmetatable({
         actions = {},
         state = {},

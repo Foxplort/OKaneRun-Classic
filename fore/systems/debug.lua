@@ -9,7 +9,7 @@ Debug.maxPages = 2
 
 Debug.keys = {
     nextPage = "tab", prevPage = "rshift",
-    increaseDetail = "=", decreaseDetail = "-", toggle = "k"
+    increaseDetail = "=", decreaseDetail = "-",
 }
 
 Debug.dc = 0
@@ -35,8 +35,7 @@ local gcRate = 2.0
 
 local function estAudioMem()
     local total = 0
-    for _ in pairs(Fx.s.sounds) do total = total + 0.3 end
-    for _ in pairs(Fx.s.music) do total = total + 5.0 end
+    for _ in pairs(fore.audio.sounds) do total = total + 0.3 end
     return total
 end
 
@@ -53,8 +52,6 @@ function Debug.keypressed(k)
         Debug.detailLevel = math.min(Debug.detailLevel + 1, Debug.maxDetailLevel)
     elseif k == Debug.keys.decreaseDetail then
         Debug.detailLevel = math.max(Debug.detailLevel - 1, 1)
-    elseif k == Debug.keys.toggle then
-        Debug.enabled = not Debug.enabled
     end
 end
 
@@ -71,7 +68,7 @@ function Debug.update()
     timer = timer + dt
     if timer >= updateRate then
         local gStats = love.graphics.getStats()
-        local aStats = Fx.s.getStats()
+        local aStats = fore.audio.getStats()
         
         stats.fps = love.timer.getFPS()
         stats.frame = frameMs
@@ -137,7 +134,7 @@ function Debug.draw()
         if Debug.detailLevel >= 3 then
             table.insert(lines, string.format("min:%.1f max:%.1f avg:%.1fms",
                 stats.frameMin, stats.frameMax, stats.frameAvg))
-            table.insert(lines, string.format("GC:%.0f | %dx%d", stats.gcCount, fore.conf.width, fore.conf.height))
+            table.insert(lines, string.format("GC:%.0f | %dx%d", stats.gcCount, fore.data.width, fore.data.height))
         end
         
     -- Page 2: Providers
@@ -163,29 +160,29 @@ function Debug.draw()
     local h = #lines * lh + pad * 2 + graphH + 10
     
     -- Panel bg
-    Fx.r.rect(x, y, w, h, {0,0,0,200})
-    Fx.r.rect(x-1, y-1, w+2, h+2, {255,255,255,40}, false)
+    fore.graphics.rect(x, y, w, h, {0,0,0,200})
+    fore.graphics.rect(x-1, y-1, w+2, h+2, {255,255,255,40}, false)
     
     -- Text
     for i,l in ipairs(lines) do
         local col = l:find("^%-") and {200,200,200} or {255,255,255}
-        Fx.r.text(l, x+pad, y+pad + (i-1)*lh, 1, col)
+        fore.graphics.text(l, x+pad, y+pad + (i-1)*lh, 1, col)
     end
     
     -- Graph
     if graphH > 0 then
         local gx, gy = x+pad, y + h - graphH - 2
         local gw = w - pad*2
-        Fx.r.text("Frame (ms)", gx, gy-12, 0.7, {200,200,200})
-        Fx.r.graph(frameHistory, gx, gy, gw, graphH-15, {255,200,100}, 0, 33.33, 16.67)
-        Fx.r.text("60", gx+gw-20, gy-10, 0.6, {100,255,100})
+        fore.graphics.text("Frame (ms)", gx, gy-12, 0.7, {200,200,200})
+        fore.graphics.graph(frameHistory, gx, gy, gw, graphH-15, {255,200,100}, 0, 33.33, 16.67)
+        fore.graphics.text("60", gx+gw-20, gy-10, 0.6, {100,255,100})
     end
     
     -- Hint with background
     local hint = "K:close Tab:page +/-:detail"
     local hw, hh = font:getWidth(hint)*0.7, font:getHeight()*0.7
-    Fx.r.rect(x, y+h+2, hw+6, hh+4, {0,0,0,180})
-    Fx.r.text(hint, x+3, y+h+4, 0.7, {200,200,200})
+    fore.graphics.rect(x, y+h+2, hw+6, hh+4, {0,0,0,180})
+    fore.graphics.text(hint, x+3, y+h+4, 0.7, {200,200,200})
 end
 
 return Debug

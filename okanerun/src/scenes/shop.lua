@@ -4,8 +4,8 @@ local Scene = {}
 -- ### VARIABLES ### --
 -- ################# --
 
-local EffectSystem = require("src.game.effectSystem")
-local Effects      = require("src.game.effects")
+local EffectSystem = require("okanerun.src.game.effectSystem")
+local Effects      = require("okanerun.src.game.effects")
 
 -- layout
 
@@ -20,9 +20,16 @@ local bought       = {}
 
 local appliedDebuff = nil
 
-local MenuSys = require("src.systems.menu")
+local MenuSys = require("okanerun.src.systems.menu")
 local Menu    = MenuSys.Menu
 local Stack   = MenuSys.Stack
+
+local view
+local menuSub
+local lockInput = false
+local selection
+local message
+local menuMain
 
 -- ################# --
 -- ### FUNCTIONS ### --
@@ -61,7 +68,7 @@ local function buyMenu()
     return Menu:new{ title = "Buy", options = opts }
 end
 
-menuStack = Stack.new(
+local menuStack = Stack.new(
     Menu:new{
         title = "Shop",
         options = {
@@ -100,30 +107,7 @@ end
 -- ### MENU CONSTRUCTORS ### --
 -- ######################### --
 
-local function buildRootMenu()
-    return Menu:new{
-        title = "Shop",
-        options = {
-            { txt = "Speak", desc = "lol", action = function()
-                view = "speak"
-                menuSub = buildSpeakMenu()
-            end },
-            { txt = "Buy", action = function()
-                view = "buy"
-                menuSub = buildBuyMenu()
-            end },
-            { txt = "Leave", action = function()
-                lockInput = true
-                message = "See you next time!"
-                Fx.t.cover(function()
-                    setScene("game")
-                end)
-            end },
-        }
-    }
-end
-
-function buildSpeakMenu()
+local function buildSpeakMenu()
     local text = speakOptions[love.math.random(#speakOptions)]
 
     return Menu:new{
@@ -141,7 +125,7 @@ function buildSpeakMenu()
     }
 end
 
-function buildBuyMenu()
+local function buildBuyMenu()
     local opts = {}
 
     for _, o in ipairs(buyOptions) do
@@ -175,13 +159,36 @@ function buildBuyMenu()
     return Menu:new{ title = "Buy", options = opts }
 end
 
+local function buildRootMenu()
+    return Menu:new{
+        title = "Shop",
+        options = {
+            { txt = "Speak", desc = "lol", action = function()
+                view = "speak"
+                menuSub = buildSpeakMenu()
+            end },
+            { txt = "Buy", action = function()
+                view = "buy"
+                menuSub = buildBuyMenu()
+            end },
+            { txt = "Leave", action = function()
+                lockInput = true
+                message = "See you next time!"
+                Fx.t.cover(function()
+                    setScene("game")
+                end)
+            end },
+        }
+    }
+end
+
 -- ###################### --
 -- ### MAIN FUNCTIONS ### --
 -- ###################### --
 
 function Scene.enter()
     view, selection, lockInput = "root", 1, false
-    slideX, mainAlpha = 0, 1
+    local slideX, mainAlpha = 0, 1
     message = nil
     bought  = {}
 
@@ -216,11 +223,11 @@ function Scene.update(dt)
 end
 
 function Scene.draw()
-    Fx.r.rect(PANEL_W, 0, fore.conf.width-PANEL_W, fore.conf.height, {8,15,20})
+    fore.graphics.rect(PANEL_W, 0, fore.data.width-PANEL_W, fore.data.height, {8,15,20})
     menuStack:draw()
 
-    Fx.r.text( "Cursed: " .. appliedDebuff.id, fore.conf.width - 220, 20, 1, {255, 80, 80}, 200, "right" )
-    Fx.r.text( "Money: " .. GameState.player.coins, fore.conf.width - 220, 32, 1, {255, 255, 80}, 200, "right" )
+    fore.graphics.text( "Cursed: " .. appliedDebuff.id, fore.data.width - 220, 20, 1, {255, 80, 80}, 200, "right" )
+    fore.graphics.text( "Money: " .. GameState.player.coins, fore.data.width - 220, 32, 1, {255, 255, 80}, 200, "right" )
 end
 
 

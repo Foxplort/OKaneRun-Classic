@@ -17,6 +17,7 @@ local BAR_HEIGHT = 2
 local BAR_Y = 230
 
 local capH = BAR_HEIGHT + 4
+local yChange = 0
 
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
@@ -24,7 +25,7 @@ local capH = BAR_HEIGHT + 4
 
 local function lineText(text)
     c = {255, 255, 255, textAlpha}
-    Fx.r.text(text, 0, 115 + 15 * (textLine-1), 1, c, fore.conf.width, "center")
+    fore.graphics.text(text, 0, 115 + 15 * (textLine-1) - yChange, 1, c, fore.data.width, "center")
     textLine = textLine+1
 end
 
@@ -33,14 +34,15 @@ end
 -- ###################### --
 
 function Scene.enter()
-    Fx.s.loadSound("warning", "assets/sounds/ui/warning.wav", "ui")
-    Fx.s.loadSound("intro", "assets/sounds/ui/intro.wav", "ui")
-    Fx.s.playAndForget("warning")
+    fore.audio.load("warning", "okanerun/assets/sounds/ui/warning.wav", false, "sfx")
+    fore.audio.load("intro", "okanerun/assets/sounds/ui/intro.wav", false, "sfx")
+    fore.audio.playOnce("warning")
 end
 
 function Scene.update(dt)
+    yChange = (fore.conf.height - fore.data.height)/2
     if state == "warning" or state == "waiting" then
-        if Fx.i:down("accept") and state == "warning" then
+        if fore.input:down("accept") and state == "warning" then
             hold = math.min(hold + dt, HOLD_TIME)
             if hold >= HOLD_TIME then
                 state = "waiting"
@@ -49,7 +51,7 @@ function Scene.update(dt)
             hold = math.max(hold - dt * 3, 0) -- decay
             if state == "waiting" and hold == 0 then
                 state = "presents"
-                Fx.s.playAndForget("intro")
+                fore.audio.playOnce("intro")
                 timer = 1.5
             end
         end
@@ -59,7 +61,7 @@ function Scene.update(dt)
             state = "done"
             -- DON'T switch scene directly
             Fx.t.cover(function()
-                setScene("menu")
+                fore.scenes:goTo("menu")
             end)
         end
     end
@@ -70,7 +72,7 @@ function Scene.draw()
         textAlpha = 255 - (hold / HOLD_TIME) * 255
 
         if state == "warning" then
-            Fx.r.text("WARNING", 0, 80, 2, {255,0,0, textAlpha}, fore.conf.width/2, "center")
+            fore.graphics.text("WARNING", 0, 80-yChange, 2, {255,0,0, textAlpha}, fore.data.width/2, "center")
             lineText("This is an early version of the game")
             lineText("Many assets are still a work in progress")
             lineText("Expect changes to gameplay and code as development progresses")
@@ -81,7 +83,7 @@ function Scene.draw()
         end
 
 
-        local cx = fore.conf.width * 0.5
+        local cx = fore.data.width * 0.5
         local progress = hold / HOLD_TIME
         local fillW = BAR_WIDTH * progress
         local x = cx - BAR_WIDTH / 2
@@ -90,14 +92,14 @@ function Scene.draw()
         
         local a = (hold / HOLD_TIME) * 255
         if state == "warning" then
-            Fx.r.rect(x, barY, fillW, BAR_HEIGHT)
+            fore.graphics.rect(x, barY, fillW, BAR_HEIGHT)
         else
-            Fx.r.rect(x, barY, BAR_WIDTH, BAR_HEIGHT, {255, 255, 255, a})
+            fore.graphics.rect(x, barY, BAR_WIDTH, BAR_HEIGHT, {255, 255, 255, a})
         end
-        Fx.r.rect(x - 10, capY, 2, capH, {255,255,255,a})
-        Fx.r.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
+        fore.graphics.rect(x - 10, capY, 2, capH, {255,255,255,a})
+        fore.graphics.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
     elseif state == "presents" or state == "done" then
-        Fx.r.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.conf.width, "center")
+        fore.graphics.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.data.width, "center")
     end
 
     textLine = 1

@@ -2,7 +2,7 @@ local T = {}
 
 local active, covered = false, false
 local t, onCovered = 0, nil
-local la = require("src.render.loading")
+local la = require("okanerun.src.render.loading")
 
 T.config = {
     duration = 3.0,
@@ -18,8 +18,8 @@ T.config = {
 }
 
 local function getSpikePolygon(x, width, spikeCount, depth, yShift)
-    local h, verts = fore.conf.height, {}
-    local overdraw, step = 300, fore.conf.height / spikeCount
+    local h, verts = fore.data.height, {}
+    local overdraw, step = 300, fore.data.height / spikeCount
     local loopedShift = yShift % (step * 2)
 
     -- Right Edge
@@ -85,7 +85,7 @@ end
 function T.draw()
     if not active then return end
 
-    local sw, c = fore.conf.width, T.config
+    local sw, c = fore.data.width, T.config
     local shapeW = sw * c.widthMult
     local buffer = 120 + c.xOffset
     local startX, endX = -shapeW - buffer, sw + buffer
@@ -101,7 +101,7 @@ function T.draw()
         posX = math.floor(posX / 2) * 2
         if c.dir == -1 then posX = sw - posX - shapeW end
 
-        Fx.r.polygon(
+        fore.graphics.polygon(
             getSpikePolygon(posX, shapeW, l.count, l.depth, t * l.yShift),
             l.color, true
         )

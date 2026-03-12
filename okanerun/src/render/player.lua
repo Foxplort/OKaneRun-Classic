@@ -2,7 +2,7 @@ local Player = {}
 
 function Player.render()
     -- shadow
-    Fx.dq.submit(L.SHADOW, GameState.player.pos.y, function()
+    fore.queuer.submit(L.SHADOW, GameState.player.pos.y, function()
         love.graphics.stencil(function()
             for _, g in ipairs(GameState.area.ground) do
                 love.graphics.rectangle("fill", g.x, g.y, g.w, g.h)
@@ -32,7 +32,7 @@ function Player.render()
         local cx = GameState.player.pos.x + pm.w * 0.5
         local cy = GameState.player.pos.y - 2
 
-        Fx.r.circ(
+        fore.graphics.circ(
             cx - w * 0.5,
             cy - h * 0.5 + 2,
             w,
@@ -46,18 +46,18 @@ function Player.render()
 
     
     -- tail (Add later with the sprite!)
-    -- Fx.dq.submit(
+    -- fore.queuer.submit(
     --     L.ACTOR,
     --     playerRenderDepth()-0.01,
     --     function()
     --         -- 5 is the base thickness, adjust as needed
-    --         Fx.r.tail(GameState.player.tail, {255, 255, 255, 255-math.abs(math.min(0, GameState.player.pos.z*6))}, 2) 
+    --         fore.graphics.tail(GameState.player.tail, {255, 255, 255, 255-math.abs(math.min(0, GameState.player.pos.z*6))}, 2) 
     --     end
     -- )
 
 
     -- player
-    Fx.dq.submit(L.ACTOR, GameState.player.pos.y, function()
+    fore.queuer.submit(L.ACTOR, GameState.player.pos.y, function()
         local pm = GameState.player.stat.body
         local vs = GameState.player.visual
         
@@ -80,7 +80,7 @@ function Player.render()
             love.graphics.setStencilTest("notequal", 1)
         end
 
-        Fx.r.rect(
+        fore.graphics.rect(
             GameState.player.pos.x + (pm.w - vw) / 2,
             GameState.player.pos.y - GameState.player.pos.z - vh,
             vw, vh,

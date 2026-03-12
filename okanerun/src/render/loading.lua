@@ -18,16 +18,16 @@ end
 function Loading.draw()
     if not active then return end
 
-    local x = fore.conf.width - RADIUS - 20
-    local y = fore.conf.height - RADIUS - 20
+    local x = fore.data.width - RADIUS - 20
+    local y = fore.data.height - RADIUS - 20
 
     love.graphics.setLineWidth(THICKNESS)
     
     -- Background "Donut"
-    Fx.r.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false)
+    fore.graphics.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false)
 
     -- Moving "White Section"
-    Fx.r.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false)
+    fore.graphics.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false)
     
     love.graphics.setLineWidth(1)
 end

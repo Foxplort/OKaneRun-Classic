@@ -36,7 +36,7 @@ local function drawZigZagPanel(x, y, w, h, scroll, c)
     pts[#pts+1] = x
     pts[#pts+1] = y + h
 
-    Fx.r.polygon(pts, c)
+    fore.graphics.polygon(pts, c)
 end
 
 function Menu:findFirstSelectable()
@@ -107,31 +107,31 @@ function Menu:update(dt, focused)
     -- MENU slides LEFT when inactive
     local targetSlide = focused and 0 or 1
     local slideSpeed = 12
-    self.slideX = Fx.m.lerp(self.slideX, targetSlide, math.min(dt * slideSpeed, 1))
+    self.slideX = fore.math.lerp(self.slideX, targetSlide, math.min(dt * slideSpeed, 1))
     
     -- Alpha based on focus and time
     local targetAlpha = focused and 1 or 0.15
-    self.alpha = Fx.m.lerp(self.alpha, targetAlpha, math.min(dt * 10, 1))
+    self.alpha = fore.math.lerp(self.alpha, targetAlpha, math.min(dt * 10, 1))
     
     -- Underline and description use the same pattern
     for i, opt in ipairs(self.options) do
         local targetUnderline = focused and i == self.selection 
             and not opt.isLabel and not opt.disabled and 1 or 0
-        self.underline[i] = Fx.m.lerp(self.underline[i], targetUnderline, math.min(dt * 12, 1))
+        self.underline[i] = fore.math.lerp(self.underline[i], targetUnderline, math.min(dt * 12, 1))
     end
     
     -- Description
     local opt = self.options[self.selection]
     local hasDesc = focused and opt and opt.desc
     local targetComment = hasDesc and 1 or 0
-    self.commentT = Fx.m.lerp(self.commentT, targetComment, math.min(dt * 8, 1))
+    self.commentT = fore.math.lerp(self.commentT, targetComment, math.min(dt * 8, 1))
     if hasDesc then self.comment = opt.desc end
 end
 
 
 function Menu:move(dir)
     local i = self.selection
-    Fx.s.play("select", {
+    fore.audio.play("select", {
         volume = 0.08,
         pitch = 1.0 + math.random(-10, 10)/100
     })
@@ -144,11 +144,11 @@ end
 function Menu:activate(stack)
     local o = self.options[self.selection]
     if not o or o.disabled then return end
-    Fx.s.play("accept_alt", {
+    fore.audio.play("accept_alt", {
         pitch = 1.0 + math.random(43, 48)/100,
         volume = 0.1
     })
-    Fx.s.play("accept", {
+    fore.audio.play("accept", {
         pitch = 1.0 + math.random(-3, 3)/100,
         volume = 0.4
     })
@@ -180,15 +180,15 @@ function Menu:drawContent(focused)
             PANEL_X + xOffset,
             0,
             PANEL_W,
-            fore.conf.height,
+            fore.data.height,
             self.spikeScroll,
             {0,0,0,a}
         )
     end
 
-    local titleWidth = Fx.r.getTextWidth(self.title, 2)
+    local titleWidth = fore.graphics.getTextWidth(self.title, 2)
     local titleX = getTextX(self.align, panelX, panelW, titleWidth)
-    Fx.r.text(self.title, titleX, y, 2, {1,1,1,a})
+    fore.graphics.text(self.title, titleX, y, 2, {1,1,1,a})
 
     for i, opt in ipairs(self.options) do
         local yy = y + 60 + (i-1)*30
@@ -199,10 +199,10 @@ function Menu:drawContent(focused)
         elseif opt.disabled then c = {0.2,0.2,0.2,a} end
 
         -- Calculate text width
-        local textWidth = Fx.r.getTextWidth(opt.txt, 1)
+        local textWidth = fore.graphics.getTextWidth(opt.txt, 1)
         local textX = getTextX(self.align, panelX, panelW, textWidth)
 
-        Fx.r.text(opt.txt, textX, yy, 1, c)
+        fore.graphics.text(opt.txt, textX, yy, 1, c)
 
         -- Underline positioned based on alignment
         local u = self.underline[i]
@@ -215,7 +215,7 @@ function Menu:drawContent(focused)
             else -- left
                 underlineX = panelX + 20
             end
-            Fx.r.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,a*u})
+            fore.graphics.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,a*u})
         end
     end
 end
@@ -228,20 +228,20 @@ function Menu:drawDescription()
     if self.commentT < 0.01 then return end
 
     local freeX = PANEL_W
-    local freeW = fore.conf.width - PANEL_W
+    local freeW = fore.data.width - PANEL_W
 
     local x = freeX + freeW/2 - self.commentW/2
-    local y = fore.conf.height - self.commentH - 20
+    local y = fore.data.height - self.commentH - 20
               + (1-self.commentT)*60
 
     local a = self.commentT * 0.627
 
     -- shadow
-    Fx.r.rect(x, y, self.commentW, self.commentH, {0,0,0,a})
+    fore.graphics.rect(x, y, self.commentW, self.commentH, {0,0,0,a})
     -- background
-    Fx.r.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
+    fore.graphics.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
 
-    Fx.r.textEx(
+    fore.graphics.textEx(
         self.comment,
         x+12, y+12,
         1,
@@ -261,7 +261,7 @@ MenuStack.__index = MenuStack
 function MenuStack.new(root)
     return setmetatable({
         stack = { root },
-        canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
+        canvas = love.graphics.newCanvas(fore.data.width, fore.data.height)
     }, MenuStack)
 end
 
@@ -295,10 +295,10 @@ end
 
 function MenuStack:input()
     local m = self.stack[#self.stack]
-    if Fx.i:pressed("up") then m:move(-1) end
-    if Fx.i:pressed("down") then m:move(1) end
-    if Fx.i:pressed("cancel") then self:pop() end
-    if Fx.i:pressed("accept") then m:activate(self) end
+    if fore.input:pressed("up") then m:move(-1) end
+    if fore.input:pressed("down") then m:move(1) end
+    if fore.input:pressed("cancel") then self:pop() end
+    if fore.input:pressed("accept") then m:activate(self) end
 end
 
 return {

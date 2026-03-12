@@ -6,9 +6,9 @@ Renderer.images = {}
 Renderer.debugColor = {255, 0, 255}
 
 Renderer.fonts = {
-    small = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
-    medium = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
-    large = love.graphics.newFont("assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
+    small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
+    medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
+    large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
 }
 
 -- INNER FUNCTIONS
