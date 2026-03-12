@@ -10,7 +10,7 @@ function Data.init(userConfig, config)
         width = config.width,
         height = config.height,
         pixelBank = userConfig.pixelBank or 0,
-        icon = userConfig.icon,
+        icon = userConfig.icon or "fore/assets/images/icon.png",
         title = userConfig.title or 
                 ((userConfig.name or "Untitled Game") .. " [" .. (userConfig.version or "1.0.0") .. "]"),
                 

@@ -4,6 +4,7 @@ fore = require("fore.core.init").init({
     version = "0.1.0-dev",
     startScene = "intro",
     pixelBank = 64,
+    icon = "okanerun/assets/images/system/icon.png",
 })
 
 Fx = {}
