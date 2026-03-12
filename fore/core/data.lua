@@ -9,6 +9,9 @@ function Data.init(userConfig, config)
         -- Window
         width = config.width,
         height = config.height,
+        windowWidth = config.width * config.scale,
+        windowHeight = config.height * config.scale,
+        scale = config.scale or 2,
         pixelBank = userConfig.pixelBank or 0,
         icon = userConfig.icon or "fore/assets/images/icon.png",
         title = userConfig.title or 

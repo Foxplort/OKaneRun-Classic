@@ -35,7 +35,6 @@ function SceneManager.init(fore)
         data = fore.data,
         lastCanvasW = 0,
         lastCanvasH = 0,
-        scale = fore.conf.scale,
         debug = fore.debug,
         hooks = fore.hooks,
     }, { __index = SceneManager })
@@ -90,61 +89,11 @@ end
 ---Draw current scene
 ---@return nil
 function SceneManager:draw()
-    local pW, pH, vW, vH = self:computeInternalResolution()
-    self:rebuildCanvas(pW, pH)
-
-    self.data.width = vW
-    self.data.height = vH
-
-    local screenW, screenH = love.graphics.getDimensions()
-
-    love.graphics.setCanvas({self.canvas, stencil = true})
-    love.graphics.clear(0.01, 0.01, 0.02)
-
-    love.graphics.push()
-    love.graphics.scale(self.scale, self.scale)
-    -- Pre-draw hooks
-    for _, cb in ipairs(self.hooks.preDraw) do
-        cb()
-    end
-    
     --Current scene
     if self.current and self.current.draw then
         self.current.draw()
     end
-
-    -- Draw hooks
-    for _, cb in ipairs(self.hooks.draw) do
-        cb()
-    end
-
-    --Debug UI
-    if self.debug.enabled then
-        self.debug.draw()
-    end
-
-    -- Post-draw hooks
-    for _, cb in ipairs(self.hooks.postDraw) do
-        cb()
-    end
-    love.graphics.pop()
-
-    love.graphics.setCanvas()
-
-    love.graphics.clear(8/255, 15/255, 20/255)
-
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.draw(
-        self.canvas,
-        math.floor((screenW - pW) / 2),
-        math.floor((screenH - pH) / 2)
-    )
-
-    if self.debug.enabled then
-        self.debug.dc = love.graphics.getStats().drawcalls
-    end
 end
-
 
 ---Handle key presses
 ---@param key string key pressed
@@ -153,40 +102,6 @@ function SceneManager:keypressed(key)
     if self.current and self.current.keypressed then
         self.current.keypressed(key)
     end
-end
-
----Creates a new canvas based on current size of the window
----@param w number
----@param h number
----@return nil
-function SceneManager:rebuildCanvas(w, h)
-    if w == self.lastCanvasW and h == self.lastCanvasH then return end
-
-    self.canvas = love.graphics.newCanvas(w, h)
-    self.canvas:setFilter("linear", "linear")
-
-    self.lastCanvasW = w
-    self.lastCanvasH = h
-end
-
----Computes the internal graphics scale
----@return number, number, number, number #actual W, actual H, canvas W, canvas H 
-function SceneManager:computeInternalResolution()
-    local screenW, screenH = love.graphics.getDimensions()
-    
-    -- How much are we need to scale the base resolution to fit the screen
-    self.scale = math.min(screenW / self.conf.width, screenH / self.conf.height)
-
-    -- Calculate what the internal size would be to fill the screen
-    local idealW = screenW / self.scale
-    local idealH = screenH / self.scale
-
-    -- Clamp size using pixelBank
-    local canvasW = math.min(idealW, self.conf.width + (self.data.pixelBank or 0))
-    local canvasH = math.min(idealH, self.conf.height + (self.data.pixelBank or 0))
-
-    -- Return physical pixels (canvas resolution)
-    return math.floor(canvasW * self.scale), math.floor(canvasH * self.scale), canvasW, canvasH
 end
 
 return SceneManager

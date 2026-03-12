@@ -73,6 +73,8 @@ GameState = require("okanerun.src.game.state").new()
 GameState.player = require("okanerun.src.data.player").new()
 GameState.area = {}
 
+local bgfx = require("okanerun.src.systems.borderFX")
+
 -- layers
 L = {
     FLOOR_DEC  = 0,
@@ -81,12 +83,19 @@ L = {
     ACTOR      = 3,
 }
 
+bgfx.init(70)
+
 fore:introduce("update", function(dt)
+    bgfx.update(dt)
     Fx.t.update(dt)
 end)
 
 fore:introduce("draw", function()
     Fx.t.draw()
+end)
+
+fore:introduce("rawPreDraw", function()
+    bgfx.draw(0, 0, fore.data.windowWidth, fore.data.windowHeight, fore.data.scale)
 end)
 
 fore:start()

@@ -28,9 +28,11 @@ function Fore.init(config)
         preUpdate = {},   -- Called before everything
         update = {},      -- Called during update
         postUpdate = {},  -- Called after update
+        rawPreDraw = {},  -- Called before drawing without scaling
         preDraw = {},     -- Called before drawing
         draw = {},        -- Called after drawing
         postDraw = {},    -- Called after debug
+        rawPostDraw = {}, -- Called after debug without scaling
     }
 
     Fore.debug = require("fore.systems.debug")
@@ -43,8 +45,8 @@ end
 
 function Fore:start()
     love.window.setMode(
-        self.data.width*self.conf.scale,
-        self.data.height*self.conf.scale,
+        self.data.width*self.data.scale,
+        self.data.height*self.data.scale,
         { 
             fullscreen = self.data.fullscreen,
             vsync = self.data.vsync,
@@ -74,7 +76,7 @@ function Fore:start()
 end
 
 ---Introduces new functions into the main loop
----@param when "preUpdate"|"update"|"postUpdate"|"preDraw"|"draw"|"postDraw" #PRE AND POST DRAW FUNCTIONS DO NOT INCLUDE SCALING
+---@param when "preUpdate"|"update"|"postUpdate"|"rawPreDraw"|"preDraw"|"draw"|"postDraw"|"rawPostDraw"
 ---@param callback function
 ---@return nil
 function Fore:introduce(when, callback)
@@ -119,12 +121,110 @@ function Fore:update(dt)
 end
 
 function Fore:draw()
+    --COMPUTE RESOLUTION
+    local pW, pH, vW, vH = self:computeInternalResolution()
+    self:rebuildCanvas(pW, pH)
+    self.data.width = vW
+    self.data.height = vH
+    local screenW, screenH = love.graphics.getDimensions()
+
+    -- CLEAR SCREEN
+    love.graphics.clear(8/255, 15/255, 20/255)
+
+    -- Raw-pre-draw hooks (UNSCALED, DIRECT TO SCREEN)
+    for _, cb in ipairs(self.hooks.rawPreDraw) do
+        cb()
+    end
+
+    -- RENDER TO CANVAS (SCALED CONTENT)
+    love.graphics.setCanvas({self.canvas, stencil = true})
+    love.graphics.clear(0.01, 0.01, 0.02)
+
+    love.graphics.push()
+    love.graphics.scale(self.data.scale, self.data.scale)
+    
+    -- Pre-draw hooks
+    for _, cb in ipairs(self.hooks.preDraw) do
+        cb()
+    end
+
+    -- Game rendering
     self.scenes:draw()
+
+    -- Draw hooks
+    for _, cb in ipairs(self.hooks.draw) do
+        cb()
+    end
+
+    -- Debug UI
+    if self.debug.enabled then
+        self.debug.draw()
+    end
+
+    -- Post-draw hooks
+    for _, cb in ipairs(self.hooks.postDraw) do
+        cb()
+    end
+
+    love.graphics.pop()
+    love.graphics.setCanvas()
+
+    -- DRAW CANVAS TO SCREEN
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(
+        self.canvas,
+        math.floor((screenW - pW) / 2),
+        math.floor((screenH - pH) / 2)
+    )
+
+    -- Raw-post-draw hooks (UNSCALED, DIRECT TO SCREEN)
+    for _, cb in ipairs(self.hooks.rawPostDraw) do
+        cb()
+    end
+
+    -- Update debug draw calls
+    if self.debug.enabled then
+        self.debug.dc = love.graphics.getStats().drawcalls
+    end
 end
 
 function Fore:keypressed(key)
     self.debug.keypressed(key)
     self.scenes:keypressed(key)
+end
+
+---Creates a new canvas based on current size of the window
+---@param w number
+---@param h number
+---@return nil
+function Fore:rebuildCanvas(w, h)
+    if w == self.lastCanvasW and h == self.lastCanvasH then return end
+
+    self.canvas = love.graphics.newCanvas(w, h)
+    self.canvas:setFilter("linear", "linear")
+
+    self.lastCanvasW = w
+    self.lastCanvasH = h
+end
+
+---Computes the internal graphics scale
+---@return number, number, number, number #actual W, actual H, canvas W, canvas H 
+function Fore:computeInternalResolution()
+    self.data.windowWidth, self.data.windowHeight = love.graphics.getDimensions()
+    
+    -- How much are we need to scale the base resolution to fit the screen
+    self.data.scale = math.min(self.data.windowWidth / self.conf.width, self.data.windowHeight / self.conf.height)
+
+    -- Calculate what the internal size would be to fill the screen
+    local idealW = self.data.windowWidth / self.data.scale
+    local idealH = self.data.windowHeight / self.data.scale
+
+    -- Clamp size using pixelBank
+    local canvasW = math.min(idealW, self.conf.width + (self.data.pixelBank or 0))
+    local canvasH = math.min(idealH, self.conf.height + (self.data.pixelBank or 0))
+
+    -- Return physical pixels (canvas resolution)
+    return math.floor(canvasW * self.data.scale), math.floor(canvasH * self.data.scale), canvasW, canvasH
 end
 
 return Fore
