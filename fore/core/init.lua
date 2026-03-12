@@ -59,6 +59,14 @@ function Fore:start()
         love.window.setIcon(love.image.newImageData(self.data.icon))
     end
 
+    self.graphics.init()
+    self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
+    if self.conf.pixelated then
+        self.scenes.canvas:setFilter("nearest", "nearest")
+    else
+        self.scenes.canvas:setFilter("linear", "linear")
+    end
+
     love.load = function() self:load() end
     love.update = function(dt) self:update(dt) end
     love.draw = function() self:draw() end

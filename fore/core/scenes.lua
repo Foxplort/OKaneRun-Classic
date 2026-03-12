@@ -30,7 +30,7 @@ function SceneManager.init(fore)
         current = nil,
         next = nil,
         minDT = minDT,
-        canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height),
+        canvas = nil,
         conf = fore.conf,
         data = fore.data,
         lastCanvasW = 0,
@@ -39,12 +39,6 @@ function SceneManager.init(fore)
         debug = fore.debug,
         hooks = fore.hooks,
     }, { __index = SceneManager })
-
-    if fore.conf.pixelated then
-        self.canvas:setFilter("nearest", "nearest")
-    else
-        self.canvas:setFilter("linear", "linear")
-    end
 
     return self
 end

@@ -5,11 +5,16 @@ local Renderer = {}
 Renderer.images = {}
 Renderer.debugColor = {255, 0, 255}
 
-Renderer.fonts = {
-    small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
-    medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
-    large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
-}
+---@return table
+function Renderer.init()
+    Renderer.fonts = {
+        small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
+        medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
+        large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
+    }
+
+    return Renderer
+end
 
 -- INNER FUNCTIONS
 
