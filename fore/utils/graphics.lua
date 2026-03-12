@@ -234,10 +234,6 @@ function Renderer.text(text, x, y, s, c, wrap, align)
     end
 end
 
-local function stripTags(str)
-    return str:gsub("%b[]", "")
-end
-
 local function parseStyledText(str, defaultColor)
     local segments, stack, i = {}, { defaultColor }, 1
     str = str:gsub("%[br%]", "\n")

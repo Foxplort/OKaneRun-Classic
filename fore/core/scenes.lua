@@ -15,6 +15,7 @@
 ---@field data table
 ---@field debug table
 ---@field hooks table
+---@field fore fore
 local SceneManager = {}
 
 ---Create new scene manager
@@ -37,6 +38,7 @@ function SceneManager.init(fore)
         lastCanvasH = 0,
         debug = fore.debug,
         hooks = fore.hooks,
+        fore = fore,
     }, { __index = SceneManager })
 
     return self
@@ -69,6 +71,7 @@ function SceneManager:update(dt)
         end
         self.current = require(self.scenes[self.next])
         self.next = nil
+        
         if self.current.enter then
             self.current.enter()
         end

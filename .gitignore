@@ -22,12 +22,13 @@ desktop.ini
 *.swo
 *~
 *.bak
+.VSCodeCounter/
 
 # ------------------------------
 # LÖVE specific
 # ------------------------------
-*.love          # packaged games
-save/           # if you store saves locally
+*.love
+save/
 *.log
 
 # ------------------------------
@@ -51,16 +52,7 @@ cache/
 *.tmp
 
 # ------------------------------
-# Third-party libs (optional)
-# Uncomment ONLY if you vendor deps elsewhere
+# Third-party libs
 # ------------------------------
-# libs/
-# vendor/
-
-# ------------------------------
-# Godot (if you ever mix projects)
-# ------------------------------
-.godot/
-.import/
-export.cfg
-export_presets.cfg
+libs/
+vendor/

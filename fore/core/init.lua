@@ -25,14 +25,16 @@ function Fore.init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
 
     Fore.hooks = {
-        preUpdate = {},   -- Called before everything
-        update = {},      -- Called during update
-        postUpdate = {},  -- Called after update
-        rawPreDraw = {},  -- Called before drawing without scaling
-        preDraw = {},     -- Called before drawing
-        draw = {},        -- Called after drawing
-        postDraw = {},    -- Called after debug
-        rawPostDraw = {}, -- Called after debug without scaling
+        preUpdate = {},     -- Called before everything
+        update = {},        -- Called during update
+        postUpdate = {},    -- Called after update
+        rawPreDraw = {},    -- Called before drawing without scaling
+        preCanvasDraw = {}, -- Called just after their canvas pop
+        preDraw = {},       -- Called before drawing
+        draw = {},          -- Called after drawing
+        postDraw = {},      -- Called after debug
+        rawPostDraw = {},   -- Called after debug without scaling
+        load = {},          -- Called during loading
     }
 
     Fore.debug = require("fore.systems.debug")
@@ -76,7 +78,7 @@ function Fore:start()
 end
 
 ---Introduces new functions into the main loop
----@param when "preUpdate"|"update"|"postUpdate"|"rawPreDraw"|"preDraw"|"draw"|"postDraw"|"rawPostDraw"
+---@param when "preUpdate"|"update"|"postUpdate"|"rawPreDraw"|"preCanvasDraw"|"preDraw"|"draw"|"postDraw"|"rawPostDraw"|"load"
 ---@param callback function
 ---@return nil
 function Fore:introduce(when, callback)
@@ -88,6 +90,10 @@ function Fore:introduce(when, callback)
 end
 
 function Fore:load()
+    for _, cb in ipairs(self.hooks.load) do
+        cb()
+    end
+
     -- Go to starting scene
     self.scenes:goTo(self.conf.startScene)
 end
@@ -168,6 +174,11 @@ function Fore:draw()
 
     love.graphics.pop()
     love.graphics.setCanvas()
+
+    -- Pre-cavas-draw hooks
+    for _, cb in ipairs(self.hooks.preCanvasDraw) do
+        cb()
+    end
 
     -- DRAW CANVAS TO SCREEN
     love.graphics.setColor(1, 1, 1, 1)

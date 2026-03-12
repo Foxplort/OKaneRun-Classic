@@ -85,6 +85,11 @@ L = {
 
 bgfx.init(70)
 
+local vignetteShader
+fore:introduce("load", function()
+    vignetteShader = love.graphics.newShader("okanerun/assets/shaders/main.glsl")
+end)
+
 fore:introduce("update", function(dt)
     bgfx.update(dt)
     Fx.t.update(dt)
@@ -97,5 +102,9 @@ end)
 fore:introduce("rawPreDraw", function()
     bgfx.draw(0, 0, fore.data.windowWidth, fore.data.windowHeight, fore.data.scale)
 end)
+
+fore:introduce("preCanvasDraw", function() love.graphics.setShader(vignetteShader) end)
+
+fore:introduce("rawPostDraw", function() love.graphics.setShader() end)
 
 fore:start()

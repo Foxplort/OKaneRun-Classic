@@ -138,6 +138,7 @@ function Scene.enter()
     gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
     gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
 
+    fore.graphics.loadImage("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
         if love.filesystem.getInfo(path) then
@@ -181,8 +182,9 @@ function Scene.exit()
     fore.debug.remove("Player")
 
     for _, eff in pairs(loadedImages) do
-        fore.graphics.unloadImage(eff, path)
+        fore.graphics.unloadImage(eff)
     end
+    fore.graphics.unloadImage("missing")
     --collectgarbage()
 end
 
