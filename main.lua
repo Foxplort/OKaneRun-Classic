@@ -88,6 +88,11 @@ bgfx.init(70)
 local vignetteShader
 fore:introduce("load", function()
     vignetteShader = love.graphics.newShader("okanerun/assets/shaders/main.glsl")
+
+    love.mouse.setCursor(love.mouse.newCursor(
+        love.image.newImageData("okanerun/assets/images/system/cursor.png"),
+        0, 0
+    ))
 end)
 
 fore:introduce("update", function(dt)

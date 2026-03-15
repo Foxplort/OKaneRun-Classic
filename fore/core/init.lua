@@ -7,7 +7,7 @@
 ---@field data table
 ---@field debug any
 ---@field version string
----@field hooks table
+---@field hooks table<string, function[]>
 local Fore = {
     version = "0.0.0",
 }
@@ -38,7 +38,7 @@ function Fore.init(config)
     }
 
     Fore.debug = require("fore.systems.debug")
-    Fore.scenes = require("fore.core.scenes").init(Fore)
+    Fore.scenes = require("fore.systems.scenes").init(Fore)
     Fore.input = require("fore.utils.input").init(Fore.data.deadzone)
 
     return Fore
@@ -75,6 +75,8 @@ function Fore:start()
     love.update = function(dt) self:update(dt) end
     love.draw = function() self:draw() end
     love.keypressed = function(key) self:keypressed(key) end
+    love.joystickadded = function(j) self:joystickadded(j) end
+    love.joystickremoved = function (j) self:joystickremoved(j) end
 end
 
 ---Introduces new functions into the main loop
@@ -202,6 +204,14 @@ end
 function Fore:keypressed(key)
     self.debug.keypressed(key)
     self.scenes:keypressed(key)
+end
+
+function Fore:joystickadded(j)
+    Fx.input:addJoystick(j)
+end
+
+function Fore:joystickremoved(j)
+    Fx.input:removeJoystick(j)
 end
 
 ---Creates a new canvas based on current size of the window
