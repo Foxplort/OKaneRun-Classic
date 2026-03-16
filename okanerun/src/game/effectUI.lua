@@ -72,7 +72,7 @@ function EffectUI.draw(player)
                 false
             )
 
-            fore.graphics.text(tostring(id), 10, 110, 1)
+            fore.graphics.text(tostring(id), 10, 65, 1)
         end
 
         -- icon (safe)

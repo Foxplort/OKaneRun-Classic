@@ -100,4 +100,37 @@ effects.healthy = {
     end,
 }
 
+effects.scanline = {
+    id = "scanline",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 1,
+
+    onApply = function(player, inst)
+        inst.y = -50
+        inst.speed = 80
+        inst.h = 20
+    end,
+
+    onUpdate = function(player, inst, dt)
+        inst.y = inst.y + inst.speed * dt
+
+        local py = player.pos.y
+
+        if py > inst.y and py < inst.y + inst.h then
+            player.damage(1)
+        end
+    end,
+
+    onDraw = function(player, inst)
+        fore.graphics.rect(
+            0,
+            inst.y,
+            GameState.area.mapWidth,
+            inst.h,
+            {255,0,0,120}
+        )
+    end,
+}
+
 return effects

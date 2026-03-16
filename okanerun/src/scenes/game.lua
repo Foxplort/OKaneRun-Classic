@@ -90,10 +90,33 @@ end
 -- ### SUBMAIN FUNCTIONS ### --
 -- ######################### --
 
+local invTime = 0
+local function damagePlayer(amount, timeMod)
+    if invTime <= 0 then
+        local p = GameState.player
+
+        if p.dead then return end
+
+        amount = amount or 1
+
+        p.hp.count = p.hp.count - amount
+
+        -- camera feedback
+        gameData.systems.camera.addShake("world", 3)
+        gameData.systems.camera.addShake("ui", 3)
+
+        if p.hp.count <= 0 then
+            p.dead = true
+        end
+
+        invTime = timeMod or 1
+    end
+end
+
 local function damageHandler(dt)
     -- Fall into the pit
     if GameState.player.pos.z <= -150 then
-        GameState.player.hp.count = GameState.player.hp.count - 1
+        damagePlayer(1)
 
         -- Safe Teleport
         GameState.player.pos.x = GameState.area.spawn.x - GameState.player.base.body.hitbox.w/2
@@ -106,15 +129,6 @@ local function damageHandler(dt)
             coin.y = GameState.player.pos.y
             coin.z = GameState.player.pos.z
         end
-
-        -- Effects
-        gameData.systems.camera.addShake("world", 3)
-        gameData.systems.camera.addShake("ui", 3)
-    end
-
-    -- Getting the results
-    if GameState.player.hp.count <= 0 then
-        GameState.player.dead = true
     end
 end
 
@@ -135,6 +149,7 @@ function Scene.enter()
     GameState.player.pos.y = GameState.area.spawn.y - GameState.player.base.body.hitbox.h/2
     GameState.player.pos.z = 40
     GameState.player.coinChain = {}
+    GameState.player.damage = damagePlayer
 
     gameData = {
         render = {
@@ -452,6 +467,9 @@ function Scene.update(dt)
         gameData.systems.particles.updateParticles(dt)
         damageHandler(dt)
         gameData.render.ui.update(dt)
+        gameData.game.effectSys.update(GameState.player, dt)
+        invTime = invTime - dt
+        if invTime > 0 then GameState.player.inv = true else GameState.player.inv = false end
     end
 end
 
@@ -498,6 +516,14 @@ function Scene.draw()
 
         for i, s in ipairs(GameState.player.tail) do
             fore.graphics.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
+        end
+    end
+
+    for _, entry in pairs(GameState.player.effects) do
+        if entry.def.onDraw then
+            for _, inst in ipairs(entry.instances) do
+                entry.def.onDraw(GameState.player, inst)
+            end
         end
     end
 

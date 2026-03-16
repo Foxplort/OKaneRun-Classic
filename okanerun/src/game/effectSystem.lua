@@ -5,7 +5,6 @@ function EffectSystem.apply(player, buffDef)
     local id = buffDef.id
     local entry = player.effects[id]
 
-    -- create entry if missing
     if not entry then
         entry = {
             def = buffDef,
@@ -15,36 +14,43 @@ function EffectSystem.apply(player, buffDef)
         player.effects[id] = entry
     end
 
-    -- cap check
     if buffDef.maxAmount and entry.amount >= buffDef.maxAmount then
-        return false -- cannot apply
+        return false
     end
 
-    -- apply effect ONCE PER STACK
-    entry.amount = entry.amount + 1
-    table.insert(entry.instances, {
+    -- create instance
+    local inst = {
         timeLeft = buffDef.duration
-    })
+    }
+
+    table.insert(entry.instances, inst)
+    entry.amount = entry.amount + 1
 
     if buffDef.onApply then
-        buffDef.onApply(player)
+        buffDef.onApply(player, inst)
     end
 
     return true
 end
 
 function EffectSystem.update(player, dt)
-    for id, inst in pairs(player.effects) do
-        if inst.timeLeft then
-            inst.timeLeft = inst.timeLeft - dt
-            if inst.timeLeft <= 0 then
-                EffectSystem.remove(player, id)
+    for id, entry in pairs(player.effects) do
+
+        for _, inst in ipairs(entry.instances) do
+
+            if inst.timeLeft then
+                inst.timeLeft = inst.timeLeft - dt
+                if inst.timeLeft <= 0 then
+                    EffectSystem.remove(player, id, 1)
+                end
             end
+
+            if entry.def.onUpdate then
+                entry.def.onUpdate(player, inst, dt)
+            end
+
         end
 
-        if inst.def.onUpdate then
-            inst.def.onUpdate(player, dt)
-        end
     end
 end
 

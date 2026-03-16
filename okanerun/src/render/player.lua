@@ -80,11 +80,14 @@ function Player.render()
             love.graphics.setStencilTest("notequal", 1)
         end
 
+        local playerCol = 200
+        if GameState.player.inv then playerCol = 120 end
+
         fore.graphics.rect(
             GameState.player.pos.x + (pm.w - vw) / 2,
             GameState.player.pos.y - GameState.player.pos.z - vh,
             vw, vh,
-            {200, 200, 200, 255-math.abs(math.min(0, GameState.player.pos.z*6))}
+            {playerCol, playerCol, playerCol, 255-math.abs(math.min(0, GameState.player.pos.z*6))}
         )
 
         love.graphics.setStencilTest() -- Reset stencil
