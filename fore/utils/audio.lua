@@ -122,7 +122,7 @@ function Audio.play(name, opts)
     end
     
     -- Generate ID and store
-    local id = name .. "_" .. love.timer.getTime()
+    local id = name .. "_" .. love.timer.getTime() .. "_" .. math.random(1000)
     Audio.playing[id] = instance
     instance.source:play()
     
@@ -293,7 +293,7 @@ end
 ---Set master volume
 ---@param volume number
 function Audio.setMasterVolume(volume)
-    Audio.masterVolume = math.max(0, math.min(1, volume))
+    Audio.masterVolume = math.max(0, math.min(2, volume))
     Audio:_updateVolumes()
 end
 
@@ -449,6 +449,15 @@ function Audio.getStats()
         masterVolume = Audio.masterVolume,
         categories = Audio.categories
     }
+end
+
+---Unload a sound by name
+---@param name string
+function Audio.unload(name)
+    -- Stop any playing instances
+    Audio.stop(name)
+    -- Remove from sounds table
+    Audio.sounds[name] = nil
 end
 
 return Audio

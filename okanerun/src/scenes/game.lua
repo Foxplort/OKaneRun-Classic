@@ -67,6 +67,25 @@ local function getActiveCore(hb)
     return nil
 end
 
+local footstepTimer = 0
+local function handleFootsteps(dt)
+    local p = GameState.player
+    local speedVal = math.sqrt(p.vel.x^2 + p.vel.y^2)
+    if p.grounded then
+        footstepTimer = footstepTimer - dt
+        if speedVal > 1.0 and footstepTimer <= 0 then
+            local interval = math.min(0.8 * (40/speedVal), 0.6)
+            fore.audio.play("footsteps", {
+                pitch = math.random(35, 65) / 100,
+                volume = 0.1
+            })
+            footstepTimer = interval
+        end
+    else
+        footstepTimer = 0
+    end
+end
+
 -- ######################### --
 -- ### SUBMAIN FUNCTIONS ### --
 -- ######################### --
@@ -175,6 +194,11 @@ function Scene.enter()
     monoShader = love.graphics.newShader("okanerun/assets/shaders/pause.glsl")
     monoShader:send("levels", 128)
     monoShader:send("strength", 0.9)
+
+    fore.audio.load("footsteps", "okanerun/assets/sounds/game/footstep.wav", false, "sfx")
+    fore.audio.load("coin_pickup", "okanerun/assets/sounds/game/coin.ogg", false, "sfx")
+    fore.audio.load("coin_deposit", "okanerun/assets/sounds/game/deposit.ogg", false, "sfx")
+    fore.audio.load("jump", "okanerun/assets/sounds/game/jump.ogg", false, "sfx")
 end
 
 function Scene.exit()
@@ -185,7 +209,11 @@ function Scene.exit()
         fore.graphics.unloadImage(eff)
     end
     fore.graphics.unloadImage("missing")
-    --collectgarbage()
+
+    fore.audio.unload("footsteps")
+    fore.audio.unload("coin_pickup")
+    fore.audio.unload("coin_deposit")
+    fore.audio.unload("jump")
 end
 
 function Scene.update(dt)
@@ -234,6 +262,10 @@ function Scene.update(dt)
                             GameState.player.vel.y
                         )
                     end
+                    fore.audio.play("jump", {
+                        pitch = math.random(145, 185) / 100,
+                        volume = 0.2
+                    })
                 end
             end
             if not GameState.player.dead then
@@ -335,6 +367,11 @@ function Scene.update(dt)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
                     Fx.t.cover(function() fore.scenes:goTo("shop") end)
                 end
+
+                fore.audio.play("coin_deposit", {
+                    pitch = math.random(85, 115) / 100,
+                    volume = 0.2
+                })
             end
         else
             -- Decay progress
@@ -355,11 +392,18 @@ function Scene.update(dt)
                     spacing = SPACING --* (#GameState.player.coinChain + 1)
                 }
 
+                fore.audio.play("coin_pickup", {
+                    pitch = math.random(85, 115) / 100,
+                    volume = 0.2
+                })
+
                 table.insert(GameState.player.coinChain, coin)
                 table.remove(GameState.area.coins, i)
                 gameData.game.effectSys.apply(GameState.player, gameData.game.effects["coin"])
             end
         end
+
+        handleFootsteps(dt)
 
         -- Visual recovery (bring scale back to 1)
         GameState.player.visual.sx = fore.math.approach(GameState.player.visual.sx, 1, 2 * dt)

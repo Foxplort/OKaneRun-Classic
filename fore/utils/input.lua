@@ -33,6 +33,12 @@ function Input.init(deadzone)
         fullscreen = {
             keys = { "f11" }
         },
+        volumeUp = {
+            keys = { "=" }
+        },
+        volumeDown = {
+            keys = { "-" }
+        },
     })
     
     return self

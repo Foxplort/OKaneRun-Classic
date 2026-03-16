@@ -73,6 +73,7 @@ local function createMenus()
                     end)
                 end,
             },
+            { txt = "Journal", disabled = true },
             { txt = "Options", disabled = true },
             { txt = "Credits", push = function() return credits end },
             { txt = "Exit",    push = function() return exit end },
@@ -87,7 +88,7 @@ function Scene.enter()
     fore.graphics.loadImage("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
     fore.graphics.loadImage("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
 
-    fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.wav", "music")
+    fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
     fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
 
     MP = require("okanerun.src.systems.menuParticles")

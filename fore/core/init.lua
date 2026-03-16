@@ -41,6 +41,9 @@ function Fore.init(config)
     Fore.scenes = require("fore.systems.scenes").init(Fore)
     Fore.input = require("fore.utils.input").init(Fore.data.deadzone)
 
+    Fore.audio.load("system_volume_change", "fore/assets/sounds/volume.ogg", false, "sfx")
+    Fore._volumeIndicator = require("fore.systems.volumeUI"):init(Fore)
+
     return Fore
 end
 
@@ -118,9 +121,19 @@ function Fore:update(dt)
         cb(dt)
     end
 
-    if self.debug.enabled then self.debug.update() end
+    if self.debug.enabled then self.debug.update()
+    else
+        local changedVol = false
+        if self.input:pressed("volumeUp") then self.audio.setMasterVolume(self.audio.masterVolume + 0.2); changedVol = true end
+        if self.input:pressed("volumeDown") then self.audio.setMasterVolume(self.audio.masterVolume - 0.2); changedVol = true end
+        if changedVol then
+            self.audio.play("system_volume_change")
+            self._volumeIndicator:show(self.audio.masterVolume)
+        end
+    end
     self.audio.update(dt)
     self.scenes:update(dt)
+    self._volumeIndicator:update(dt)
 
     -- Post-update hooks
     for _, cb in ipairs(self.hooks.postUpdate) do
@@ -168,6 +181,7 @@ function Fore:draw()
     if self.debug.enabled then
         self.debug.draw()
     end
+    self._volumeIndicator:draw()
 
     -- Post-draw hooks
     for _, cb in ipairs(self.hooks.postDraw) do
