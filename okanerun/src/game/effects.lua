@@ -143,9 +143,9 @@ effects.scanline = {
         if inst.safeTimer then col = {255,0,127,90} end
         fore.queuer.submit(L.ACTOR, inst.y+inst.h, function()
             fore.graphics.rect(
-                0,
+                -600,
                 inst.y,
-                GameState.area.mapWidth,
+                GameState.area.mapWidth+1200,
                 inst.h,
                 col
             )
