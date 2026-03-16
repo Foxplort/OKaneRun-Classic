@@ -104,32 +104,46 @@ effects.scanline = {
     id = "scanline",
     type = "debuff",
     duration = nil,
-    maxAmount = 1,
+    maxAmount = 2,
 
     onApply = function(player, inst)
-        inst.y = -50
-        inst.speed = 80
+        inst.speed = 80 + (inst.index-1) * 10
         inst.h = 20
+        inst.t = 15
+        inst.z = 0
+    end,
+
+    onReset = function(player, inst)
+        inst.y = -50 + (inst.index-1) * 50
+        inst.up = false
     end,
 
     onUpdate = function(player, inst, dt)
-        inst.y = inst.y + inst.speed * dt
+        if inst.up then
+            inst.y = inst.y - inst.speed * dt
+            if 0 >= inst.y then inst.up = false end
+        else
+            inst.y = inst.y + inst.speed * dt
+            if GameState.area.mapHeight <= inst.y + inst.h then inst.up = true end
+        end
 
         local py = player.pos.y
 
-        if py > inst.y and py < inst.y + inst.h then
+        if py > inst.y and py < inst.y + inst.h and player.grounded then
             player.damage(1)
         end
     end,
 
     onDraw = function(player, inst)
-        fore.graphics.rect(
-            0,
-            inst.y,
-            GameState.area.mapWidth,
-            inst.h,
-            {255,0,0,120}
-        )
+        fore.queuer.submit(L.ACTOR, inst.y+inst.z, function()
+            fore.graphics.rect(
+                0,
+                inst.y,
+                GameState.area.mapWidth,
+                inst.h,
+                {255,0,0,120}
+            )
+        end)
     end,
 }
 

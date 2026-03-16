@@ -214,6 +214,14 @@ function Scene.enter()
     fore.audio.load("coin_pickup", "okanerun/assets/sounds/game/coin.ogg", false, "sfx")
     fore.audio.load("coin_deposit", "okanerun/assets/sounds/game/deposit.ogg", false, "sfx")
     fore.audio.load("jump", "okanerun/assets/sounds/game/jump.ogg", false, "sfx")
+
+    for _, entry in pairs(GameState.player.effects) do
+        if entry.def.onReset then
+            for _, inst in ipairs(entry.instances) do
+                entry.def.onReset(GameState.player, inst)
+            end
+        end
+    end
 end
 
 function Scene.exit()
@@ -491,6 +499,15 @@ function Scene.draw()
     -- Dust
     gameData.systems.particles.draw()
 
+    -- Hazards
+    for _, entry in pairs(GameState.player.effects) do
+        if entry.def.onDraw then
+            for _, inst in ipairs(entry.instances) do
+                entry.def.onDraw(GameState.player, inst)
+            end
+        end
+    end
+
     -- ## END OF DRAW ##
 
     fore.queuer.draw() -- draw items in order
@@ -516,14 +533,6 @@ function Scene.draw()
 
         for i, s in ipairs(GameState.player.tail) do
             fore.graphics.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
-        end
-    end
-
-    for _, entry in pairs(GameState.player.effects) do
-        if entry.def.onDraw then
-            for _, inst in ipairs(entry.instances) do
-                entry.def.onDraw(GameState.player, inst)
-            end
         end
     end
 

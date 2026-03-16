@@ -24,10 +24,14 @@ function EffectSystem.apply(player, buffDef)
     }
 
     table.insert(entry.instances, inst)
+    inst.index = #entry.instances
     entry.amount = entry.amount + 1
 
     if buffDef.onApply then
         buffDef.onApply(player, inst)
+    end
+    if buffDef.onReset then
+        buffDef.onReset(player, inst)
     end
 
     return true
