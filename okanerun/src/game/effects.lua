@@ -231,4 +231,203 @@ effects.trail = {
     end,
 }
 
+effects.zoomed = {
+    id = "zoomed",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 3,
+    
+    onApply = function(player)
+        player.camZoom = player.camZoom + 0.1
+    end,
+
+    onRemove = function(player)
+        player.camZoom = player.camZoom - 0.1
+    end,
+}
+
+effects.explosive = {
+    id = "explosive",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 3,
+    
+    onApply = function(player, inst)
+        inst.size = 16
+        inst.spawnDelay = 1.5
+        inst.minDistanceFromPlayer = 140
+        inst.maxMines = 5
+    end,
+    
+    onReset = function(player, inst)
+        inst.mines = {}
+        inst.spawnTimer = 0
+    end,
+    
+    onUpdate = function(player, inst, dt)
+        inst.spawnTimer = inst.spawnTimer + dt
+
+        if inst.spawnTimer >= inst.spawnDelay and #inst.mines < inst.maxMines then
+            inst.spawnTimer = 0
+            local attempts = 0
+            local maxAttempts = 20
+            local spawned = false
+            
+            while not spawned and attempts < maxAttempts do
+                local x = math.random(50, GameState.area.mapWidth - 50)
+                local y = math.random(50, GameState.area.mapHeight - 50)
+                
+                local dx = x - player.pos.x
+                local dy = y - player.pos.y
+                local dist = math.sqrt(dx*dx + dy*dy)
+                
+                if dist >= inst.minDistanceFromPlayer then
+                    local tooClose = false
+                    for _, mine in ipairs(inst.mines) do
+                        local mdx = x - mine.x
+                        local mdy = y - mine.y
+                        if math.sqrt(mdx*mdx + mdy*mdy) < inst.size * 2 then
+                            tooClose = true
+                            break
+                        end
+                    end
+                    
+                    if not tooClose then
+                        table.insert(inst.mines, {
+                            x = x,
+                            y = y,
+                            state = "idle",
+                            timer = 0,
+                            blinkDuration = 1.0,
+                            blinkInterval = 0.15,
+                            explodeRadius = 60,
+                            explodeDamage = 2,
+                            colorShift = math.random()
+                        })
+                        spawned = true
+                    end
+                end
+                
+                attempts = attempts + 1
+            end
+        end
+        
+        for i = #inst.mines, 1, -1 do
+            local mine = inst.mines[i]
+            mine.timer = mine.timer + dt
+            local px = player.pos.x + player.base.body.w/2
+            local py = player.pos.y + player.base.body.h/2
+            local dx = px - (mine.x + inst.size/2)
+            local dy = py - (mine.y + inst.size/2)
+            local dist = math.sqrt(dx*dx + dy*dy)
+            
+            if dist < inst.size and player.grounded then
+                if mine.state == "idle" then
+                    mine.state = "blinking"
+                    mine.timer = 0
+                    player.damage(1)
+                elseif mine.state == "blinking" then
+                    player.damage(1)
+                end
+            end
+
+            if mine.state == "idle" then
+                if mine.timer > math.random(3, 6) then
+                    mine.state = "blinking"
+                    mine.timer = 0
+                end
+            elseif mine.state == "blinking" then
+                if mine.timer >= mine.blinkDuration then
+                    mine.state = "exploding"
+                    mine.timer = 0
+                end
+            elseif mine.state == "exploding" then
+                if mine.timer < 0.1 then
+                    local dx = px - mine.x
+                    local dy = py - mine.y
+                    local dist = math.sqrt(dx*dx + dy*dy)
+                    
+                    if dist < mine.explodeRadius*0.9 and player.pos.z > mine.explodeRadius*-0.9 and player.pos.z < mine.explodeRadius*0.9 then
+                        player.damage(mine.explodeDamage, 2)
+                    end
+                end
+                
+                if mine.timer > 0.3 then
+                    table.remove(inst.mines, i)
+                end
+            end
+        end
+    end,
+    
+    onDraw = function(player, inst)
+        for _, mine in ipairs(inst.mines) do
+            local r, g, b
+            
+            if mine.state == "idle" then
+                local shift = (math.sin(mine.timer * 2 + mine.colorShift * 10) + 1) / 2
+                r = math.floor(200 + 55 * shift)
+                g = math.floor(0)
+                b = math.floor(100 + 27 * (1 - shift))
+            elseif mine.state == "blinking" then
+                local blinkPhase = (math.floor(mine.timer / mine.blinkInterval) % 2)
+                if blinkPhase == 0 then r, g, b = 255, 0, 127
+                else r, g, b = 190, 0, 190 end
+            elseif mine.state == "exploding" then
+                local progress = mine.timer / 0.3  -- 0 to 1
+                local size = inst.size + (mine.explodeRadius - inst.size) * progress
+                local alpha = math.floor(255 * (1 - progress))
+                
+                fore.queuer.submit(L.ACTOR, mine.y + size, function()
+                    fore.graphics.circ(
+                        mine.x-size,
+                        mine.y-size,
+                        size*2,
+                        size*2,
+                        {255, 255, 200, alpha},
+                        true, math.floor(5 + (size/9))
+                    )
+                end)
+                
+                goto continue
+            end
+            
+            fore.queuer.submit(L.ACTOR, mine.y + inst.size, function()
+                -- Body
+                fore.graphics.rect(
+                    mine.x,
+                    mine.y,
+                    inst.size,
+                    inst.size,
+                    {r, g, b, 200}
+                )
+                
+                -- Highlight
+                fore.graphics.rect(
+                    mine.x + 1,
+                    mine.y + 1,
+                    inst.size - 2,
+                    inst.size - 2,
+                    {255, 255, 255, 70}
+                )
+                
+                -- Llines
+                if mine.state == "blinking" then
+                    fore.graphics.line(
+                        {mine.x + 1, mine.y + 1,
+                        mine.x + inst.size - 1, mine.y + inst.size - 1},
+                        {255, 255, 255, 100}
+                    )
+                    fore.graphics.line(
+                        {mine.x + inst.size - 1, mine.y + 1,
+                        mine.x + 1, mine.y + inst.size - 1},
+                        {255, 255, 255, 100}
+                    )
+                end
+            end)
+            
+            ::continue::
+        end
+    end,
+}
+
 return effects

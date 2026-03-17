@@ -34,7 +34,7 @@ function EffectUI.draw(player)
         local row = math.floor((i - 1) / EffectUI.Data.cols)
 
         local x = EffectUI.Data.x + col * (EffectUI.Data.size + EffectUI.Data.padding)
-        local y = EffectUI.Data.y + row * (EffectUI.Data.size + EffectUI.Data.padding)
+        local y = EffectUI.Data.y + row * (EffectUI.Data.size + EffectUI.Data.padding + 10)
 
         local active = player.effects[id] ~= nil
         local selected = i == EffectUI.Data.selected
@@ -61,7 +61,7 @@ function EffectUI.draw(player)
 
         local entry = player.effects[id]
         local amountApplied = entry and entry.amount or 0
-        fore.graphics.text(tostring(amountApplied), x+2, 100, 1)
+        fore.graphics.text(tostring(amountApplied), x+2, y+24, 1)
 
         if selected then
             fore.graphics.rect(

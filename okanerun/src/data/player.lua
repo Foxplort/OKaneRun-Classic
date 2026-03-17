@@ -44,6 +44,7 @@ function Player.new()
 
         coinChain = {},
         effects = {},
+        camZoom = 0.9,
 
         -- BASE STATS (immutable)
         base = {

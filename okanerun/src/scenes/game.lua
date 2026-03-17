@@ -455,6 +455,7 @@ function Scene.update(dt)
         local camTargetY = GameState.player.pos.y + GameState.player.stat.body.h / 2
 
         gameData.systems.camera.update(camTargetX, camTargetY, dt)
+        gameData.systems.camera.setCategoryZoom("world", GameState.player.camZoom, false)
 
         -- Tails Math
         local speed = math.sqrt(

@@ -15,7 +15,7 @@ local categories = {
         active = true,
         followWorld = true,
         zoom = 1.0,
-        targetZoom = 1.0,
+        targetZoom = 0.9,
         shake = { amount = 0, x = 0, y = 0 },
         offsetX = 0, offsetY = 0,
         parallax = 1.0
@@ -32,8 +32,8 @@ local categories = {
 }
 
 -- Screen dimensions
-local halfW = fore.conf.width / 2
-local halfH = fore.conf.height / 2
+local halfW = fore.data.width / 2
+local halfH = fore.data.height / 2
 
 -- Movement
 local followSpeed = 8
@@ -168,8 +168,8 @@ end
 
 function Camera.update(targetX_, targetY_, dt, velX, velY)
     -- Recalculate half dimensions with world zoom
-    halfW = fore.conf.width / 2 / worldCam.zoom
-    halfH = fore.conf.height / 2 / worldCam.zoom
+    halfW = fore.data.width / 2
+    halfH = fore.data.height / 2
     
     worldCam.targetX, worldCam.targetY = targetX_, targetY_
     
@@ -261,25 +261,24 @@ function Camera.push(category)
     
     love.graphics.push()
     
-    -- Apply world zoom
     if cat.followWorld then
-        love.graphics.scale(worldCam.zoom, worldCam.zoom)
-    end
-    
-    -- Apply category zoom
-    love.graphics.scale(cat.zoom, cat.zoom)
-    
-    -- Apply shake
-    love.graphics.translate(cat.shake.x, cat.shake.y)
-    
-    -- Apply category offset
-    love.graphics.translate(cat.offsetX, cat.offsetY)
-    
-    -- Apply world camera movement with parallax
-    if cat.followWorld then
-        local moveX = -(worldCam.x - halfW) * cat.parallax
-        local moveY = -(worldCam.y - halfH) * cat.parallax
-        love.graphics.translate(moveX, moveY)
+        -- WORLD CATEGORY
+        love.graphics.translate(halfW, halfH)
+        love.graphics.scale(worldCam.zoom * cat.zoom, worldCam.zoom * cat.zoom)
+        love.graphics.translate(-worldCam.x * cat.parallax, -worldCam.y * cat.parallax)
+        
+        -- Shake and offset
+        love.graphics.translate(cat.shake.x, cat.shake.y)
+        love.graphics.translate(cat.offsetX, cat.offsetY)
+    else
+        -- UI CATEGORY
+        if cat.zoom ~= 1 then
+            love.graphics.scale(cat.zoom, cat.zoom)
+        end
+        
+        -- Shake and offset
+        love.graphics.translate(cat.shake.x, cat.shake.y)
+        love.graphics.translate(cat.offsetX, cat.offsetY)
     end
 end
 
@@ -302,29 +301,56 @@ function Camera.resetShake(category)
 end
 
 -- Coordinate conversion
-function Camera.screenToWorld(screenX, screenY, category)
-    local cat = categories[category or "world"]
-    local effectiveZoom = worldCam.zoom * (cat and cat.zoom or 1)
-    
-    local worldX = (screenX / effectiveZoom) + worldCam.x - halfW
-    local worldY = (screenY / effectiveZoom) + worldCam.y - halfH
-    
-    if cat and cat.parallax ~= 1 then
-        worldX = worldX / cat.parallax
-        worldY = worldY / cat.parallax
-    end
-    
-    return worldX, worldY
-end
-
 function Camera.worldToScreen(worldX, worldY, category)
     local cat = categories[category or "world"]
-    local effectiveZoom = worldCam.zoom * (cat and cat.zoom or 1)
     
-    local screenX = (worldX - worldCam.x + halfW) * effectiveZoom
-    local screenY = (worldY - worldCam.y + halfH) * effectiveZoom
+    if not cat or cat.followWorld then
+        local camX = worldX - worldCam.x
+        local camY = worldY - worldCam.y
+        
+        if cat and cat.parallax ~= 1 then
+            camX = camX * cat.parallax
+            camY = camY * cat.parallax
+        end
+        
+        local totalZoom = worldCam.zoom
+        if cat then
+            totalZoom = totalZoom * cat.zoom
+        end
+        
+        local screenX = camX * totalZoom + halfW
+        local screenY = camY * totalZoom + halfH
+        
+        return screenX, screenY
+    else
+        return worldX, worldY
+    end
+end
+
+function Camera.screenToWorld(screenX, screenY, category)
+    local cat = categories[category or "world"]
     
-    return screenX, screenY
+    if not cat or cat.followWorld then
+        local totalZoom = worldCam.zoom
+        if cat then
+            totalZoom = totalZoom * cat.zoom
+        end
+        
+        local camX = (screenX - halfW) / totalZoom
+        local camY = (screenY - halfH) / totalZoom
+        
+        if cat and cat.parallax ~= 1 then
+            camX = camX / cat.parallax
+            camY = camY / cat.parallax
+        end
+        
+        local worldX = camX + worldCam.x
+        local worldY = camY + worldCam.y
+        
+        return worldX, worldY
+    else
+        return screenX, screenY
+    end
 end
 
 function Camera.isVisible(x, y, margin, category)
