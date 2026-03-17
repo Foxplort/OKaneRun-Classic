@@ -371,7 +371,7 @@ end
 
 function Renderer.loadImage(name, path, imgtype)
     local img = love.graphics.newImage(path)
-    imgtype = imgtype or "nearest" 
+    imgtype = imgtype or "linear" 
     img:setFilter(imgtype, imgtype)
     Renderer.images[name] = img
 end
