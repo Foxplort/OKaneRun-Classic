@@ -15,6 +15,8 @@ local monoShader = nil
 local DEPOSIT_TIME = 0.8
 local DECAY_TIME = 2
 
+local jumpQueue = {}
+
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
@@ -86,6 +88,10 @@ local function handleFootsteps(dt)
     end
 end
 
+local function queueJump(delay)
+    table.insert(jumpQueue, {time = delay})
+end
+
 -- ######################### --
 -- ### SUBMAIN FUNCTIONS ### --
 -- ######################### --
@@ -109,7 +115,11 @@ local function damagePlayer(amount, timeMod)
             p.dead = true
         end
 
-        invTime = timeMod or 1
+        invTime = 1.2
+        if timeMod then invTime = invTime * timeMod end
+        if GameState.player.effectRef.bloodloss then
+            invTime = invTime * (0.6^GameState.player.effectRef.bloodloss)
+        end
     end
 end
 
@@ -265,67 +275,170 @@ function Scene.update(dt)
         if fore.input:pressed("debugEffect") then
             gameData.game.effectUI.Data.visible = not gameData.game.effectUI.Data.visible
         end
-        
+
         if gameData.game.effectUI.Data.visible then
             gameData.game.effectUI.keypressed(GameState.player)
         else
             if fore.input:pressed("jump") then
-                if GameState.player.jump.cons < GameState.player.stat.jump.lim then
-                    GameState.player.jump.cons = GameState.player.jump.cons + 1
-                    GameState.player.vel.z = GameState.player.stat.jump.vel
-                    GameState.player.jump.timer = GameState.player.stat.jump.cd
-                    GameState.player.visual.sx = 0.7 -- Thin
-                    GameState.player.visual.sy = 1.4 -- Tall
-                    if GameState.player.grounded then
-                        gameData.systems.particles.spawnDust(
-                            GameState.player.pos.x + 10,
-                            GameState.player.pos.y,
-                            GameState.player.pos.z,
-                            GameState.player.vel.x, 
-                            GameState.player.vel.y
-                        )
-                    end
-                    fore.audio.play("jump", {
-                        pitch = math.random(145, 185) / 100,
-                        volume = 0.2
-                    })
+                if not GameState.player.effectRef.sticky or GameState.player.effectRef.sticky <= 0 then
+                    queueJump(0)
+                else
+                    queueJump(0.15 * GameState.player.effectRef.sticky)
                 end
             end
+
+            for i = #jumpQueue, 1, -1 do
+                local j = jumpQueue[i]
+                j.time = j.time - dt
+
+                if j.time <= 0 then
+                    if GameState.player.jump.cons < GameState.player.stat.jump.lim then
+                        GameState.player.jump.cons = GameState.player.jump.cons + 1
+                        GameState.player.vel.z = GameState.player.stat.jump.vel
+                        GameState.player.jump.timer = GameState.player.stat.jump.cd
+
+                        GameState.player.visual.sx = 0.7
+                        GameState.player.visual.sy = 1.4
+
+                        if GameState.player.grounded then
+                            gameData.systems.particles.spawnDust(
+                                GameState.player.pos.x + 10,
+                                GameState.player.pos.y,
+                                GameState.player.pos.z,
+                                GameState.player.vel.x, 
+                                GameState.player.vel.y
+                            )
+
+                            fore.audio.play("footsteps", {
+                                pitch = math.random(35, 65) / 100,
+                                volume = 0.1
+                            })
+                        end
+
+                        fore.audio.play("jump", {
+                            pitch = math.random(145, 185) / 100,
+                            volume = 0.2
+                        })
+
+                        table.remove(jumpQueue, i)
+                    elseif j.time <= -0.1 then
+                        table.remove(jumpQueue, i)
+                    end
+                end
+            end
+
             if not GameState.player.dead then
                 if fore.input:down("right") then mx = mx + 1 end
                 if fore.input:down("left") then mx = mx - 1 end
                 if fore.input:down("up") then my = my - 1 end
                 if fore.input:down("down") then my = my + 1 end
                 if fore.input:pressed("cancel") then pause = true; menu:resetAnimation() end
+                if GameState.player.effectRef.confused then
+                    mx = -mx
+                    my = -my
+                end
             end
         end
 
-        local targetVX = mx * GameState.player.stat.move.maxVel
-        local targetVY = my * GameState.player.stat.move.maxVel
+        if GameState.player.dash.timer <= 0 then
+            local targetVX = mx * GameState.player.stat.move.maxVel
+            local targetVY = my * GameState.player.stat.move.maxVel
 
-        local accel = GameState.player.stat.move.accel
-        local decel = GameState.player.stat.move.fri
+            local accel = GameState.player.stat.move.accel
+            local decel = GameState.player.stat.move.fri
 
-        -- X axis
-        if targetVX ~= 0 then
-            GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, targetVX, accel * dt)
+            local w = GameState.player.effectRef.windy
+            if w then
+                w.timer = w.timer - dt
+
+                if w.timer <= 0 then
+                    w.dir = math.random() * math.pi * 2
+                    w.targetStrength = math.random(20, 70)
+                    w.timer = math.random(1.5, 3)
+                end
+
+                w.strength = fore.math.approach(w.strength, w.targetStrength, 60 * dt)
+
+                local fx = math.cos(w.dir) * w.strength
+                local fy = math.sin(w.dir) * w.strength
+
+                targetVX = targetVX + fx
+                targetVY = targetVY + fy
+            end
+
+            -- X axis
+            if targetVX ~= 0 then
+                GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, targetVX, accel * dt)
+            else
+                GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, 0, decel * dt)
+            end
+
+            -- Y axis
+            if targetVY ~= 0 then
+                GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, targetVY, accel * dt)
+            else
+                GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, 0, decel * dt)
+            end
+
+            -- Clamp max speed
+            local speed = math.sqrt(GameState.player.vel.x^2 + GameState.player.vel.y^2)
+            if speed > GameState.player.stat.move.maxVel then
+                local s = GameState.player.stat.move.maxVel / speed
+                GameState.player.vel.x = GameState.player.vel.x * s
+                GameState.player.vel.y = GameState.player.vel.y * s
+            end
         else
-            GameState.player.vel.x = fore.math.approach(GameState.player.vel.x, 0, decel * dt)
+            GameState.player.dash.timer = GameState.player.dash.timer - dt
+
+            local d = GameState.player.dash
+            local t = d.timer / d.time
+            local speedMul = 0.6 + 0.4 * t
+
+            local inputLen = math.sqrt(mx*mx + my*my)
+            if inputLen > 0 then
+                mx, my = mx/inputLen, my/inputLen
+
+                -- blend direction
+                local steer = 6
+                d.dir.x = fore.math.approach(d.dir.x, mx, steer * dt)
+                d.dir.y = fore.math.approach(d.dir.y, my, steer * dt)
+
+                -- normalize again
+                local len = math.sqrt(d.dir.x^2 + d.dir.y^2)
+                if len > 0 then
+                    d.dir.x, d.dir.y = d.dir.x/len, d.dir.y/len
+                end
+            end
+
+            GameState.player.vel.x = d.dir.x * d.power * speedMul
+            GameState.player.vel.y = d.dir.y * d.power * speedMul
         end
 
-        -- Y axis
-        if targetVY ~= 0 then
-            GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, targetVY, accel * dt)
-        else
-            GameState.player.vel.y = fore.math.approach(GameState.player.vel.y, 0, decel * dt)
-        end
+        if fore.input:pressed("dash") and GameState.player.dash.cooldown <= 0 then
+            local dx = mx
+            local dy = my
 
-        -- Clamp max speed
-        local speed = math.sqrt(GameState.player.vel.x^2 + GameState.player.vel.y^2)
-        if speed > GameState.player.stat.move.maxVel then
-            local s = GameState.player.stat.move.maxVel / speed
-            GameState.player.vel.x = GameState.player.vel.x * s
-            GameState.player.vel.y = GameState.player.vel.y * s
+            if dx == 0 and dy == 0 then
+                dx = GameState.player.vel.x
+                dy = GameState.player.vel.y
+            end
+
+            local len = math.sqrt(dx*dx + dy*dy)
+            if len > 0 then
+                GameState.player.visual.sx = 1.6
+                GameState.player.visual.sy = 0.6
+                dx, dy = dx/len, dy/len
+
+                GameState.player.dash.dir.x = dx
+                GameState.player.dash.dir.y = dy
+                GameState.player.dash.timer = GameState.player.dash.time
+                GameState.player.dash.cooldown = GameState.player.dash.cdMax
+
+                fore.audio.play("jump", {
+                    pitch = math.random(145, 185) / 100,
+                    volume = 0.2
+                })
+            end
         end
 
         -- Apply X movement
@@ -388,6 +501,7 @@ function Scene.update(dt)
                 GameState.player.coins = GameState.player.coins + 1
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
+                    pause = true
                     Fx.t.cover(function() fore.scenes:goTo("shop") end)
                 end
 
@@ -412,7 +526,7 @@ function Scene.update(dt)
                     x = c.x,
                     y = c.y,
                     z = GameState.player.pos.z,
-                    spacing = SPACING --* (#GameState.player.coinChain + 1)
+                    spacing = SPACING
                 }
 
                 fore.audio.play("coin_pickup", {
@@ -479,6 +593,17 @@ function Scene.update(dt)
         gameData.game.effectSys.update(GameState.player, dt)
         invTime = invTime - dt
         if invTime > 0 then GameState.player.inv = true else GameState.player.inv = false end
+
+        if GameState.player.dash.cooldown > 0 then
+            GameState.player.dash.cooldown = GameState.player.dash.cooldown - dt
+        end
+
+        if GameState.player.dash.timer > 0 then
+            GameState.player.dash.timer = GameState.player.dash.timer - dt
+
+            GameState.player.vel.x = GameState.player.dash.dir.x * GameState.player.dash.power
+            GameState.player.vel.y = GameState.player.dash.dir.y * GameState.player.dash.power
+        end
     end
 end
 

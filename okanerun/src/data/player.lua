@@ -45,6 +45,16 @@ function Player.new()
         coinChain = {},
         effects = {},
         camZoom = 0.9,
+        effectRef = {},
+
+        dash = {
+            cooldown = 0,
+            cdMax = 1.1,
+            power = 380,
+            time = 0.55,
+            timer = 0,
+            dir = {x=0,y=0}
+        },
 
         -- BASE STATS (immutable)
         base = {

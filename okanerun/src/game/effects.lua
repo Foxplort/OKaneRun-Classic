@@ -410,7 +410,7 @@ effects.explosive = {
                     {255, 255, 255, 70}
                 )
                 
-                -- Llines
+                -- Lines
                 if mine.state == "blinking" then
                     fore.graphics.line(
                         {mine.x + 1, mine.y + 1,
@@ -427,6 +427,99 @@ effects.explosive = {
             
             ::continue::
         end
+    end,
+}
+
+effects.bloodloss = {
+    id = "bloodloss",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 2,
+
+    -- Makes invincibility frames last 40% less. In the damaged code.
+    onApply = function(player)
+        if not player.effectRef.bloodloss then player.effectRef.bloodloss = 0 end
+        player.effectRef.bloodloss = player.effectRef.bloodloss + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.bloodloss = player.effectRef.bloodloss - 1
+    end,
+}
+
+effects.confused = {
+    id = "confused",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 1,
+
+    -- Reverse controls. In player controls.
+    onApply = function(player)
+        player.effectRef.confused = true
+    end,
+
+    onRemove = function(player)
+        player.effectRef.confused = false
+    end,
+}
+
+effects.sticky = {
+    id = "sticky",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 2,
+
+    -- Delays the jump by 0.15 seconds. In player controls.
+    onApply = function(player)
+        if not player.effectRef.sticky then player.effectRef.sticky = 0 end
+        player.effectRef.sticky = player.effectRef.sticky + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.sticky = player.effectRef.sticky - 1
+    end,
+}
+
+effects.windy = {
+    id = "windy",
+    type = "debuff",
+    maxAmount = 1,
+
+    onApply = function(player)
+        player.effectRef.windy = {
+            dir = 0,
+            strength = 0,
+            targetStrength = 0,
+            timer = 0
+        }
+    end,
+
+    onReset = function(player)
+        local w = player.effectRef.windy
+        w.dir = math.random() * math.pi * 2
+        w.targetStrength = math.random(20, 70)
+        w.timer = math.random(1.5, 3)
+    end,
+
+    onRemove = function(player)
+        player.effectRef.windy = nil
+    end,
+}
+
+effects.slippery = {
+    id = "slippery",
+    type = "buff",
+    duration = nil,
+    maxAmount = 2,
+
+    onApply = function(player)
+        player.dash.time = player.dash.time + 0.05
+        player.dash.power = player.dash.power + 30
+    end,
+
+    onRemove = function(player)
+        player.dash.time = player.dash.time - 0.05
+        player.dash.power = player.dash.power - 30
     end,
 }
 

@@ -61,7 +61,7 @@ function EffectUI.draw(player)
 
         local entry = player.effects[id]
         local amountApplied = entry and entry.amount or 0
-        fore.graphics.text(tostring(amountApplied), x+2, y+24, 1)
+        fore.graphics.text(tostring(amountApplied), x+2, y+22, 1)
 
         if selected then
             fore.graphics.rect(

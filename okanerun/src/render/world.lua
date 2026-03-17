@@ -129,7 +129,8 @@ function World.renderCores()
                 i.y,
                 i.w,
                 i.h,
-                {0, 190, 80}
+                {0, 190, 80},
+                false
             )
         end)
     end
