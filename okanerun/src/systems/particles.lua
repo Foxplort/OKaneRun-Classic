@@ -63,12 +63,16 @@ function Particles.draw(depthFn)
             function()
                 local alpha = p.life * 180
                 local s = p.size * (0.5 + p.life * 0.5)
+                local speed = math.sqrt(p.vx*p.vx + p.vy*p.vy)
+                local stretch = math.min(speed * 0.02, 2)
 
-                fore.graphics.rect(
+                fore.graphics.circ(
                     p.x - s/2,
                     p.y - p.z - s,
-                    s, s,
-                    {255, 255, 255, alpha}
+                    s + stretch,
+                    s,
+                    {255,255,255,alpha},
+                    true, 6
                 )
             end
         )

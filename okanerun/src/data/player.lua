@@ -41,6 +41,7 @@ function Player.new()
             sx = 1,
             sy = 1,
         },
+        afterimages = {},
 
         coinChain = {},
         effects = {},

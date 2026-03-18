@@ -57,19 +57,22 @@ function Player.render()
 
 
     -- player
-    fore.queuer.submit(L.ACTOR, GameState.player.pos.y, function()
-        local pm = GameState.player.stat.body
-        local vs = GameState.player.visual
-        
-        -- Calculate visual dimensions
-        local vw = pm.w * vs.sx
-        local vh = pm.h * vs.sy
+    local pm = GameState.player.stat.body
+    local vs = GameState.player.visual
+    
+    -- Calculate visual dimensions
+    local vw = pm.w * vs.sx
+    local vh = pm.h * vs.sy
 
-        local sortY = GameState.player.pos.y
-        if GameState.player.pos.z < -5 then 
-            sortY = -998
-        end
-        
+    local sortY = GameState.player.pos.y
+    if GameState.player.pos.z < -5 then 
+        sortY = -998
+    end
+
+    local playerCol = 200
+    if GameState.player.inv then playerCol = 120 end
+    
+    fore.queuer.submit(L.ACTOR, GameState.player.pos.y, function()
         if GameState.player.pos.z < 0 then
             love.graphics.stencil(function()
                 for _, g in ipairs(GameState.area.ground) do
@@ -80,9 +83,6 @@ function Player.render()
             love.graphics.setStencilTest("notequal", 1)
         end
 
-        local playerCol = 200
-        if GameState.player.inv then playerCol = 120 end
-
         fore.graphics.rect(
             GameState.player.pos.x + (pm.w - vw) / 2,
             GameState.player.pos.y - GameState.player.pos.z - vh,
@@ -92,6 +92,31 @@ function Player.render()
 
         love.graphics.setStencilTest() -- Reset stencil
     end)
+
+    for _, a in ipairs(GameState.player.afterimages) do
+        fore.queuer.submit(L.ACTOR, a.y, function()
+            local alpha = (a.life / 0.4) * 120
+
+            if a.z < 0 then
+                love.graphics.stencil(function()
+                    for _, g in ipairs(GameState.area.ground) do
+                        love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-GameState.player.stat.body.h)
+                    end
+                end, "replace", 1)
+                -- "notequal 1" means: Only draw where the stencil (ground) is NOT
+                love.graphics.setStencilTest("notequal", 1)
+            end
+
+            fore.graphics.rect(
+                a.x + (pm.w - pm.w * a.sx) / 2,
+                a.y - a.z - pm.h * a.sy,
+                pm.w * a.sx, pm.h * a.sy,
+                {0, playerCol/1.3, playerCol, alpha}
+            )
+
+            love.graphics.setStencilTest()
+        end)
+    end
 end
 
 return Player

@@ -66,6 +66,32 @@ function Renderer.circ(x, y, w, h, c, f, s)
     love.graphics.ellipse(f, x, y, w, h, s)
 end
 
+---Draw a circle from the center
+---@param x number
+---@param y number
+---@param r number|table
+---@param c number|table
+---@param f boolean
+---@param s number
+---@return nil
+function Renderer.mCirc(x, y, r, c, f, s)
+    f = filling(f)
+    if s == nil then s = 8 end
+    local w
+    local h
+
+    if type(r) == "number" then
+        w = r
+        h = r
+    else
+        w = r[1]
+        h = r[2]
+    end
+
+    setColor(c)
+    love.graphics.ellipse(f, x, y, w, h, s)
+end
+
 function Renderer.line(vertices, c, width)
     love.graphics.push("all")
     if width then love.graphics.setLineWidth(width) end

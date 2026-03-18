@@ -150,7 +150,7 @@ function Scene.enter()
     -- LOAD THE LEVEL
     local levelList = require("okanerun.src.data.levels")
     GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
-    --GameState.area = Fx.ll.load("okanerun.src/data/levels/cheezeLand.lua")
+    --GameState.area = Fx.ll.load("okanerun/src/data/levels/sliced.lua")
 
     -- RESET VARIABLES
     pause = false
@@ -598,11 +598,34 @@ function Scene.update(dt)
             GameState.player.dash.cooldown = GameState.player.dash.cooldown - dt
         end
 
+        GameState.player.dash.afterimageTimer = (GameState.player.dash.afterimageTimer or 0) - dt
+
         if GameState.player.dash.timer > 0 then
             GameState.player.dash.timer = GameState.player.dash.timer - dt
 
             GameState.player.vel.x = GameState.player.dash.dir.x * GameState.player.dash.power
             GameState.player.vel.y = GameState.player.dash.dir.y * GameState.player.dash.power
+
+            if GameState.player.dash.afterimageTimer <= 0 then
+                GameState.player.dash.afterimageTimer = 0.05
+                table.insert(GameState.player.afterimages, {
+                    x = GameState.player.pos.x,
+                    y = GameState.player.pos.y,
+                    z = GameState.player.pos.z,
+                    sx = GameState.player.visual.sx,
+                    sy = GameState.player.visual.sy,
+                    life = 0.3
+                })
+            end
+        end
+
+        for i = #GameState.player.afterimages, 1, -1 do
+            local a = GameState.player.afterimages[i]
+            a.life = a.life - dt
+
+            if a.life <= 0 then
+                table.remove(GameState.player.afterimages, i)
+            end
         end
     end
 end

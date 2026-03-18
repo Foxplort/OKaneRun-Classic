@@ -3,18 +3,21 @@ local UI = {}
 local coinTrackers = {}
 local healthWave = 0
 
-local function updateCoinTrackers()
+local function updateCoinTrackers(dt)
     local p = GameState.player
     local coins = GameState.area.coins
     
+    -- Track if coin is close to the player
+    local someoneIsFilling = false
+    for _, t in pairs(coinTrackers) do
+        if t.fill > 0.1 then someoneIsFilling = true break end
+    end
+
     local active = {}
     for _, coin in ipairs(coins) do
         active[coin] = true
         if not coinTrackers[coin] then
-            coinTrackers[coin] = {
-                fill = 0, exit = 0, fade = 0,
-                angle = math.atan2(coin.y - p.pos.y, coin.x - p.pos.x)
-            }
+            coinTrackers[coin] = { fill = 0, exit = 0, fade = 0, angle = 0 }
         end
     end
     
@@ -22,18 +25,26 @@ local function updateCoinTrackers()
         if active[coin] then
             local dx, dy = coin.x - p.pos.x, coin.y - p.pos.y
             local dist = math.sqrt(dx*dx + dy*dy)
-            t.angle = math.atan2(coin.y - p.pos.y, coin.x - p.pos.x)
+            t.angle = math.atan2(dy, dx)
             
             if dist < 200 then
-                t.fill = math.min(1, t.fill + 0.02)
-                t.exit = math.max(0, t.exit - 0.03)
+                t.fill = math.min(1, t.fill + 2.0 * dt)
+                t.exit = math.max(0, t.exit - 3.0 * dt)
             else
-                t.fill = math.max(0, t.fill - 0.03)
-                t.exit = math.min(1, t.exit + 0.02)
+                t.fill = math.max(0, t.fill - 3.0 * dt)
+                t.exit = math.min(1, t.exit + 2.0 * dt)
             end
-            t.fade = 1
+
+            -- If another coin is filling
+            local targetFade = someoneIsFilling and t.fill <= 0 and 0.2 or 1
+            if t.fade < targetFade then 
+                t.fade = math.min(targetFade, t.fade + 2.0 * dt)
+            else
+                t.fade = math.max(targetFade, t.fade - 2.0 * dt)
+            end
         else
-            t.fade = math.max(0, t.fade - 0.03)
+            -- Fade out and remove
+            t.fade = math.max(0, t.fade - 4.0 * dt)
             if t.fade <= 0 then coinTrackers[coin] = nil end
         end
     end
@@ -43,16 +54,16 @@ local function drawCoinIndicator()
     local p = GameState.player
     local coins = GameState.area.coins
     local full = #coins > 0
-    local coinText = full and (#coins .. " left") or "Deposit!"
+    local coinText = full and (#coins .. " left") or "deposit"
     fore.graphics.text(coinText, fore.data.width-80, 35, 1, 255, 80, "center")
 
-    if full then
-        local centerX, centerY = fore.data.width - 40, 40
-        local radius, baseThick = 20, 3
-        local time = love.timer.getTime()
-        
-        fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
+    local centerX, centerY = fore.data.width - 40, 40
+    local radius, baseThick = 20, 3
+    local time = love.timer.getTime()
+    
+    fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
 
+    if full then
         for coin, t in pairs(coinTrackers) do
             if t.fade > 0 then
                 local angle = t.angle
@@ -89,6 +100,32 @@ local function drawCoinIndicator()
                     fore.graphics.arc(centerX, centerY, radius + 2, angle - arcSize/2 - 0.05, angle + arcSize/2 + 0.05,
                         {255, 200, 0, 100 * pulse * t.fade}, "open", false, 8, thickness + 2)
                 end
+            end
+        end
+    else
+        local core = GameState.area.cores[1]
+        if core then
+            local targetX, targetY = core.x + core.w/2, core.y + core.h/2
+            local dx, dy = targetX - p.pos.x, targetY - p.pos.y
+            local dist = math.sqrt(dx*dx + dy*dy)
+            local angle = math.atan2(dy, dx)
+            local coreFill = 1 - math.max(0, math.min(1, (dist - 50) / 100))
+            local time = love.timer.getTime()
+            local pulse = (math.sin(time * 10) + 1) / 2
+            local arcSize = 0.8 + (math.pi * 2 - 0.8) * (coreFill * coreFill)
+            local r, g, b = 0 + (255 * coreFill), 255, 200 + (55 * coreFill)
+            
+            if coreFill < 0.98 then
+                fore.graphics.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
+                    {r, g, b, 150 + 105 * pulse}, "open", false, 32, baseThick + 2)
+            else
+                fore.graphics.arc(centerX, centerY, radius, 0, math.pi * 2,
+                    {255, 255, 255, 200 + 55 * pulse}, "open", false, 32, baseThick + 4)
+            end
+
+            if coreFill < 0.8 then
+                local tx, ty = centerX + math.cos(angle) * (radius + 8), centerY + math.sin(angle) * (radius + 8)
+                fore.graphics.mCirc(tx, ty, 2 + pulse * 2, {0, 255, 200, 255}, true, 16)
             end
         end
     end
@@ -181,7 +218,7 @@ local function drawHealthIndicator()
 end
 
 function UI.update(dt)
-    updateCoinTrackers()
+    updateCoinTrackers(dt)
     healthWave = healthWave + dt
 end
 
