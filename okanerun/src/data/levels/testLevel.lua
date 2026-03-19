@@ -2,7 +2,7 @@ return {
     mapWidth = 1200,
     mapHeight = 800,
     ground = {
-        {x=50, y=50, w=1100, h=700},
+        {x=50, y=50, xp=1150, yp=750},
     },
     coins = {
         {x=200, y=200},

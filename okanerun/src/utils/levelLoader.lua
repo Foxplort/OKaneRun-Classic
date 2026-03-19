@@ -25,6 +25,13 @@ local function fixCores(cores)
     end
 end
 
+local function fixGround(ground)
+    for _, g in ipairs(ground) do
+        if g.w == nil then g.w = g.xp - g.x end
+        if g.h == nil then g.h = g.yp - g.y end
+    end
+end
+
 -- Main loader
 function LevelLoader.load(path)
     -- load file as Lua table
@@ -35,6 +42,7 @@ function LevelLoader.load(path)
     applyDefaults(data, defaults)
 
     if data.cores then fixCores(data.cores) end
+    if data.ground then fixGround(data.ground) end
     if not data.spawn then data.spawn = defaults.spawn end
 
     return data

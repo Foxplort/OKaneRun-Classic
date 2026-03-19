@@ -150,7 +150,7 @@ function Scene.enter()
     -- LOAD THE LEVEL
     local levelList = require("okanerun.src.data.levels")
     GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
-    --GameState.area = Fx.ll.load("okanerun/src/data/levels/sliced.lua")
+    --GameState.area = Fx.ll.load("okanerun/src/data/levels/testLevel.lua")
 
     -- RESET VARIABLES
     pause = false

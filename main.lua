@@ -108,7 +108,10 @@ fore:introduce("rawPreDraw", function()
     bgfx.draw(0, 0, fore.data.windowWidth, fore.data.windowHeight, fore.data.scale)
 end)
 
-fore:introduce("preCanvasDraw", function() love.graphics.setShader(vignetteShader) end)
+fore:introduce("preCanvasDraw", function()
+    love.graphics.setShader(vignetteShader)
+    vignetteShader:send("time", love.timer.getTime())
+end)
 
 fore:introduce("rawPostDraw", function() love.graphics.setShader() end)
 
