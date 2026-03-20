@@ -132,6 +132,7 @@ function Fore:update(dt)
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
         love.window.setFullscreen(self.data.fullscreen, "desktop")
+        self.graphics.updateFonts()
     end
 
     -- Update hooks
@@ -167,6 +168,11 @@ function Fore:draw()
     self.data.width = vW
     self.data.height = vH
     local screenW, screenH = love.graphics.getDimensions()
+
+    if self.data.scale ~= self.last_font_scale then
+        self.graphics.updateFonts()
+        self.last_font_scale = self.data.scale
+    end
 
     -- CLEAR SCREEN
     love.graphics.clear(8/255, 15/255, 20/255)

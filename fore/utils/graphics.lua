@@ -11,15 +11,32 @@ local response_channel = love.thread.getChannel("fore_response")
 Renderer.fore = nil
 Renderer.pending_assets = 0
 
----@return table
-function Renderer.init()
-    Renderer.fonts = {
-        small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 4),
-        medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 8),
-        large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", 16)
-    }
+Renderer.base_font_sizes = {
+    small = 2,
+    medium = 4,
+    large = 8
+}
 
+function Renderer.init()
+    Renderer.updateFonts()
     return Renderer
+end
+
+---Updates font objects to match current screen scale
+function Renderer.updateFonts()
+    local scale = (Renderer.fore and Renderer.fore.data and Renderer.fore.data.scale) or 1
+    
+    scale = math.max(0.1, scale)
+
+    Renderer.fonts = {
+        small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.small * scale)),
+        medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.medium * scale)),
+        large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.large * scale))
+    }
+    
+    for _, font in pairs(Renderer.fonts) do
+        font:setFilter("linear", "linear")
+    end
 end
 
 -- INNER FUNCTIONS
