@@ -5,6 +5,12 @@ local Renderer = {}
 Renderer.images = {}
 Renderer.debugColor = {255, 0, 255}
 
+local loader_channel = love.thread.getChannel("fore_loader")
+local response_channel = love.thread.getChannel("fore_response")
+
+Renderer.fore = nil
+Renderer.pending_assets = 0
+
 ---@return table
 function Renderer.init()
     Renderer.fonts = {
@@ -395,11 +401,52 @@ end
 
 -- IMAGES LOADING HANDLER
 
+Renderer.pending_assets = 0
+
 function Renderer.loadImage(name, path, imgtype)
-    local img = love.graphics.newImage(path)
-    imgtype = imgtype or "linear" 
-    img:setFilter(imgtype, imgtype)
-    Renderer.images[name] = img
+    local loader = love.thread.getChannel("fore_loader")
+    Renderer.pending_assets = Renderer.pending_assets + 1
+    loader:push({
+        cmd = "load_image", 
+        name = name, 
+        path = path, 
+        imgtype = imgtype or "nearest"
+    })
+end
+
+function Renderer.update_loading()
+    local response = love.thread.getChannel("fore_response")
+    local uploads_this_frame = 0
+    local max_uploads = 1 -- Keep it strictly to 1 to kill the lag
+
+    while uploads_this_frame < max_uploads do
+        local msg = response:pop()
+        if not msg then break end
+
+        if msg.type == "image" then
+            local img = love.graphics.newImage(msg.data)
+            img:setFilter(msg.imgtype, msg.imgtype)
+            Renderer.images[msg.name] = img
+            Renderer.pending_assets = Renderer.pending_assets - 1
+            uploads_this_frame = uploads_this_frame + 1
+
+        elseif msg.type == "audio" then
+            -- Creating a Source from SoundData is instantaneous!
+            local source = love.audio.newSource(msg.data, "static")
+            Renderer.fore.audio.sounds[msg.name] = {
+                name = msg.name,
+                source = source,
+                category = msg.category,
+                stream = false
+            }
+            Renderer.pending_assets = Renderer.pending_assets - 1
+            -- We don't increment uploads_this_frame here because 
+            -- Audio Sources don't block the GPU like Textures do.
+        
+        elseif msg.type == "error" then
+            Renderer.pending_assets = Renderer.pending_assets - 1
+        end
+    end
 end
 
 function Renderer.getImage(name)

@@ -4,6 +4,7 @@
 ---@field update? fun(dt: number) Called every frame with delta time
 ---@field draw? fun() Called every frame for rendering
 ---@field keypressed? fun(key: string) Called on key press
+---@field onComplete? fun() Called as soon as all assets are loaded in
 
 ---@class fore.scenes
 ---@field scenes table
@@ -39,6 +40,7 @@ function SceneManager.init(fore)
         debug = fore.debug,
         hooks = fore.hooks,
         fore = fore,
+        frameOne = false,
     }, { __index = SceneManager })
 
     return self
@@ -69,15 +71,24 @@ function SceneManager:update(dt)
         if self.current and self.current.exit then
             self.current.exit()
         end
+
         self.current = require(self.scenes[self.next])
         self.next = nil
         
         if self.current.enter then
             self.current.enter()
         end
+        self.frameOne = true
     end
 
-    if self.current and self.current.update then
+    -- Waiting for the assets to load
+    if self.fore.graphics.pending_assets > 0 then
+        return
+    end
+
+    if self.frameOne and self.current.onComplete then self.current.onComplete() end
+
+    if self.current and self.current.update and (not self.fore.transition.is_frozen or self.frameOne) then
         -- if framerate is too low - switch to fixed timestep system
         if self.minDT and dt > self.minDT then
             for i=1, math.floor(dt/self.minDT) do
@@ -86,12 +97,17 @@ function SceneManager:update(dt)
             end
         end
         self.current.update(dt)
+        if self.frameOne then self.frameOne = false end
     end
 end
 
 ---Draw current scene
 ---@return nil
 function SceneManager:draw()
+    -- Waiting for the assets to load
+    if self.fore.graphics.pending_assets > 0 then
+        return
+    end
     --Current scene
     if self.current and self.current.draw then
         self.current.draw()

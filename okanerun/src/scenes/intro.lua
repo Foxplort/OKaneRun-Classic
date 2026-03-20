@@ -36,6 +36,9 @@ end
 function Scene.enter()
     fore.audio.load("warning", "okanerun/assets/sounds/ui/warning.wav", false, "sfx")
     fore.audio.load("intro", "okanerun/assets/sounds/ui/intro.wav", false, "sfx")
+end
+
+function Scene.onComplete()
     fore.audio.playOnce("warning")
 end
 
@@ -60,7 +63,7 @@ function Scene.update(dt)
         if timer <= 0 then
             state = "done"
             -- DON'T switch scene directly
-            Fx.t.cover(function()
+            fore.transition.start("spike", function()
                 fore.scenes:goTo("menu")
             end)
         end

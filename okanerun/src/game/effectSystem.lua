@@ -34,6 +34,8 @@ function EffectSystem.apply(player, buffDef)
         buffDef.onReset(player, inst)
     end
 
+    fore.save.set("effects_obtained", fore.save.get("effects_obtained") + 1)
+
     return true
 end
 

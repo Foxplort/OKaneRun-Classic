@@ -112,6 +112,7 @@ local function damagePlayer(amount, timeMod)
         gameData.systems.camera.addShake("ui", 3)
 
         if p.hp.count <= 0 then
+            fore.save.set("deaths", fore.save.get("deaths") + 1)
             p.dead = true
         end
 
@@ -208,7 +209,7 @@ function Scene.enter()
         style = "spikes",  -- optional: "plain" or "spikes"
         options = {
             {txt="Resume", action=function() pause = false end},
-            {txt="Main Menu", action=function() Fx.t.cover(function() fore.scenes:goTo("menu") end) end},
+            {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end) end},
             {txt="Quit", action=function() love.event.quit() end},
         }
     }
@@ -247,6 +248,7 @@ function Scene.exit()
     fore.audio.unload("coin_pickup")
     fore.audio.unload("coin_deposit")
     fore.audio.unload("jump")
+    fore.save.write()
 end
 
 function Scene.update(dt)
@@ -500,9 +502,10 @@ function Scene.update(dt)
                 table.remove(GameState.player.coinChain, 1)
                 GameState.player.coins = GameState.player.coins + 1
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
+                fore.save.set("coint_deposited", fore.save.get("coint_deposited") + 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
                     pause = true
-                    Fx.t.cover(function() fore.scenes:goTo("shop") end)
+                    fore.transition.start("dither", function() fore.scenes:goTo("shop") end)
                 end
 
                 fore.audio.play("coin_deposit", {

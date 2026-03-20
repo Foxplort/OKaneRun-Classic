@@ -5,12 +5,17 @@ fore = require("fore.core.init").init({
     startScene = "intro",
     pixelBank = 64,
     icon = "okanerun/assets/images/system/icon.png",
+    save = {
+        total_runs = 0,
+        deaths = 0,
+        effects_obtained = 0,
+        coint_deposited = 0,
+    },
 })
 
 Fx = {}
 Fx.cl = require("okanerun.src.utils.collision") -- Cl - Collision
 Fx.ll = require("okanerun.src.utils.levelLoader") -- LL - Level Loader
-Fx.t = require("okanerun.src.utils.transition") -- T - Transition
 Fx.bfx = require("okanerun.src.systems.borderFX")
 
 fore.audio.load("select", "okanerun/assets/sounds/ui/select.wav", false, "sfx")
@@ -97,11 +102,6 @@ end)
 
 fore:introduce("update", function(dt)
     bgfx.update(dt)
-    Fx.t.update(dt)
-end)
-
-fore:introduce("draw", function()
-    Fx.t.draw()
 end)
 
 fore:introduce("rawPreDraw", function()

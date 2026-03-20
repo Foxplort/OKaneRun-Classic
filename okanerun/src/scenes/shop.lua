@@ -74,7 +74,7 @@ local menuStack = Stack.new(
         options = {
             { txt="Speak", desc="Talk to the merchant.", push = speakMenu },
             { txt="Buy", desc="Purchase items.", push = buyMenu },
-            { txt="Leave", action = function() Fx.t.cover(function() fore.scenes:goTo("game") end) end }
+            { txt="Leave", action = function() fore.transition.start("dither", function() fore.scenes:goTo("game") end) end }
         }
     }
 )
@@ -174,7 +174,7 @@ local function buildRootMenu()
             { txt = "Leave", action = function()
                 lockInput = true
                 message = "See you next time!"
-                Fx.t.cover(function()
+                fore.transition.start("dither", function()
                     fore.scenes:goTo("game")
                 end)
             end },
@@ -215,6 +215,10 @@ function Scene.enter()
 
     menuMain = buildRootMenu()
     menuSub  = nil
+end
+
+function Scene.exit()
+    fore.save.write()
 end
 
 function Scene.update(dt)

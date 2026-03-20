@@ -3,6 +3,7 @@
 ---@field categories table<string, AudioCategory>
 ---@field sounds table<string, AudioClip>
 ---@field playing table<string, AudioInstance>
+---@field fore fore
 local Audio = {
     masterVolume = 1.0,
     
@@ -19,7 +20,9 @@ local Audio = {
     sounds = {},
     
     ---@type table<string, AudioInstance>
-    playing = {}
+    playing = {},
+
+    fore = nil,
 }
 
 ---@class AudioCategory
@@ -51,6 +54,12 @@ local Audio = {
 ---@field fadeOut? number  -- for stop/fade out
 ---@field concurrent? boolean  -- override category concurrent setting
 
+---Init audio module
+---@param fore fore
+function Audio.init(fore)
+    Audio.fore = fore
+end
+
 ---Load a sound (user decides streaming)
 ---@param name string
 ---@param path string
@@ -61,15 +70,19 @@ function Audio.load(name, path, stream, category)
     stream = stream or false
     category = category or (stream and "music" or "sfx")
     
-    local clip = {
-        name = name,
-        path = path,
-        stream = stream,
-        category = category,
-        source = love.audio.newSource(path, stream and "stream" or "static")
-    }
-    Audio.sounds[name] = clip
-    return clip
+    if stream then
+        -- Streams can stay on main thread because they don't 
+        -- decode the whole file at once
+        Audio.sounds[name] = {
+            name = name, path = path, stream = true, category = category,
+            source = love.audio.newSource(path, "stream")
+        }
+    else
+        -- Static sounds go to the background thread
+        local loader = love.thread.getChannel("fore_loader")
+        Audio.fore.graphics.pending_assets = Audio.fore.graphics.pending_assets + 1
+        loader:push({cmd = "load_audio", name = name, path = path, category = category})
+    end
 end
 
 ---Play a sound

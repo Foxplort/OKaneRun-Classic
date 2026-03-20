@@ -16,6 +16,8 @@ local logoY = 0
 
 local breathShader = love.graphics.newShader("okanerun/assets/shaders/menu_breathing.glsl")
 
+local logScore = 0
+
 local function createMenus()
     local main, credits, exit
 
@@ -68,7 +70,9 @@ local function createMenus()
             {
                 txt = "Play",
                 action = function()
-                    Fx.t.cover(function()
+                    fore.save.set("total_runs", fore.save.get("total_runs") + 1)
+                    fore.save.write()
+                    fore.transition.start("spike", function()
                         fore.scenes:goTo("game")
                     end)
                 end,
@@ -89,7 +93,6 @@ function Scene.enter()
     fore.graphics.loadImage("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
-    fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
 
     MP = require("okanerun.src.systems.menuParticles")
     MP.init(0)
@@ -104,6 +107,12 @@ function Scene.enter()
     stack = Stack.new(root)
 
     GameState.player = require("okanerun.src.data.player").new()
+
+    logScore = fore.save.get("deaths")*3 + fore.save.get("coint_deposited") + fore.save.get("effects_obtained")
+end
+
+function Scene.onComplete()
+    fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
 end
 
 function Scene.exit()

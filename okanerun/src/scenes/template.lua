@@ -4,6 +4,10 @@ local Scene = {}
 function Scene.enter()
 end
 
+-- Whatever should happen when the scene AS WELL AS assets gets loaded.
+function Scene.onComplete()
+end
+
 -- Whatever should happen when the scene gets deloaded.
 function Scene.exit()
 end

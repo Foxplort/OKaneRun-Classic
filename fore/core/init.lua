@@ -16,10 +16,20 @@ local Fore = {
 ---@param config table
 ---@return fore
 function Fore.init(config)
+    Fore.channels = {
+        loader = love.thread.getChannel("fore_loader"),
+        response = love.thread.getChannel("fore_response")
+    }
+
+    Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
+    Fore.loaderThread:start()
+
     Fore.graphics = require("fore.utils.graphics")
+    Fore.graphics.fore = Fore
     Fore.math = require("fore.utils.math")
     Fore.audio = require("fore.utils.audio")
-    Fore.queuer = require("fore.utils.queuer")
+    Fore.audio.init(Fore)
+    Fore.queuer = require("fore.systems.queuer")
 
     Fore.conf = require("fore.core.config").init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
@@ -44,6 +54,11 @@ function Fore.init(config)
     Fore.audio.load("system_volume_change", "fore/assets/sounds/volume.ogg", false, "sfx")
     Fore._volumeIndicator = require("fore.systems.volumeUI"):init(Fore)
 
+    Fore.save = require("fore.systems.save")
+    Fore.save.init(config.save or {})
+
+    Fore.transition = require("fore.systems.transition")
+
     return Fore
 end
 
@@ -67,6 +82,7 @@ function Fore:start()
     end
 
     self.graphics.init()
+    Fore.transition.init()
     self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
     if self.conf.pixelated then
         self.scenes.canvas:setFilter("nearest", "nearest")
@@ -109,6 +125,7 @@ function Fore:update(dt)
         cb(dt)
     end
 
+    self.graphics.update_loading()
     self.input:update()
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
     if self.input:pressed("fullscreen") then
@@ -134,6 +151,7 @@ function Fore:update(dt)
     self.audio.update(dt)
     self.scenes:update(dt)
     self._volumeIndicator:update(dt)
+    self.transition.update(dt)
 
     -- Post-update hooks
     for _, cb in ipairs(self.hooks.postUpdate) do
@@ -176,6 +194,8 @@ function Fore:draw()
     for _, cb in ipairs(self.hooks.draw) do
         cb()
     end
+    
+    self.transition.draw()
 
     -- Debug UI
     if self.debug.enabled then
