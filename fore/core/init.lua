@@ -117,7 +117,9 @@ function Fore:load()
     end
 
     -- Go to starting scene
-    self.scenes:goTo(self.conf.startScene)
+    self.transition.start("dither", function()
+        self.scenes:goTo(self.conf.startScene)
+    end, nil, 0, 0.5)
 end
 
 function Fore:update(dt)

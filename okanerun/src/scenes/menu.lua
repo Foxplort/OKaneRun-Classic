@@ -88,9 +88,9 @@ local function createMenus()
 end
 
 function Scene.enter()
-    fore.graphics.loadImage("logo", "okanerun/assets/images/ui/logo-smooth.png", "linear")
-    fore.graphics.loadImage("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
-    fore.graphics.loadImage("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
+    fore.graphics.scheduleLoad("logo", "okanerun/assets/images/ui/logo-smooth.png", "linear")
+    fore.graphics.scheduleLoad("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
+    fore.graphics.scheduleLoad("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
 
@@ -116,9 +116,9 @@ function Scene.onComplete()
 end
 
 function Scene.exit()
-    fore.graphics.unloadImage("logo")
-    fore.graphics.unloadImage("menu_portrait")
-    fore.graphics.unloadImage("menu_fog")
+    fore.graphics.scheduleUnload("logo")
+    fore.graphics.scheduleUnload("menu_portrait")
+    fore.graphics.scheduleUnload("menu_fog")
     fore.audio.fadeOutAndUnload("menu_music", 2.0)
 end
 

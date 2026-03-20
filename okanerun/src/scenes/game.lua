@@ -192,11 +192,11 @@ function Scene.enter()
     gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
     gameData.systems.particles.reset()
 
-    fore.graphics.loadImage("missing", "okanerun/assets/images/buffs/missing.png")
+    fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
         if love.filesystem.getInfo(path) then
-            fore.graphics.loadImage(eff.id, path)
+            fore.graphics.scheduleLoad(eff.id, path)
             table.insert(loadedImages, eff.id)
         end
     end
@@ -249,9 +249,9 @@ function Scene.exit()
     fore.debug.remove("Player")
 
     for _, eff in pairs(loadedImages) do
-        fore.graphics.unloadImage(eff)
+        fore.graphics.scheduleUnload(eff)
     end
-    fore.graphics.unloadImage("missing")
+    fore.graphics.scheduleUnload("missing")
 
     fore.audio.unload("footsteps")
     fore.audio.unload("coin_pickup")

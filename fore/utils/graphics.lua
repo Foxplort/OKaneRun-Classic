@@ -11,6 +11,10 @@ local response_channel = love.thread.getChannel("fore_response")
 Renderer.fore = nil
 Renderer.pending_assets = 0
 
+Renderer.asset_registry = {}
+Renderer.planned_loads = {}
+Renderer.planned_unloads = {}
+
 Renderer.base_font_sizes = {
     small = 2,
     medium = 4,
@@ -423,6 +427,9 @@ Renderer.pending_assets = 0
 function Renderer.loadImage(name, path, imgtype)
     local loader = love.thread.getChannel("fore_loader")
     Renderer.pending_assets = Renderer.pending_assets + 1
+    
+    Renderer.asset_registry[name] = {path = path, imgtype = imgtype or "linear"}
+    
     loader:push({
         cmd = "load_image", 
         name = name, 
@@ -472,7 +479,83 @@ end
 
 function Renderer.unloadImage(name)
     Renderer.images[name] = nil
+    Renderer.asset_registry[name] = nil
     --collectgarbage()
+end
+
+-- SMART ASSET LOADING SYSTEM
+
+function Renderer.scheduleLoad(name, path, imgtype)
+    Renderer.planned_loads[name] = {path = path, imgtype = imgtype or "linear"}
+end
+
+function Renderer.scheduleUnload(name)
+    Renderer.planned_unloads[name] = true
+end
+
+function Renderer.flushAssetSchedule()
+    local available_paths = {}
+    for existing_name, data in pairs(Renderer.asset_registry) do
+        available_paths[data.path] = available_paths[data.path] or {}
+        table.insert(available_paths[data.path], existing_name)
+    end
+
+    for new_name, load_data in pairs(Renderer.planned_loads) do
+        local path = load_data.path
+        local existing_names = available_paths[path]
+
+        if existing_names and #existing_names > 0 then
+            local exact_match = false
+            for _, ename in ipairs(existing_names) do
+                if ename == new_name then
+                    exact_match = true
+                    break
+                end
+            end
+
+            if exact_match then
+                Renderer.planned_unloads[new_name] = nil
+            else
+                local reused_name = nil
+                for i, ename in ipairs(existing_names) do
+                    if Renderer.planned_unloads[ename] then
+                        reused_name = ename
+                        table.remove(existing_names, i)
+                        break
+                    end
+                end
+
+                if reused_name then
+                    Renderer.images[new_name] = Renderer.images[reused_name]
+                    Renderer.asset_registry[new_name] = Renderer.asset_registry[reused_name]
+                    
+                    Renderer.images[reused_name] = nil
+                    Renderer.asset_registry[reused_name] = nil
+                    
+                    Renderer.planned_unloads[reused_name] = nil
+                    Renderer.planned_unloads[new_name] = nil
+                    
+                    table.insert(existing_names, new_name)
+                else
+                    local source_name = existing_names[1]
+                    Renderer.images[new_name] = Renderer.images[source_name]
+                    Renderer.asset_registry[new_name] = {path = path, imgtype = load_data.imgtype}
+                    Renderer.planned_unloads[new_name] = nil
+                    table.insert(existing_names, new_name)
+                end
+            end
+        else
+            Renderer.loadImage(new_name, path, load_data.imgtype)
+            Renderer.planned_unloads[new_name] = nil
+        end
+    end
+
+    for name, _ in pairs(Renderer.planned_unloads) do
+        Renderer.unloadImage(name)
+    end
+
+    Renderer.planned_loads = {}
+    Renderer.planned_unloads = {}
 end
 
 return Renderer

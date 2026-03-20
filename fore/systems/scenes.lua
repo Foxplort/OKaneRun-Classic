@@ -79,6 +79,7 @@ function SceneManager:update(dt)
             self.current.enter()
         end
         self.frameOne = true
+        self.fore.graphics.flushAssetSchedule()
     end
 
     -- Waiting for the assets to load
