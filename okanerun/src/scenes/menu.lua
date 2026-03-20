@@ -74,7 +74,7 @@ local function createMenus()
                     fore.save.write()
                     fore.transition.start("spike", function()
                         fore.scenes:goTo("game")
-                    end)
+                    end, nil, 0, 0.7)
                 end,
             },
             { txt = "Journal", disabled = true },

@@ -73,7 +73,7 @@ local footstepTimer = 0
 local function handleFootsteps(dt)
     local p = GameState.player
     local speedVal = math.sqrt(p.vel.x^2 + p.vel.y^2)
-    if p.grounded then
+    if p.grounded and GameState.player.dash.timer <= 0 then
         footstepTimer = footstepTimer - dt
         if speedVal > 1.0 and footstepTimer <= 0 then
             local interval = math.min(0.8 * (40/speedVal), 0.6)
@@ -161,6 +161,9 @@ function Scene.enter()
     GameState.player.pos.z = 40
     GameState.player.coinChain = {}
     GameState.player.damage = damagePlayer
+    GameState.player.afterimages = {}
+
+    statPerp()
 
     gameData = {
         render = {
@@ -181,7 +184,13 @@ function Scene.enter()
     }
 
     gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
+    gameData.systems.camera.setPosition(
+        GameState.player.pos.x + GameState.player.stat.body.w / 2,
+        GameState.player.pos.y + GameState.player.stat.body.h / 2,
+        true
+    )
     gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
+    gameData.systems.particles.reset()
 
     fore.graphics.loadImage("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
@@ -209,7 +218,7 @@ function Scene.enter()
         style = "spikes",  -- optional: "plain" or "spikes"
         options = {
             {txt="Resume", action=function() pause = false end},
-            {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end) end},
+            {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end, nil, 0, 0.6) end},
             {txt="Quit", action=function() love.event.quit() end},
         }
     }
@@ -504,8 +513,7 @@ function Scene.update(dt)
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
                 fore.save.set("coint_deposited", fore.save.get("coint_deposited") + 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
-                    pause = true
-                    fore.transition.start("dither", function() fore.scenes:goTo("shop") end)
+                    fore.transition.start("dither", function() fore.scenes:goTo("shop") end, nil, 0, 0.6)
                 end
 
                 fore.audio.play("coin_deposit", {

@@ -65,7 +65,7 @@ function Scene.update(dt)
             -- DON'T switch scene directly
             fore.transition.start("spike", function()
                 fore.scenes:goTo("menu")
-            end)
+            end, nil, 0, 0.6)
         end
     end
 end
@@ -75,7 +75,7 @@ function Scene.draw()
         textAlpha = 255 - (hold / HOLD_TIME) * 255
 
         if state == "warning" then
-            fore.graphics.text("WARNING", 0, 80-yChange, 2, {255,0,0, textAlpha}, fore.data.width/2, "center")
+            fore.graphics.text("WARNING", 0, 80-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
             lineText("This is an early version of the game")
             lineText("Many assets are still a work in progress")
             lineText("Expect changes to gameplay and code as development progresses")

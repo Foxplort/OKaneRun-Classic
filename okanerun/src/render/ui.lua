@@ -217,6 +217,50 @@ local function drawHealthIndicator()
     end
 end
 
+local function drawDashIndicator()
+    local p = GameState.player
+    local dash = p.dash
+    local progress = 1 - (dash.cooldown / dash.cdMax)
+    local isReady = dash.cooldown <= 0
+    local x, y = 15, fore.data.height - 25
+    local w, h = 100, 6
+    local tilt = 8
+    
+    -- Background
+    local bgPoints = {
+        x, y,
+        x + w, y - 2,
+        x + w - tilt, y + h,
+        x - tilt, y + h + 2
+    }
+    fore.graphics.polygon(bgPoints, {0, 0, 0, 150}, true)
+    fore.graphics.polygon(bgPoints, {255, 255, 255, 30}, false)
+
+    -- The Fill Bar
+    if progress > 0 then
+        local fillW = w * progress
+        local color = {160, 235, 255, 200}
+        
+        if isReady then
+            local pulse = (math.sin(love.timer.getTime() * 2) + 1) / 2
+            color = {160, 235, 255, 200 + 55 * pulse}
+        end
+
+        local fillPoints = {
+            x, y,
+            x + fillW, y - (2 * progress),
+            x + fillW - tilt, y + h + 2 - (2 * progress),
+            x - tilt, y + h + 2
+        }
+        fore.graphics.polygon(fillPoints, color, true)
+    end
+    
+    -- Label
+    if isReady then
+        fore.graphics.text("READY", x - 5, y, 0.8, {0,0,0,200}, w, "center")
+    end
+end
+
 function UI.update(dt)
     updateCoinTrackers(dt)
     healthWave = healthWave + dt
@@ -224,6 +268,7 @@ end
 
 function UI.draw()
     drawHealthIndicator()
+    drawDashIndicator()
     drawCoinIndicator()
 end
 

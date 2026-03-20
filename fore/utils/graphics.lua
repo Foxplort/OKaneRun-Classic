@@ -113,7 +113,7 @@ function Renderer.arc(x, y, r, a1, a2, c, arcType, f, s, width)
 
     if width then
         love.graphics.setLineWidth(width)
-        love.graphics.setLineStyle("rough")
+        love.graphics.setLineStyle("smooth")
     end
 
     setColor(c)
@@ -140,7 +140,7 @@ function Renderer.tail(tail, color, baseWidth)
         local currWidth = baseWidth * (0.4 + 0.6 * taper)
         
         -- Set width for this specific segment
-        love.graphics.setLineStyle("rough")
+        love.graphics.setLineStyle("smooth")
         love.graphics.setLineWidth(currWidth)
         love.graphics.setLineJoin("none") -- We use circles for joins instead
         
@@ -260,7 +260,7 @@ function Renderer.text(text, x, y, s, c, wrap, align)
 
     setColor(c)
     if wrap then
-        love.graphics.printf(text, x, y, wrap, align, 0, sx, sy)
+        love.graphics.printf(text, x, y, wrap/sx, align, 0, sx, sy)
     else
         love.graphics.print(text, x, y, 0, sx, sy)
     end

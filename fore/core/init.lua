@@ -73,6 +73,7 @@ function Fore:start()
             resizable = self.data.resizable,
             minwidth = self.data.width,
             minheight = self.data.height,
+            msaa = (self.conf.pixelated and 4) or 0,
         }
     )
 
@@ -141,8 +142,8 @@ function Fore:update(dt)
     if self.debug.enabled then self.debug.update()
     else
         local changedVol = false
-        if self.input:pressed("volumeUp") then self.audio.setMasterVolume(self.audio.masterVolume + 0.2); changedVol = true end
-        if self.input:pressed("volumeDown") then self.audio.setMasterVolume(self.audio.masterVolume - 0.2); changedVol = true end
+        if self.input:pressed("volumeUp") then self.audio.setMasterVolume(self.audio.masterVolume + 20); changedVol = true end
+        if self.input:pressed("volumeDown") then self.audio.setMasterVolume(self.audio.masterVolume - 20); changedVol = true end
         if changedVol then
             self.audio.play("system_volume_change")
             self._volumeIndicator:show(self.audio.masterVolume)

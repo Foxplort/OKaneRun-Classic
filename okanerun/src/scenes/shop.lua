@@ -74,7 +74,7 @@ local menuStack = Stack.new(
         options = {
             { txt="Speak", desc="Talk to the merchant.", push = speakMenu },
             { txt="Buy", desc="Purchase items.", push = buyMenu },
-            { txt="Leave", action = function() fore.transition.start("dither", function() fore.scenes:goTo("game") end) end }
+            { txt="Leave", action = function() fore.transition.start("dither", function() fore.scenes:goTo("game") end, nil, 0, 0.7) end }
         }
     }
 )
@@ -176,7 +176,7 @@ local function buildRootMenu()
                 message = "See you next time!"
                 fore.transition.start("dither", function()
                     fore.scenes:goTo("game")
-                end)
+                end, nil, 0, 0.7)
             end },
         }
     }

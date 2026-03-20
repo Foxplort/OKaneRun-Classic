@@ -50,9 +50,9 @@ function Player.new()
 
         dash = {
             cooldown = 0,
-            cdMax = 1.1,
-            power = 380,
-            time = 0.55,
+            cdMax = 1.75,
+            power = 400,
+            time = 0.75,
             timer = 0,
             dir = {x=0,y=0}
         },

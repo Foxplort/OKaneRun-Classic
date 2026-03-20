@@ -513,13 +513,13 @@ effects.slippery = {
     maxAmount = 2,
 
     onApply = function(player)
-        player.dash.time = player.dash.time + 0.05
-        player.dash.power = player.dash.power + 30
+        player.dash.time = player.dash.time + 0.1
+        player.dash.power = player.dash.power + 20
     end,
 
     onRemove = function(player)
-        player.dash.time = player.dash.time - 0.05
-        player.dash.power = player.dash.power - 30
+        player.dash.time = player.dash.time - 0.1
+        player.dash.power = player.dash.power - 20
     end,
 }
 

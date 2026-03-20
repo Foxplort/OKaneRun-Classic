@@ -79,4 +79,8 @@ function Particles.draw(depthFn)
     end
 end
 
+function Particles.reset()
+    list = {}
+end
+
 return Particles

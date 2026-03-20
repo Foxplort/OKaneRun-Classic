@@ -52,14 +52,14 @@ function VolumeIndicator:draw()
     self.fore.graphics.rect(x, y, self.WIDTH, self.HEIGHT, {0, 0, 0, 204 * self.alpha})
     self.fore.graphics.rect(x, y, self.WIDTH, self.HEIGHT, {100, 100, 100, 128 * self.alpha}, false)
     
-    local volumePercent = math.floor(self.volume * 100)
+    local volumePercent = math.floor(self.volume)
     local textColor
     
-    if self.volume >= 1.8 then
+    if self.volume >= 180 then
         textColor = {255, 100, 100, alpha255}
-    elseif self.volume >= 1.3 then
+    elseif self.volume >= 130 then
         textColor = {255, 200, 100, alpha255}
-    elseif self.volume >= 0.7 then
+    elseif self.volume >= 70 then
         textColor = {200, 255, 200, alpha255}
     else
         textColor = {150, 150, 255, alpha255}
@@ -69,7 +69,7 @@ function VolumeIndicator:draw()
     
     self.fore.graphics.rect(x + 10, y + self.HEIGHT - 15, self.WIDTH - 20, 8, {50, 50, 50, 128 * self.alpha})
     
-    local barWidth = (self.WIDTH - 20) * (self.volume / 2.0)
+    local barWidth = (self.WIDTH - 20) * (self.volume / 2.0 / 100)
     self.fore.graphics.rect(x + 10, y + self.HEIGHT - 15, barWidth, 8, {255, 255, 255, alpha255})
     
     self.fore.graphics.line({x + 10 + (self.WIDTH - 20) * 0.5, y + self.HEIGHT - 19, x + 10 + (self.WIDTH - 20) * 0.5, y + self.HEIGHT - 11}, {150, 150, 150, 77 * self.alpha}, 1)

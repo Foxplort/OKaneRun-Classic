@@ -5,7 +5,7 @@
 ---@field playing table<string, AudioInstance>
 ---@field fore fore
 local Audio = {
-    masterVolume = 1.0,
+    masterVolume = 100.0,
     
     ---@type table<string, AudioCategory>
     categories = {
@@ -306,7 +306,7 @@ end
 ---Set master volume
 ---@param volume number
 function Audio.setMasterVolume(volume)
-    Audio.masterVolume = math.max(0, math.min(2, volume))
+    Audio.masterVolume = math.max(0, math.min(200, volume))
     Audio:_updateVolumes()
 end
 
@@ -410,7 +410,7 @@ end
 -- Private methods
 function Audio:_calcVolume(instance, category)
     local cat = Audio.categories[category or instance.category] or Audio.categories.sfx
-    return instance.baseVolume * cat.volume * Audio.masterVolume
+    return instance.baseVolume * cat.volume * Audio.masterVolume / 100
 end
 
 function Audio:_updateVolumes(category)
@@ -459,7 +459,7 @@ function Audio.getStats()
         loaded = loaded,
         playing = playing,
         byCategory = byCategory,
-        masterVolume = Audio.masterVolume,
+        masterVolume = Audio.masterVolume / 100,
         categories = Audio.categories
     }
 end

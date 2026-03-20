@@ -9,6 +9,7 @@ local on_covered = nil
 local on_complete = nil 
 local la = require("fore.utils.loading")
 local dither_shader
+local freeze_thresholds = { start = 0, stop = 1 }
 
 T.is_frozen = false
 
@@ -58,7 +59,9 @@ end
 ---@param style "spike"|"dither"
 ---@param callback_covered function Called when screen is fully black
 ---@param callback_complete function? Called when animation finishes
-function T.start(style, callback_covered, callback_complete)
+---@param f_start number? Progress (0-1) to freeze game (default 0)
+---@param f_stop number? Progress (0-1) to unfreeze game (default 1)
+function T.start(style, callback_covered, callback_complete, f_start, f_stop)
     if active then return end -- Don't interrupt an existing transition
     
     active = true
@@ -67,6 +70,13 @@ function T.start(style, callback_covered, callback_complete)
     current_style = style or "spike"
     on_covered = callback_covered
     on_complete = callback_complete
+
+    -- Set custom freeze windows
+    freeze_thresholds.start = f_start or 0
+    freeze_thresholds.stop = f_stop or 1
+    
+    -- Initial check in case start is 0
+    T.is_frozen = progress >= freeze_thresholds.start and progress < freeze_thresholds.stop
     
     la.start()
 end
@@ -77,27 +87,26 @@ function T.update(dt)
     
     local duration = (current_style == "dither") and T.config.dither_duration or T.config.duration
 
-    -- Move to midpoint
+    -- Progress Logic
     if progress < 0.5 then
         progress = math.min(0.5, progress + dt / duration)
-        
-        -- If we just hit exactly 0.5
         if progress == 0.5 and on_covered then
             on_covered() 
             on_covered = nil
         end
-        return -- STOP HERE until logic is triggered
+        -- Stay at 0.5 if assets are still loading
+        if progress == 0.5 and fore.graphics.pending_assets > 0 then return end
+    else
+        progress = progress + dt / duration
     end
 
-    -- Wait for Assets
-    -- The transition stays at 0.5 as long as assets are loading
-    if fore.graphics.pending_assets > 0 then
-        return 
-    end
+    -- DYNAMIC FREEZE LOGIC
+    local in_freeze_window = progress >= freeze_thresholds.start and progress < freeze_thresholds.stop
+    local is_loading = (progress == 0.5 and fore.graphics.pending_assets > 0)
+    
+    T.is_frozen = in_freeze_window or is_loading
 
-    -- Move to end
-    progress = progress + dt / duration
-
+    -- Finish Logic
     if progress >= 1 then
         active = false
         T.is_frozen = false
@@ -131,7 +140,7 @@ function T.draw()
 
         for i, l in ipairs(c.layers) do
             local window = 1 - l.delay - l.finishEarly
-            
+
             local p = math.max(0, math.min(1, (progress - l.delay) / window))
             local ease = p * p * (3 - 2 * p)
             
