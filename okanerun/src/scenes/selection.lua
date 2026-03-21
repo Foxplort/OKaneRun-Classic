@@ -350,70 +350,66 @@ function Scene.draw()
                     local isSelected = (isRowFocused and row.selected == j)
                     
                     if row.type == "shop" or row.type == "selection" then
-                        -- Card Background
-                        local bgCol = {220, 225, 235}
-                        local tint = {255, 255, 255}
-                        if row.type == "shop" then 
-                            tint = {210, 220, 255}
-                        else
-                            tint = {255, 210, 210}
-                        end
-
-                        -- Limit check for darkening
+                        local isShop = (row.type == "shop")
                         local limit = isAtLimit(GameState.player, item.def)
-                        if limit then
-                            bgCol = {25, 30, 45}
-                        end
                         
-                        if item.bought then
-                            bgCol = {15, 18, 25}
+                        -- Colors
+                        local themeCol = isShop and {0, 200, 180} or {220, 20, 80}
+                        if limit or item.bought then
+                             themeCol = isShop and {40, 80, 80} or {80, 40, 50}
                         end
 
-                        -- Selection border
+                        -- Card Body Color
+                        local bgCol = {40, 45, 55, rowAlpha * 220}
+                        if not isShop then bgCol = {45, 40, 45, rowAlpha * 220} end
+                        
                         if isSelected then
-                            fore.graphics.rect(rx - 2, ry - 2, CARD_W + 4, CARD_H + 4, {255, 255, 0, rowAlpha * 255}, true)
+                            bgCol = {220, 240, 255, rowAlpha * 255}
+                            if currentRow == 1 then
+                                fore.graphics.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {0, 180, 180, rowAlpha * 150}, true)
+                            else
+                                fore.graphics.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {220, 20, 80, rowAlpha * 150}, true)
+                            end
                         end
+                        if limit then bgCol = {20, 22, 28, rowAlpha * 200} end
+                        if item.bought then bgCol = {15, 15, 20, rowAlpha * 180} end
                         
                         -- Selected mark for debuff
                         if row.type == "selection" and selectedDebuff == item then
-                            fore.graphics.rect(rx - 4, ry - 4, CARD_W + 8, CARD_H + 8, {255, 50, 50, rowAlpha * 255}, false)
+                            fore.graphics.rect(rx - 5, ry - 5, CARD_W + 10, CARD_H + 10, {220, 20, 80, rowAlpha * 255}, false)
                         end
 
-                        -- Main Card
-                        local cw, ch = CARD_W, CARD_H
-                        local cx, cy = rx, ry
-
-                        -- Selected
-                        if isSelected then
-                            fore.graphics.rect(cx - 3, cy - 3, cw + 6, ch + 6, {255, 255, 100, rowAlpha * 180}, true)
-                        end
+                        -- Main Card Body
+                        fore.graphics.rect(rx, ry, CARD_W, CARD_H, bgCol)
                         
-                        -- Selected mark for debuff
-                        if row.type == "selection" and selectedDebuff == item then
-                            fore.graphics.rect(cx - 5, cy - 5, cw + 10, ch + 10, {255, 80, 80, rowAlpha * 255}, false)
-                        end
-
-                        fore.graphics.rect(cx, cy, cw, ch, {bgCol[1]*tint[1]/255, bgCol[2]*tint[2]/255, bgCol[3]*tint[3]/255, rowAlpha * 255})
-                        local innerAlpha = limit and 40 or 180
-                        if item.bought then innerAlpha = 15 end
-                        fore.graphics.rect(cx+4, cy+4, cw-8, ch-8, {255, 255, 255, rowAlpha * innerAlpha})
+                        -- Colored Accent Border
+                        fore.graphics.rect(rx, ry, CARD_W, 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * 255})
                         
-                        -- Card Content
-                        local txtCol = limit and {140, 150, 170, rowAlpha * 255} or {20, 25, 40, rowAlpha * 255}
-                        if item.bought then txtCol = {80, 85, 100, rowAlpha * 255} end
+                        -- Inner frame
+                        local innerAlpha = isSelected and 40 or 15
+                        if limit then innerAlpha = 5 end
+                        fore.graphics.rect(rx + 2, ry + 2, CARD_W - 4, CARD_H - 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * innerAlpha})
+
+                        -- Card Content Colors
+                        local txtAlpha = rowAlpha * 255
+                        local txtCol = isSelected and {20, 25, 40, txtAlpha} or {180, 200, 220, txtAlpha}
+                        if limit then txtCol = {100, 110, 120, txtAlpha} end
+                        if item.bought then txtCol = {60, 65, 75, txtAlpha} end
 
                         -- Icon
-                        fore.graphics.imageSafe(item.def.id, "missing", cx + cw/2 - 16, cy + 10, 32, 32, 0, 0, 0, {0,0,0, rowAlpha * 255})
+                        local iconTint = isSelected and {20, 25, 40, txtAlpha} or {themeCol[1], themeCol[2], themeCol[3], txtAlpha}
+                        fore.graphics.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, iconTint)
                         
                         -- ID/Name
-                        fore.graphics.text(item.def.id:upper(), cx + 5, cy + 50, 1, txtCol, cw - 10, "center")
+                        fore.graphics.text(item.def.id:upper(), rx + 5, ry + 50, 1, txtCol, CARD_W - 10, "center")
                         
                         -- Desc
-                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", cx + 10, cy + 70, 0.8, txtCol, cw - 20, "left")
+                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8, txtCol, CARD_W - 20, "left")
 
                         -- Price for buffs
-                        if row.type == "shop" and not item.bought then
-                            fore.graphics.text(item.price .. "c", cx + cw - 25, cy + ch - 15, 0.7, {255, 220, 0, rowAlpha * 255})
+                        if isShop then
+                            local priceCol = isSelected and {20, 25, 40, txtAlpha} or {themeCol[1], themeCol[2], themeCol[3], txtAlpha}
+                            fore.graphics.text(item.price .. "c", rx + CARD_W - 35, ry + CARD_H - 18, 1, priceCol, 30, "right")
                         end
 
                     elseif row.type == "buttons" then
@@ -428,10 +424,10 @@ function Scene.draw()
                         
                         -- shadow/border for selected
                         if isSelected then
-                            fore.graphics.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {255, 220, 100, rowAlpha * 180}, true)
+                            fore.graphics.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {0, 127, 127, rowAlpha * 180}, true)
                         end
                         fore.graphics.rect(bx, by, btnW, btnH, bCol)
-                        fore.graphics.text(item.txt, bx, by + 12, isSelected and 1.1 or 1, tCol, btnW, "center")
+                        fore.graphics.text(item.txt, bx, by + 15, 1, tCol, btnW, "center")
                     end
                 end
                 love.graphics.pop()

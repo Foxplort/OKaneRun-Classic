@@ -9,6 +9,7 @@ local save = {
         engine = {
             vsync = 1,
             fullscreen = false,
+            volume = 100,
         },
         game = {} -- User defined data goes here
     },

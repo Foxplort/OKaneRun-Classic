@@ -1,8 +1,14 @@
 extern number time;
 
+float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 34.45);
+    return fract(p.x * p.y);
+}
+
 float get_noise(vec2 uv) {
-    float t = floor(time * 12.0);
-    return fract(sin(dot(uv + t, vec2(12.9898, 78.233))) * 43758.5453);
+    float t = mod(floor(time * 12.0), 256.0);
+    return hash(uv + vec2(t, t * 0.37));
 }
 
 vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
@@ -17,7 +23,7 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
     vec4 texcolor = vec4(r, g, b, 1.0);
 
     // NOISE
-    float noise = get_noise(texture_coords);
+    float noise = get_noise(screen_coords / love_ScreenSize.xy);
     float luminance = dot(texcolor.rgb, vec3(0.299, 0.587, 0.114));
     float noiseStrength = 0.02 * (1.0 - luminance * 0.5);
     texcolor.rgb += (noise - 0.5) * noiseStrength;

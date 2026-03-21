@@ -91,6 +91,8 @@ function Fore:start()
         self.scenes.canvas:setFilter("linear", "linear")
     end
 
+    self.audio.setMasterVolume(self.save.get_engine("volume"))
+
     love.load = function() self:load() end
     love.update = function(dt) self:update(dt) end
     love.draw = function() self:draw() end
@@ -148,6 +150,8 @@ function Fore:update(dt)
         if self.input:pressed("volumeUp") then self.audio.setMasterVolume(self.audio.masterVolume + 20); changedVol = true end
         if self.input:pressed("volumeDown") then self.audio.setMasterVolume(self.audio.masterVolume - 20); changedVol = true end
         if changedVol then
+            self.save.set_engine("volume", self.audio.masterVolume)
+            self.save.write()
             self.audio.play("system_volume_change")
             self._volumeIndicator:show(self.audio.masterVolume)
         end
