@@ -33,7 +33,7 @@ function Player.new()
             max = 3,
         },
 
-        coins = 0,
+        coins = 4,
         dead = false,
         coreProgress = 0,
 

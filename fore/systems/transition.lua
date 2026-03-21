@@ -62,7 +62,7 @@ end
 ---@param f_start number? Progress (0-1) to freeze game (default 0)
 ---@param f_stop number? Progress (0-1) to unfreeze game (default 1)
 function T.start(style, callback_covered, callback_complete, f_start, f_stop)
-    if active then return end -- Don't interrupt an existing transition
+    if active and progress < 0.85 then return end
     
     active = true
     T.is_frozen = true

@@ -25,6 +25,8 @@ fore.scenes:reg("intro", "okanerun.src.scenes.intro")
 fore.scenes:reg("menu", "okanerun.src.scenes.menu")
 fore.scenes:reg("game", "okanerun.src.scenes.game")
 fore.scenes:reg("shop", "okanerun.src.scenes.shop")
+fore.scenes:reg("selection", "okanerun.src.scenes.selection")
+
 
 fore.input:registerAll({
     accept = {

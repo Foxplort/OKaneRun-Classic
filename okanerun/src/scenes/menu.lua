@@ -73,7 +73,7 @@ local function createMenus()
                     fore.save.set("total_runs", fore.save.get("total_runs") + 1)
                     fore.save.write()
                     fore.transition.start("spike", function()
-                        fore.scenes:goTo("game")
+                        fore.scenes:goTo("selection")
                     end, nil, 0, 0.7)
                 end,
             },

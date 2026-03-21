@@ -513,7 +513,7 @@ function Scene.update(dt)
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
                 fore.save.set("coint_deposited", fore.save.get("coint_deposited") + 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
-                    fore.transition.start("dither", function() fore.scenes:goTo("shop") end, nil, 0, 0.6)
+                    fore.transition.start("dither", function() fore.scenes:goTo("selection") end, nil, 0, 0.6)
                 end
 
                 fore.audio.play("coin_deposit", {
