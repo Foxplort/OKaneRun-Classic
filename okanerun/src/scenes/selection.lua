@@ -22,6 +22,7 @@ local rows = {
     { name = "Controls", type = "buttons", items = {}, scroll = 0, selected = 1 }
 }
 local currentRow = 1
+local lockedRow = {false, false, false}
 local selectedDebuff = nil
 local coins = 0
 local message = ""
@@ -30,6 +31,7 @@ local animTimer = 0
 local verticalScroll = 0
 local EffectsDesc = require("okanerun.src.data.effectsDesc")
 local loadedImages = {}
+local particles = {}
 
 -- ################# --
 -- ### FUNCTIONS ### --
@@ -70,7 +72,11 @@ local function buildRows()
     coins = player.coins
 
     -- Row 1: Buffs
-    local availableBuffs = getAllByType("buff")
+    local themeBuffs = getAllByType("buff")
+    local availableBuffs = {}
+    for _, b in ipairs(themeBuffs) do
+        if not isAtLimit(player, b) then table.insert(availableBuffs, b) end
+    end
     local pickedBuffs = pickRandom(availableBuffs, 3)
     rows[1].items = {}
     for _, b in ipairs(pickedBuffs) do
@@ -82,7 +88,11 @@ local function buildRows()
     end
 
     -- Row 2: Debuffs
-    local availableDebuffs = getAllByType("debuff")
+    local themeDebuffs = getAllByType("debuff")
+    local availableDebuffs = {}
+    for _, d in ipairs(themeDebuffs) do
+        if not isAtLimit(player, d) then table.insert(availableDebuffs, d) end
+    end
     local pickedDebuffs = pickRandom(availableDebuffs, 2)
     rows[2].items = {}
     for _, d in ipairs(pickedDebuffs) do
@@ -94,7 +104,7 @@ local function buildRows()
     -- Row 3: Buttons
     rows[3].items = {
         { txt = "Continue", action = function()
-            if not selectedDebuff then
+            if #rows[2].items > 0 and not selectedDebuff then
                 message = "Pick a debuff first!"
                 messageTimer = 2
                 return
@@ -105,8 +115,10 @@ local function buildRows()
             end)
         end },
         { txt = "Menu", action = function()
-            fore.audio.play("select")
-            fore.scenes:goTo("menu")
+            fore.audio.play("accept")
+            fore.transition.start("spike", function()
+                fore.scenes:goTo("menu")
+            end)
         end }
     }
 end
@@ -116,8 +128,8 @@ end
 -- ###################### --
 
 function Scene.enter()
+    lockedRow = {false, false, false}
     selectedDebuff = nil
-    currentRow = 1
     rows[1].selected = 1
     rows[2].selected = 1
     rows[3].selected = 1
@@ -126,6 +138,14 @@ function Scene.enter()
     animTimer = 0
     verticalScroll = 0
     buildRows()
+    
+    currentRow = 3
+    if #rows[2].items > 0 then
+        currentRow = 2
+    else lockedRow[2] = true end
+    if #rows[1].items > 0 then
+        currentRow = 1
+    else lockedRow[1] = true end
 
     fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(require("okanerun.src.game.effects")) do
@@ -135,9 +155,29 @@ function Scene.enter()
             table.insert(loadedImages, eff.id)
         end
     end
+
+    -- Init particles
+    particles = {}
+    for i = 1, 40 do
+        table.insert(particles, {
+            x = math.random(0, fore.data.width),
+            y = math.random(0, fore.data.height),
+            s = math.random() * 2 + 0.5,
+            vx = (math.random() - 0.5) * 10,
+            vy = (math.random() * 5) + 5,
+            a = math.random() * 0.3 + 0.1
+        })
+    end
 end
 
 function Scene.exit()
+    -- Apply selected
+    if selectedDebuff then
+        EffectSystem.apply(GameState.player, selectedDebuff.def)
+    end
+    fore.save.write()
+
+    -- Unload assets
     for _, eff in pairs(loadedImages) do
         fore.graphics.scheduleUnload(eff)
     end
@@ -151,12 +191,37 @@ function Scene.update(dt)
     end
 
     -- Handle Input
+    local prevRow = currentRow
+    local prevSelect = rows[currentRow].selected
+
     if fore.input:pressed("up") then
-        currentRow = math.max(1, currentRow - 1)
-        fore.audio.play("select", { volume = 0.1 })
+        local nextRow = currentRow
+        for i = currentRow - 1, 1, -1 do
+            if #rows[i].items > 0 then
+                nextRow = i
+                break
+            end
+        end
+        
+        if nextRow ~= currentRow then
+            currentRow = nextRow
+            rows[currentRow].selected = math.min(#rows[currentRow].items, prevSelect)
+            fore.audio.play("select", { volume = 0.1, pitch = 1.1 })
+        end
     elseif fore.input:pressed("down") then
-        currentRow = math.min(#rows, currentRow + 1)
-        fore.audio.play("select", { volume = 0.1 })
+        local nextRow = currentRow
+        for i = currentRow + 1, #rows do
+            if #rows[i].items > 0 then
+                nextRow = i
+                break
+            end
+        end
+
+        if nextRow ~= currentRow then
+            currentRow = nextRow
+            rows[currentRow].selected = math.min(#rows[currentRow].items, prevSelect)
+            fore.audio.play("select", { volume = 0.1, pitch = 0.9 })
+        end
     end
 
     local r = rows[currentRow]
@@ -170,23 +235,24 @@ function Scene.update(dt)
 
     if fore.input:pressed("accept") then
         local item = r.items[r.selected]
+        if not item then return end
+
         if r.type == "shop" then
-            if not item.bought then
-                local player = GameState.player
-                if player.coins >= item.price then
+            local player = GameState.player
+            if player.coins >= item.price then
+                if not isAtLimit(player, item.def) then
                     if EffectSystem.apply(player, item.def) then
                         player.coins = player.coins - item.price
                         coins = player.coins
-                        item.bought = true
                         fore.audio.play("accept", { pitch = 1.2 })
-                    else
-                        message = "Already at max amount!"
-                        messageTimer = 2
                     end
                 else
-                    message = "Not enough coins!"
+                    message = "Already at max amount!"
                     messageTimer = 2
                 end
+            else
+                message = "Not enough coins!"
+                messageTimer = 2
             end
         elseif r.type == "selection" then
             if selectedDebuff ~= item then
@@ -211,114 +277,166 @@ function Scene.update(dt)
     end
 
     -- Vertical scrolling
-    local totalHeight = #rows * (CARD_H + ROW_SPACING) + MARGIN_TOP
+    local totalHeight = MARGIN_TOP
+    local selY = MARGIN_TOP
+    for i, row in ipairs(rows) do
+        if #row.items > 0 then
+            local h = (row.type == "buttons" and 60 or (CARD_H + ROW_SPACING))
+            if i == currentRow then
+                selY = totalHeight
+            end
+            totalHeight = totalHeight + h
+        end
+    end
+    
     local visibleHeight = fore.data.height - 40
     local targetVScroll = 0
     if totalHeight > visibleHeight then
-        local selY = MARGIN_TOP + (currentRow - 1) * (CARD_H + ROW_SPACING)
         targetVScroll = math.max(0, math.min(totalHeight - visibleHeight, selY - visibleHeight / 2 + CARD_H / 2))
     end
     verticalScroll = fore.math.lerp(verticalScroll, targetVScroll, dt * 8)
+
+    -- Update particles
+    for _, p in ipairs(particles) do
+        p.x = p.x + p.vx * dt
+        p.y = p.y + p.vy * dt
+        if p.y > fore.data.height then p.y = -5 end
+        if p.x > fore.data.width then p.x = -5 elseif p.x < -5 then p.x = fore.data.width end
+    end
 end
 
 function Scene.draw()
     -- Background
     fore.graphics.rect(0, 0, fore.data.width, fore.data.height, {10, 15, 20})
+    
+    -- Dust particles
+    for _, p in ipairs(particles) do
+        fore.graphics.circ(p.x, p.y, p.s, p.s, {200, 200, 220, p.a * 255})
+    end
 
     -- Header
-    fore.graphics.text("SELECTION", 60, 25, 2.5, {255, 255, 255})
-    fore.graphics.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 255, 120})
+    fore.graphics.text("SELECTION", 60, 25, 2.5, {255, 250, 240})
+    fore.graphics.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100})
 
     love.graphics.push()
     love.graphics.translate(0, -verticalScroll)
 
     -- Rows
+    local currentY = MARGIN_TOP
     for i, row in ipairs(rows) do
-        local rowAnimOffset = math.max(0, 1 - (animTimer - i * 0.15) * 4)
-        local ry = MARGIN_TOP + (i - 1) * (CARD_H + ROW_SPACING) + rowAnimOffset * 20
-        local isRowFocused = (i == currentRow)
-        local rowAlpha = math.min(1, (animTimer - i * 0.15) * 4)
+        local rowHeight = (row.type == "buttons" and 60 or (CARD_H + ROW_SPACING))
         
-        if rowAlpha > 0 then
-            -- Row title
-            local titleColor = isRowFocused and {255, 255, 255, rowAlpha * 255} or {127, 127, 127, rowAlpha * 180}
-            fore.graphics.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1, titleColor)
-
-            -- Items
-            love.graphics.push()
-            love.graphics.translate(-row.scroll, 0)
+        if #row.items > 0 then
+            local rowAnimOffset = math.max(0, 1 - (animTimer - i * 0.15) * 4)
+            local ry = currentY + rowAnimOffset * 20
+            local isRowFocused = (i == currentRow)
             
-            for j, item in ipairs(row.items) do
-                local rx = MARGIN_LEFT + (j - 1) * (CARD_W + CARD_SPACING)
-                local isSelected = (isRowFocused and row.selected == j)
+            -- Alpha fade when scrolling up
+            local yInView = ry - verticalScroll + 20
+            local topFade = math.min(1, (yInView - 40) / 60)
+            local rowAlpha = math.min(1, (animTimer - i * 0.15) * 4) * math.max(0, topFade)
+            
+            if rowAlpha > 0 then
+                -- Row title
+                local titleColor = isRowFocused and {255, 255, 255, rowAlpha * 255} or {127, 127, 127, rowAlpha * 180}
+                fore.graphics.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1, titleColor)
+
+                -- Items
+                love.graphics.push()
+                love.graphics.translate(-row.scroll, 0)
                 
-                if row.type == "shop" or row.type == "selection" then
-                    -- Card Background
-                    local bgCol = {200, 200, 200}
-                    local tint = {255, 255, 255}
-                    if row.type == "shop" then 
-                        tint = {200, 200, 255}
-                    else
-                        tint = {255, 200, 200}
-                    end
+                for j, item in ipairs(row.items) do
+                    local rx = MARGIN_LEFT + (j - 1) * (CARD_W + CARD_SPACING)
+                    local isSelected = (isRowFocused and row.selected == j)
+                    
+                    if row.type == "shop" or row.type == "selection" then
+                        -- Card Background
+                        local bgCol = {220, 225, 235}
+                        local tint = {255, 255, 255}
+                        if row.type == "shop" then 
+                            tint = {210, 220, 255}
+                        else
+                            tint = {255, 210, 210}
+                        end
 
-                    -- Limit check for darkening
-                    local limit = isAtLimit(GameState.player, item.def)
-                    if limit then
-                        bgCol = {100, 100, 100}
-                    end
-                    
-                    if item.bought then
-                        bgCol = {50, 50, 50}
-                    end
+                        -- Limit check for darkening
+                        local limit = isAtLimit(GameState.player, item.def)
+                        if limit then
+                            bgCol = {25, 30, 45}
+                        end
+                        
+                        if item.bought then
+                            bgCol = {15, 18, 25}
+                        end
 
-                    -- Selection border
-                    if isSelected then
-                        fore.graphics.rect(rx - 2, ry - 2, CARD_W + 4, CARD_H + 4, {255, 255, 0, rowAlpha * 255}, true)
+                        -- Selection border
+                        if isSelected then
+                            fore.graphics.rect(rx - 2, ry - 2, CARD_W + 4, CARD_H + 4, {255, 255, 0, rowAlpha * 255}, true)
+                        end
+                        
+                        -- Selected mark for debuff
+                        if row.type == "selection" and selectedDebuff == item then
+                            fore.graphics.rect(rx - 4, ry - 4, CARD_W + 8, CARD_H + 8, {255, 50, 50, rowAlpha * 255}, false)
+                        end
+
+                        -- Main Card
+                        local cw, ch = CARD_W, CARD_H
+                        local cx, cy = rx, ry
+
+                        -- Selected
+                        if isSelected then
+                            fore.graphics.rect(cx - 3, cy - 3, cw + 6, ch + 6, {255, 255, 100, rowAlpha * 180}, true)
+                        end
+                        
+                        -- Selected mark for debuff
+                        if row.type == "selection" and selectedDebuff == item then
+                            fore.graphics.rect(cx - 5, cy - 5, cw + 10, ch + 10, {255, 80, 80, rowAlpha * 255}, false)
+                        end
+
+                        fore.graphics.rect(cx, cy, cw, ch, {bgCol[1]*tint[1]/255, bgCol[2]*tint[2]/255, bgCol[3]*tint[3]/255, rowAlpha * 255})
+                        local innerAlpha = limit and 40 or 180
+                        if item.bought then innerAlpha = 15 end
+                        fore.graphics.rect(cx+4, cy+4, cw-8, ch-8, {255, 255, 255, rowAlpha * innerAlpha})
+                        
+                        -- Card Content
+                        local txtCol = limit and {140, 150, 170, rowAlpha * 255} or {20, 25, 40, rowAlpha * 255}
+                        if item.bought then txtCol = {80, 85, 100, rowAlpha * 255} end
+
+                        -- Icon
+                        fore.graphics.imageSafe(item.def.id, "missing", cx + cw/2 - 16, cy + 10, 32, 32, 0, 0, 0, {0,0,0, rowAlpha * 255})
+                        
+                        -- ID/Name
+                        fore.graphics.text(item.def.id:upper(), cx + 5, cy + 50, 1, txtCol, cw - 10, "center")
+                        
+                        -- Desc
+                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", cx + 10, cy + 70, 0.8, txtCol, cw - 20, "left")
+
+                        -- Price for buffs
+                        if row.type == "shop" and not item.bought then
+                            fore.graphics.text(item.price .. "c", cx + cw - 25, cy + ch - 15, 0.7, {255, 220, 0, rowAlpha * 255})
+                        end
+
+                    elseif row.type == "buttons" then
+                        -- Button rendering
+                        local btnW = 140
+                        local btnH = 40
+                        local bx = rx
+                        local by = ry
+                        
+                        local bCol = isSelected and {255, 255, 230, rowAlpha * 255} or {60, 65, 80, rowAlpha * 200}
+                        local tCol = isSelected and {20, 20, 30, rowAlpha * 255} or {220, 225, 240, rowAlpha * 255}
+                        
+                        -- shadow/border for selected
+                        if isSelected then
+                            fore.graphics.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {255, 220, 100, rowAlpha * 180}, true)
+                        end
+                        fore.graphics.rect(bx, by, btnW, btnH, bCol)
+                        fore.graphics.text(item.txt, bx, by + 12, isSelected and 1.1 or 1, tCol, btnW, "center")
                     end
-                    
-                    -- Selected mark for debuff
-                    if row.type == "selection" and selectedDebuff == item then
-                        fore.graphics.rect(rx - 4, ry - 4, CARD_W + 8, CARD_H + 8, {255, 50, 50, rowAlpha * 255}, false)
-                    end
-
-                    -- Main Card
-                    fore.graphics.rect(rx, ry, CARD_W, CARD_H, {bgCol[1]*tint[1]/255, bgCol[2]*tint[2]/255, bgCol[3]*tint[3]/255, rowAlpha * 255})
-                    fore.graphics.rect(rx+4, ry+4, CARD_W-8, CARD_H-8, {255, 255, 255, rowAlpha * 150})
-                    
-                    -- Card Content
-                    local txtCol = limit and {180, 180, 180, rowAlpha * 255} or {0, 0, 0, rowAlpha * 255}
-                    if item.bought then txtCol = {120, 120, 120, rowAlpha * 255} end
-
-                    -- Icon
-                    fore.graphics.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, {0,0,0})
-                    
-                    -- ID/Name
-                    fore.graphics.text(item.def.id:upper(), rx + 5, ry + 50, 1, txtCol, CARD_W - 10, "center")
-                    
-                    -- Desc
-                    fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8, txtCol, CARD_W - 20, "left")
-
-                    -- Price for buffs
-                    if row.type == "shop" and not item.bought then
-                        fore.graphics.text(item.price .. "c", rx + CARD_W - 25, ry + CARD_H - 15, 0.7, {25, 25, 0, rowAlpha * 255})
-                    end
-
-                elseif row.type == "buttons" then
-                    -- Button rendering
-                    local btnW = 140
-                    local btnH = 40
-                    local bx = rx
-                    local by = ry
-                    
-                    local bCol = isSelected and {255, 255, 255, rowAlpha * 255} or {100, 100, 100, rowAlpha * 150}
-                    local tCol = isSelected and {0, 0, 0, rowAlpha * 255} or {200, 200, 200, rowAlpha * 200}
-                    
-                    fore.graphics.rect(bx, by, btnW, btnH, bCol)
-                    fore.graphics.text(item.txt, bx, by + 12, 1, tCol, btnW, "center")
                 end
+                love.graphics.pop()
             end
-            love.graphics.pop()
+            currentY = currentY + rowHeight
         end
     end
     love.graphics.pop()
@@ -330,12 +448,5 @@ function Scene.draw()
     end
 end
 
-function Scene.exit()
-    -- Apply selected
-    if selectedDebuff then
-        EffectSystem.apply(GameState.player, selectedDebuff.def)
-    end
-    fore.save.write()
-end
 
 return Scene
