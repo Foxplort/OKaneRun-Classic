@@ -147,9 +147,15 @@ function Fore:update(dt)
     if self.debug.enabled then self.debug.update()
     else
         local changedVol = false
-        if self.input:pressed("volumeUp") then self.audio.setMasterVolume(self.audio.masterVolume + 20); changedVol = true end
-        if self.input:pressed("volumeDown") then self.audio.setMasterVolume(self.audio.masterVolume - 20); changedVol = true end
+        local vol = self.audio.masterVolume
+        if self.input:pressed("volumeUp") then changedVol = 1 end
+        if self.input:pressed("volumeDown") then changedVol = -1 end
         if changedVol then
+            if vol < 100 then
+                self.audio.setMasterVolume(vol + (20*changedVol))
+            else
+                self.audio.setMasterVolume(vol + (40*changedVol))
+            end
             self.save.set_engine("volume", self.audio.masterVolume)
             self.save.write()
             self.audio.play("system_volume_change")

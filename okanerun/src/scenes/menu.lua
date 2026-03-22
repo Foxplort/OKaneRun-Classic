@@ -77,7 +77,14 @@ local function createMenus()
                     end, nil, 0, 0.7)
                 end,
             },
-            { txt = "Journal", disabled = true },
+            {
+                txt = "Records",
+                action = function()
+                    fore.transition.start("dither", function()
+                        fore.scenes:goTo("records")
+                    end)
+                end
+            },
             { txt = "Options", disabled = true },
             { txt = "Credits", push = function() return credits end },
             { txt = "Exit",    push = function() return exit end },
@@ -112,14 +119,18 @@ function Scene.enter()
 end
 
 function Scene.onComplete()
-    fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
+    if not fore.audio.isPlaying("menu_music") then
+        fore.audio.play("menu_music", {volume = 2.0, loop = true, fadeIn = 2.0})
+    end
 end
 
 function Scene.exit()
     fore.graphics.scheduleUnload("logo")
     fore.graphics.scheduleUnload("menu_portrait")
     fore.graphics.scheduleUnload("menu_fog")
-    fore.audio.fadeOutAndUnload("menu_music", 2.0)
+    if fore.scenes.next ~= "records" then
+        fore.audio.fadeOutAndUnload("menu_music", 2.0)
+    end
 end
 
 

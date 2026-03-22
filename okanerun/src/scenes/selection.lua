@@ -17,12 +17,11 @@ local MARGIN_LEFT = 60
 
 -- State
 local rows = {
-    { name = "Buffs", type = "shop", items = {}, scroll = 0, selected = 1 },
-    { name = "Debuffs", type = "selection", items = {}, scroll = 0, selected = 1 },
+    { name = "Blessings", type = "shop", items = {}, scroll = 0, selected = 1 },
+    { name = "Curses", type = "selection", items = {}, scroll = 0, selected = 1 },
     { name = "Controls", type = "buttons", items = {}, scroll = 0, selected = 1 }
 }
 local currentRow = 1
-local lockedRow = {false, false, false}
 local selectedDebuff = nil
 local coins = 0
 local message = ""
@@ -128,7 +127,6 @@ end
 -- ###################### --
 
 function Scene.enter()
-    lockedRow = {false, false, false}
     selectedDebuff = nil
     rows[1].selected = 1
     rows[2].selected = 1
@@ -140,12 +138,8 @@ function Scene.enter()
     buildRows()
     
     currentRow = 3
-    if #rows[2].items > 0 then
-        currentRow = 2
-    else lockedRow[2] = true end
-    if #rows[1].items > 0 then
-        currentRow = 1
-    else lockedRow[1] = true end
+    if #rows[1].items > 0 then currentRow = 1
+    elseif #rows[2].items > 0 then currentRow = 2 end
 
     fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(require("okanerun.src.game.effects")) do

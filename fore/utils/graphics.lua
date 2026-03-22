@@ -43,6 +43,15 @@ function Renderer.updateFonts()
     end
 end
 
+function Renderer.setFontScale(s)
+    local font = "small"
+    if s < 1.4 then font = "small"
+    elseif s < 2.4 then font = "medium"
+    else font = "large" end 
+    love.graphics.setFont(Renderer.fonts[font])
+    return font
+end
+
 -- INNER FUNCTIONS
 
 local function coloring(c, pA)
@@ -272,19 +281,19 @@ function Renderer.text(text, x, y, s, c, wrap, align)
     local sy = s[2] or s[1]
     align = align or "left"
 
-    local font = "small"
-    local fontScale = math.max(sx, sy)
-    if fontScale < 1.5 then font = "small"
-    elseif fontScale < 2.5 then font = "medium"
-    else font = "large" end 
-    love.graphics.setFont(Renderer.fonts[font])
+    local font = Renderer.setFontScale(math.max(sx, sy))
 
     setColor(c)
+    local height = 0
     if wrap then
+        local width, lines = Renderer.fonts[font]:getWrap(text, wrap/sx)
         love.graphics.printf(text, x, y, wrap/sx, align, 0, sx, sy)
+        height = #lines * Renderer.fonts[font]:getHeight() * sy
     else
         love.graphics.print(text, x, y, 0, sx, sy)
+        height = Renderer.fonts[font]:getHeight() * sy
     end
+    return height
 end
 
 local function parseStyledText(str, defaultColor)
@@ -342,7 +351,10 @@ end
 function Renderer.textAdvanced(text, x, y, s, c, wrap, align)
     s = type(s) == "table" and s[1] or s or 1
     local _, _, _, baseAlpha = coloring(c)
-    local h = love.graphics.getFont():getHeight() * s
+
+    Renderer.setFontScale(s)
+
+    local lineHeight = love.graphics.getFont():getHeight() * s
     local lines = layoutStyledText(parseStyledText(text, c), wrap, s)
 
     for i, line in ipairs(lines) do
@@ -355,14 +367,16 @@ function Renderer.textAdvanced(text, x, y, s, c, wrap, align)
         for _, seg in ipairs(line) do
             local r, g, b, a = coloring(seg.color, baseAlpha)
             love.graphics.setColor(r, g, b, a)
-            love.graphics.print(seg.text, cx, y + (i - 1) * h, 0, s, s)
+            love.graphics.print(seg.text, cx, y + (i - 1) * lineHeight, 0, s, s)
             cx = cx + Renderer.getTextWidth(seg.text, s)
         end
     end
+    
+    return #lines * lineHeight
 end
 
 function Renderer.textEx(text, x, y, s, c, wrap, align)
-    if type(text) == "string" and text:find("%[c=") or text:find("%[br") then
+    if type(text) == "string" and (text:find("[c=", 1, true) or text:find("[br", 1, true)) then
         return Renderer.textAdvanced(text, x, y, s, c, wrap, align)
     else
         return Renderer.text(text, x, y, s, c, wrap, align)

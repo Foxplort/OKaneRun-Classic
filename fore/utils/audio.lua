@@ -142,6 +142,18 @@ function Audio.play(name, opts)
     return instance
 end
 
+---Check if a sound is currently playing
+---@param name string
+---@return boolean
+function Audio.isPlaying(name)
+    for id, instance in pairs(Audio.playing) do
+        if id:match("^" .. name) then
+            return true
+        end
+    end
+    return false
+end
+
 ---Play and auto-delete after (one-shot)
 ---@param name string
 ---@param opts? AudioPlayOptions
@@ -306,7 +318,7 @@ end
 ---Set master volume
 ---@param volume number
 function Audio.setMasterVolume(volume)
-    Audio.masterVolume = math.max(0, math.min(200, volume))
+    Audio.masterVolume = math.max(0, math.min(300, volume))
     Audio:_updateVolumes()
 end
 
