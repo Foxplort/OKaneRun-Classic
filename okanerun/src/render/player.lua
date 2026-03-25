@@ -1,5 +1,35 @@
 local Player = {}
 
+local function getPlayerSprite(p)
+    return tostring(p.anim.frame)
+end
+
+local function drawPlayerSprite(p, x, y, z, sx, sy, color)
+    local sprite = getPlayerSprite(p)
+    local img = fore.graphics.getImage(sprite)
+    
+    if not img then return end
+
+    local scale = p.sprite.scale or 0.35
+    local finalSX = scale * sx
+    local finalSY = scale * sy
+    
+    if p.anim.flipX then finalSX = -finalSX end
+
+    -- Center horizontally (p.stat.body.w/2), align bottom to feet
+    -- Offset is for fine-tuning
+    local tx = x + p.stat.body.w / 2 + (p.sprite.offset.x * (p.anim.flipX and -1 or 1))
+    local ty = y - z + p.sprite.offset.y
+
+    -- Align bottom-center (or feet-center) of the image
+    fore.graphics.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, p.sprite.feetY or 256, color)
+
+    if fore.debug.enabled then
+        fore.graphics.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0})
+        fore.graphics.rect(tx - 1, ty - 1, 2, 2, {255, 255, 255})
+    end
+end
+
 function Player.render()
     -- shadow
     fore.queuer.submit(L.SHADOW, GameState.player.pos.y, function()
@@ -45,30 +75,22 @@ function Player.render()
     end)
 
     
-    -- tail (Add later with the sprite!)
-    -- fore.queuer.submit(
-    --     L.ACTOR,
-    --     playerRenderDepth()-0.01,
-    --     function()
-    --         -- 5 is the base thickness, adjust as needed
-    --         fore.graphics.tail(GameState.player.tail, {255, 255, 255, 255-math.abs(math.min(0, GameState.player.pos.z*6))}, 2) 
-    --     end
-    -- )
+    -- tail
+    fore.queuer.submit(
+        L.ACTOR,
+        GameState.player.pos.y-0.01,
+        function()
+            local alpha = 255-math.abs(math.min(0, GameState.player.pos.z*6))
+            fore.graphics.tail(GameState.player.tail, {24, 24, 24, alpha}, 2, {187, 187, 187, alpha}, 1) 
+        end
+    )
 
 
     -- player
     local pm = GameState.player.stat.body
     local vs = GameState.player.visual
+    local ps = GameState.player
     
-    -- Calculate visual dimensions
-    local vw = pm.w * vs.sx
-    local vh = pm.h * vs.sy
-
-    local sortY = GameState.player.pos.y
-    if GameState.player.pos.z < -5 then 
-        sortY = -998
-    end
-
     local playerCol = 200
     if GameState.player.inv then playerCol = 120 end
     
@@ -83,11 +105,11 @@ function Player.render()
             love.graphics.setStencilTest("notequal", 1)
         end
 
-        fore.graphics.rect(
-            GameState.player.pos.x + (pm.w - vw) / 2,
-            GameState.player.pos.y - GameState.player.pos.z - vh,
-            vw, vh,
-            {playerCol, playerCol, playerCol, 255-math.abs(math.min(0, GameState.player.pos.z*6))}
+        drawPlayerSprite(
+            ps,
+            ps.pos.x, ps.pos.y, ps.pos.z,
+            vs.sx, vs.sy,
+            {playerCol, playerCol, playerCol, 255-math.abs(math.min(0, ps.pos.z*6))}
         )
 
         love.graphics.setStencilTest() -- Reset stencil
@@ -107,10 +129,10 @@ function Player.render()
                 love.graphics.setStencilTest("notequal", 1)
             end
 
-            fore.graphics.rect(
-                a.x + (pm.w - pm.w * a.sx) / 2,
-                a.y - a.z - pm.h * a.sy,
-                pm.w * a.sx, pm.h * a.sy,
+            drawPlayerSprite(
+                ps, -- use player state for current frame/state, which is technically incorrect for an afterimage but works for now
+                a.x, a.y, a.z,
+                a.sx, a.sy,
                 {0, playerCol/1.3, playerCol, alpha}
             )
 

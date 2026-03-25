@@ -57,6 +57,23 @@ function Player.new()
             dir = {x=0,y=0}
         },
 
+        anim = {
+            timer = 0,
+            frame = 1,
+            state = "idle",
+            flipX = false,
+            speed = 0.1,
+            
+            jumpTimer = 0,
+            landTimer = 0,
+        },
+
+        sprite = {
+            offset = { x = 0, y = 0 },
+            scale = 0.4,
+            feetY = 190,
+        },
+
         -- BASE STATS (immutable)
         base = {
             move = {
@@ -100,7 +117,7 @@ function Player.new()
         stat = {}
     }
 
-    playerData.tail = makeTail(playerData, 12, 3)
+    playerData.tail = makeTail(playerData, 24, 1.9)
 
     return playerData
 end

@@ -69,24 +69,7 @@ local function getActiveCore(hb)
     return nil
 end
 
-local footstepTimer = 0
-local function handleFootsteps(dt)
-    local p = GameState.player
-    local speedVal = math.sqrt(p.vel.x^2 + p.vel.y^2)
-    if p.grounded and GameState.player.dash.timer <= 0 then
-        footstepTimer = footstepTimer - dt
-        if speedVal > 1.0 and footstepTimer <= 0 then
-            local interval = math.min(0.8 * (40/speedVal), 0.6)
-            fore.audio.play("footsteps", {
-                pitch = math.random(35, 65) / 100,
-                volume = 0.1
-            })
-            footstepTimer = interval
-        end
-    else
-        footstepTimer = 0
-    end
-end
+
 
 local function queueJump(delay)
     table.insert(jumpQueue, {time = delay})
@@ -201,6 +184,14 @@ function Scene.enter()
         end
     end
 
+    -- LOAD PLAYER ASSETS
+    local playerAssets = {"1", "2", "3", "4", "5", "6"}
+    for _, name in ipairs(playerAssets) do
+        local path = "okanerun/assets/images/player/" .. name .. ".png"
+        fore.graphics.scheduleLoad(name, path)
+        table.insert(loadedImages, name)
+    end
+
     fore.debug.add("Player", function()
         local p = GameState.player
         return {
@@ -310,6 +301,7 @@ function Scene.update(dt)
 
                         GameState.player.visual.sx = 0.7
                         GameState.player.visual.sy = 1.4
+                        GameState.player.anim.jumpTimer = 0.12
 
                         if GameState.player.grounded then
                             gameData.systems.particles.spawnDust(
@@ -489,6 +481,7 @@ function Scene.update(dt)
 
                 GameState.player.visual.sx = 1.5 -- Wide
                 GameState.player.visual.sy = 0.5 -- Short
+                GameState.player.anim.landTimer = 0.18
             end
 
             GameState.player.pos.z = 0
@@ -551,7 +544,52 @@ function Scene.update(dt)
             end
         end
 
-        handleFootsteps(dt)
+        -- ANIMATION & FOOTSTEPS
+        local speedVal = math.sqrt(GameState.player.vel.x^2 + GameState.player.vel.y^2)
+        local p = GameState.player
+
+        p.anim.jumpTimer = math.max(0, p.anim.jumpTimer - dt)
+        p.anim.landTimer = math.max(0, p.anim.landTimer - dt)
+
+        if p.anim.landTimer > 0 then
+            p.anim.frame = 5
+        elseif p.anim.jumpTimer > 0 then
+            p.anim.frame = 5
+        elseif p.dash.timer > 0 then
+            p.anim.frame = 4
+        elseif not p.grounded then
+            p.anim.frame = 6
+        elseif speedVal > 10 then
+            p.anim.state = "walk"
+            -- Playback
+            p.anim.timer = p.anim.timer + dt * (speedVal / 180)
+            local frames = {2, 1, 3, 1}
+            local frameIndex = math.floor(p.anim.timer / p.anim.speed) % #frames + 1
+            p.anim.frame = frames[frameIndex]
+
+            -- Sync sound with frame index change
+            if frameIndex ~= p.anim.lastIdx then
+                if frameIndex == 1 or frameIndex == 3 then
+                    fore.audio.play("footsteps", {
+                        pitch = math.random(45, 65) / 100,
+                        volume = 0.1
+                    })
+                end
+                p.anim.lastIdx = frameIndex
+            end
+        else
+            p.anim.state = "idle"
+            p.anim.frame = 1
+            p.anim.timer = 0
+            p.anim.lastIdx = 0
+        end
+
+        if p.vel.x > 5 then
+            p.anim.flipX = false
+        elseif p.vel.x < -5 then
+            p.anim.flipX = true
+        end
+
 
         -- Visual recovery (bring scale back to 1)
         GameState.player.visual.sx = fore.math.approach(GameState.player.visual.sx, 1, 2 * dt)
@@ -591,11 +629,11 @@ function Scene.update(dt)
         gameData.systems.tail.updateTail(
             GameState.player.tail,
             GameState.player.pos.x + GameState.player.base.body.w / 2,
-            GameState.player.pos.y - GameState.player.pos.z - 6,
+            GameState.player.pos.y - GameState.player.pos.z - 22 + (GameState.player.anim.state == "walk" and (GameState.player.anim.frame == 2 or GameState.player.anim.frame == 3) and 2 or 0),
             dt
         )
 
-        gameData.systems.tail.applyTailWave(GameState.player.tail, speed, love.timer.getTime())
+        gameData.systems.tail.applyTailWave(GameState.player.tail, speed, love.timer.getTime(), dt)
 
         -- Updaters / Handlers
         gameData.systems.particles.updateParticles(dt)

@@ -1,70 +1,65 @@
 local PlayerTail = {}
 
-function PlayerTail.applyTailWave(tail, speed, t)
-    local moveAmp = math.min(speed / 6000, 0.02) 
-    local idleAmp = 0.04
-
+function PlayerTail.applyTailWave(tail, speed, t, dt)
+    local dtScale = (dt or (1/60)) * 60
+    
+    -- Wave intensity scales UP with speed for "fluttering" effect
+    local flutterFactor = math.min(speed / 400, 1.0)
+    local idleFactor = 1.0 - flutterFactor
+    
     for i = 2, #tail do
-        local a = tail[i - 1]
-        local b = tail[i]
-
-        local dx = b.x - a.x
-        local dy = b.y - a.y
-        local len = math.sqrt(dx*dx + dy*dy)
-        if len == 0 then len = 0.001 end
-
-        -- Calculate Normal (perpendicular)
-        local nx, ny = -dy / len, dx / len
-
-        -- Wave logic: use a lower multiplier on 't' for a slower wag
-        local frequency = 3.0
-        local waveSpread = 0.4
-        local phase = t * frequency - i * waveSpread
+        local s = tail[i]
         
-        -- Tail is stiffer at the base and flexible at the tip
-        local stiffness = (i / #tail) 
-        local amp = (idleAmp + moveAmp) * stiffness * 1.5
-
-        b.x = b.x + nx * math.sin(phase) * amp
-        b.y = b.y + ny * math.sin(phase) * amp
+        -- High frequency for running, slow for idle
+        local frequency = 3.0 * idleFactor + 12.0 * flutterFactor
+        local phase = t * frequency - i * 0.3
+        
+        -- Fluttering amp
+        local waveAmp = (0.08 * idleFactor + 0.15 * flutterFactor) * (i / #tail) * dtScale
+        
+        s.x = s.x + math.sin(phase) * waveAmp
+        s.y = s.y + math.cos(phase * 0.7) * waveAmp * 0.4
     end
 end
 
 function PlayerTail.updateTail(tail, anchorX, anchorY, dt)
-    local damping = 0.8
-    if math.abs(GameState.player.vel.z) > 10 then
-        damping = 0.6 -- More drag during jumps/falls
-    end
+    -- Drag
+    local damping = 0.3
+    damping = damping ^ ((dt or (1/60)) * 60)
 
-    for i, s in ipairs(tail) do
-        if i > 1 then
-            local vx = (s.x - s.px) * damping
-            local vy = (s.y - s.py) * damping
-            s.px, s.py = s.x, s.y
-            s.x, s.y = s.x + vx, s.y + vy
-        end
-    end
+    -- Update anchor (Head)
+    tail[1].px, tail[1].py = tail[1].x, tail[1].y
+    tail[1].x, tail[1].y = anchorX, anchorY
 
-    -- Anchor
-    tail[1].x = anchorX
-    tail[1].y = anchorY
-    tail[1].px = anchorX
-    tail[1].py = anchorY
+    -- Update segments
+    for i = 2, #tail do
+        local s = tail[i]
+        local prev = tail[i-1]
 
-    -- Constraint Solver (Firmness)
-    for _ = 1, 4 do
-        for i = 2, #tail do
-            local a = tail[i-1]
-            local b = tail[i]
-            local dx, dy = b.x - a.x, b.y - a.y
-            local dist = math.sqrt(dx*dx + dy*dy)
-            if dist == 0 then dist = 0.001 end
-            
-            local percentage = (dist - b.spacing) / dist
-            
-            -- Move the segment towards the previous one
-            b.x = b.x - dx * percentage
-            b.y = b.y - dy * percentage
+        -- Physics (Inertia)
+        local vx = (s.x - s.px) * damping
+        local vy = (s.y - s.py) * damping
+
+        -- Store current as previous
+        s.px, s.py = s.x, s.y
+
+        -- Apply "air-y" force: slight lift and follow
+        local lift = 0.08 * ((24-i)/24) * (dt or 1/60) * 60
+        
+        s.x = s.x + vx
+        s.y = s.y + vy - lift
+        
+        -- Link Constraint
+        local dx, dy = s.x - prev.x, s.y - prev.y
+        local dist = math.sqrt(dx*dx + dy*dy)
+        if dist == 0 then dist = 0.001 end
+
+        -- If the segment is too far, pull it back
+        local goalDist = s.spacing or 1.9
+        if dist > goalDist then
+            local ratio = goalDist / dist
+            s.x = prev.x + dx * ratio
+            s.y = prev.y + dy * ratio
         end
     end
 end
