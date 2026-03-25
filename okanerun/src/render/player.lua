@@ -98,7 +98,7 @@ function Player.render()
         if GameState.player.pos.z < 0 then
             love.graphics.stencil(function()
                 for _, g in ipairs(GameState.area.ground) do
-                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-GameState.player.stat.body.h)
+                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-(GameState.player.sprite.feetY*GameState.player.sprite.scale))
                 end
             end, "replace", 1)
             -- "notequal 1" means: Only draw where the stencil (ground) is NOT

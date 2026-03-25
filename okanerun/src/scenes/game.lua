@@ -71,8 +71,8 @@ end
 
 
 
-local function queueJump(delay)
-    table.insert(jumpQueue, {time = delay})
+local function queueJump(delay, mul)
+    table.insert(jumpQueue, {time = delay, mul = mul or 1})
 end
 
 -- ######################### --
@@ -281,11 +281,40 @@ function Scene.update(dt)
         if gameData.game.effectUI.Data.visible then
             gameData.game.effectUI.keypressed(GameState.player)
         else
-            if fore.input:pressed("jump") then
-                if not GameState.player.effectRef.sticky or GameState.player.effectRef.sticky <= 0 then
-                    queueJump(0)
+            local chargeActive = GameState.player.effects["charged"]
+            if not chargeActive then
+                if fore.input:pressed("jump") then
+                    if not GameState.player.effectRef.sticky or GameState.player.effectRef.sticky <= 0 then
+                        queueJump(0)
+                    else
+                        queueJump(0.1 * GameState.player.effectRef.sticky)
+                    end
+                end
+            else
+                if not GameState.player.dead then
+                    if fore.input:down("jump") then
+                        GameState.player.effectRef.charged = GameState.player.effectRef.charged + dt
+                        if GameState.player.effectRef.charged >= 2 then
+                            local mul = 0.7 + (math.min(GameState.player.effectRef.charged, 0.8) / 0.8) * 0.6
+                            local delay = 0
+                            if GameState.player.effectRef.sticky and GameState.player.effectRef.sticky > 0 then
+                                delay = 0.15 * GameState.player.effectRef.sticky
+                            end
+                            queueJump(delay, mul)
+                            GameState.player.effectRef.charged = 0
+                        end
+                    elseif GameState.player.effectRef.charged > 0 then
+                        -- Released
+                        local mul = 0.7 + (math.min(GameState.player.effectRef.charged, 0.8) / 0.8) * 0.6
+                        local delay = 0
+                        if GameState.player.effectRef.sticky and GameState.player.effectRef.sticky > 0 then
+                            delay = 0.15 * GameState.player.effectRef.sticky
+                        end
+                        queueJump(delay, mul)
+                        GameState.player.effectRef.charged = 0
+                    end
                 else
-                    queueJump(0.15 * GameState.player.effectRef.sticky)
+                    GameState.player.effectRef.charged = 0
                 end
             end
 
@@ -296,7 +325,7 @@ function Scene.update(dt)
                 if j.time <= 0 then
                     if GameState.player.jump.cons < GameState.player.stat.jump.lim then
                         GameState.player.jump.cons = GameState.player.jump.cons + 1
-                        GameState.player.vel.z = GameState.player.stat.jump.vel
+                        GameState.player.vel.z = GameState.player.stat.jump.vel * j.mul
                         GameState.player.jump.timer = GameState.player.stat.jump.cd
 
                         GameState.player.visual.sx = 0.7
@@ -462,35 +491,73 @@ function Scene.update(dt)
 
         -- Ground resolution
         local hb = Fx.cl.getPlayerHitbox()
+
+        local GROUND_SNAP = 0        -- normal ground level
+        local GROUND_BUFFER = -4     -- "forgiveness" zone
+        local GROUND_SOLID = -8      -- becomes wall
+
         local touchingGround = false
+        local blockingGround = false
 
         for _, g in ipairs(GameState.area.ground) do
-            if fore.math.aabb(hb, Fx.cl.getGroundHitbox(g)) then
+            local gh = Fx.cl.getGroundHitbox(g)
+
+            if fore.math.aabb(hb, gh) then
                 touchingGround = true
+
+                -- If player is deep below → treat as wall
+                if GameState.player.pos.z < GROUND_SOLID then
+                    blockingGround = true
+
+                    -- Push player OUT horizontally (like walls)
+                    if lastX + GameState.player.stat.body.hitbox.xt + hb.w <= gh.x then
+                        GameState.player.pos.x = gh.x - GameState.player.stat.body.hitbox.xt - hb.w
+                    elseif lastX + GameState.player.stat.body.hitbox.xt >= gh.x + gh.w then
+                        GameState.player.pos.x = gh.x + gh.w - GameState.player.stat.body.hitbox.xt
+                    end
+
+                    if lastY + GameState.player.stat.body.hitbox.yt + hb.h <= gh.y then
+                        GameState.player.pos.y = gh.y - GameState.player.stat.body.hitbox.yt - hb.h
+                    elseif lastY + GameState.player.stat.body.hitbox.yt >= gh.y + gh.h then
+                        GameState.player.pos.y = gh.y + gh.h - GameState.player.stat.body.hitbox.yt
+                    end
+                end
+
                 break
             end
         end
 
-        if touchingGround and GameState.player.pos.z <= 0 then
-            if GameState.player.vel.z < -50 then
-                gameData.systems.particles.spawnLandingDust(
-                    GameState.player.pos.x + 10,
-                    GameState.player.pos.y,
-                    0
+        -- NORMAL GROUND + BUFFER
+        if touchingGround and not blockingGround then
+            if GameState.player.pos.z <= GROUND_SNAP then
+                if GameState.player.vel.z < -50 then
+                    gameData.systems.particles.spawnLandingDust(
+                        GameState.player.pos.x + 10,
+                        GameState.player.pos.y,
+                        0
+                    )
+
+                    GameState.player.visual.sx = 1.5
+                    GameState.player.visual.sy = 0.5
+                    GameState.player.anim.landTimer = 0.18
+                end
+
+                GameState.player.pos.z = GROUND_SNAP
+                GameState.player.vel.z = 0
+                GameState.player.jump.cons = 0
+            elseif GameState.player.pos.z < GROUND_SNAP and GameState.player.pos.z > GROUND_BUFFER then
+                -- soft push up (forgiveness zone)
+                GameState.player.pos.z = fore.math.approach(
+                    GameState.player.pos.z,
+                    GROUND_SNAP,
+                    120 * dt
                 )
-
-                GameState.player.visual.sx = 1.5 -- Wide
-                GameState.player.visual.sy = 0.5 -- Short
-                GameState.player.anim.landTimer = 0.18
+                GameState.player.vel.z = 0
             end
-
-            GameState.player.pos.z = 0
-            GameState.player.vel.z = 0
-            GameState.player.jump.cons = 0
         end
 
         local hb = Fx.cl.getPlayerHitbox()
-        GameState.player.grounded = touchingGround and GameState.player.vel.z == 0
+        GameState.player.grounded = touchingGround and GameState.player.pos.z == 0
         local core = getActiveCore(hb)
 
         if core and GameState.player.grounded and #GameState.player.coinChain > 0 then

@@ -523,4 +523,46 @@ effects.slippery = {
     end,
 }
 
+effects.charged = {
+    id = "charged",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 1,
+
+    onApply = function(player)
+        player.effectRef.charged = 0
+    end,
+
+    onRemove = function(player)
+        player.effectRef.charged = nil
+    end,
+
+    onDraw = function(player, inst)
+        local charge = player.effectRef.charged
+        if charge and charge > 0 then
+            local px = player.pos.x + player.base.body.w/2
+            local py = player.pos.y - player.pos.z
+            local progress = math.min(charge / 0.8, 1)
+            
+            fore.queuer.submit(L.ACTOR, py + 10, function()
+                local w, h = 24, 4
+                local x, y = px - w/2, py + 5
+                
+                -- BG
+                fore.graphics.rect(x - 1, y - 1, w + 2, h + 2, {0, 0, 0, 150})
+                
+                -- Progress
+                local r, g, b = 100, 200, 255
+                if charge >= 0.8 then
+                    r, g, b = 255, 200, 50
+                    local pulse = (math.sin(love.timer.getTime() * 15) + 1) / 2
+                    r = r + (255-r) * pulse
+                end
+                
+                fore.graphics.rect(x, y, w * progress, h, {r, g, b, 200})
+            end)
+        end
+    end,
+}
+
 return effects
