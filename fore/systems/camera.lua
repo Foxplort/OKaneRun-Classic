@@ -1,4 +1,7 @@
+---@class foreRef.camera
 local Camera = {}
+
+local foreRef = nil
 
 -- Core properties
 local worldCam = {
@@ -32,8 +35,8 @@ local categories = {
 }
 
 -- Screen dimensions
-local halfW = fore.data.width / 2
-local halfH = fore.data.height / 2
+local halfW = 100
+local halfH = 100
 
 -- Movement
 local followSpeed = 8
@@ -77,6 +80,14 @@ function Camera.createCategory(name, config)
         parallax = config.parallax or 1.0
     }
     return name
+end
+
+---Creates camera module
+---@param fore fore
+function Camera.systemInit(fore)
+    foreRef = fore
+    halfW = foreRef.data.width / 2
+    halfH = foreRef.data.height / 2
 end
 
 -- Remove a category
@@ -168,18 +179,18 @@ end
 
 function Camera.update(targetX_, targetY_, dt, velX, velY)
     -- Recalculate half dimensions with world zoom
-    halfW = fore.data.width / 2
-    halfH = fore.data.height / 2
+    halfW = foreRef.data.width / 2
+    halfH = foreRef.data.height / 2
     
     worldCam.targetX, worldCam.targetY = targetX_, targetY_
     
     -- Look-ahead
     if lookAhead.enabled and velX and velY then
-        lookAhead.velX = fore.math.lerp(lookAhead.velX, velX, dt * 5)
-        lookAhead.velY = fore.math.lerp(lookAhead.velY, velY, dt * 5)
+        lookAhead.velX = foreRef.math.lerp(lookAhead.velX, velX, dt * 5)
+        lookAhead.velY = foreRef.math.lerp(lookAhead.velY, velY, dt * 5)
         
-        local offsetX = fore.math.clamp(lookAhead.velX * lookAhead.strength, -lookAhead.maxOffset, lookAhead.maxOffset)
-        local offsetY = fore.math.clamp(lookAhead.velY * lookAhead.strength, -lookAhead.maxOffset, lookAhead.maxOffset)
+        local offsetX = foreRef.math.clamp(lookAhead.velX * lookAhead.strength, -lookAhead.maxOffset, lookAhead.maxOffset)
+        local offsetY = foreRef.math.clamp(lookAhead.velY * lookAhead.strength, -lookAhead.maxOffset, lookAhead.maxOffset)
         
         worldCam.targetX = worldCam.targetX + offsetX
         worldCam.targetY = worldCam.targetY + offsetY
@@ -188,26 +199,26 @@ function Camera.update(targetX_, targetY_, dt, velX, velY)
     -- Update category shake
     for name, cat in pairs(categories) do
         if cat.active then
-            cat.shake.amount = fore.math.approach(cat.shake.amount, 0, 40 * dt)
+            cat.shake.amount = foreRef.math.approach(cat.shake.amount, 0, 40 * dt)
             cat.shake.x = randf(cat.shake.amount)
             cat.shake.y = randf(cat.shake.amount)
             
             -- Update category zoom
-            cat.zoom = fore.math.lerp(cat.zoom, cat.targetZoom, 1 - math.exp(-zoomSpeed * dt))
+            cat.zoom = foreRef.math.lerp(cat.zoom, cat.targetZoom, 1 - math.exp(-zoomSpeed * dt))
         end
     end
     
     -- Smooth world camera follow
     if smoothMode == "exponential" then
         local follow = 1 - math.exp(-followSpeed * dt)
-        worldCam.x = fore.math.lerp(worldCam.x, worldCam.targetX, follow)
-        worldCam.y = fore.math.lerp(worldCam.y, worldCam.targetY, follow)
+        worldCam.x = foreRef.math.lerp(worldCam.x, worldCam.targetX, follow)
+        worldCam.y = foreRef.math.lerp(worldCam.y, worldCam.targetY, follow)
     else
         local distX = worldCam.targetX - worldCam.x
         local distY = worldCam.targetY - worldCam.y
         local maxMove = followSpeed * dt * 60
-        worldCam.x = worldCam.x + fore.math.clamp(distX, -maxMove, maxMove)
-        worldCam.y = worldCam.y + fore.math.clamp(distY, -maxMove, maxMove)
+        worldCam.x = worldCam.x + foreRef.math.clamp(distX, -maxMove, maxMove)
+        worldCam.y = worldCam.y + foreRef.math.clamp(distY, -maxMove, maxMove)
     end
     
     -- Deadzone
@@ -231,25 +242,25 @@ function Camera.update(targetX_, targetY_, dt, velX, velY)
         local maxY = worldHeight - halfH + boundPadding
         
         if boundMode == "hard" then
-            worldCam.x = fore.math.clamp(worldCam.x, minX, maxX)
-            worldCam.y = fore.math.clamp(worldCam.y, minY, maxY)
+            worldCam.x = foreRef.math.clamp(worldCam.x, minX, maxX)
+            worldCam.y = foreRef.math.clamp(worldCam.y, minY, maxY)
         elseif boundMode == "soft" then
             if worldCam.x < minX then
-                worldCam.x = fore.math.lerp(worldCam.x, minX, dt * 5)
+                worldCam.x = foreRef.math.lerp(worldCam.x, minX, dt * 5)
             elseif worldCam.x > maxX then
-                worldCam.x = fore.math.lerp(worldCam.x, maxX, dt * 5)
+                worldCam.x = foreRef.math.lerp(worldCam.x, maxX, dt * 5)
             end
             
             if worldCam.y < minY then
-                worldCam.y = fore.math.lerp(worldCam.y, minY, dt * 5)
+                worldCam.y = foreRef.math.lerp(worldCam.y, minY, dt * 5)
             elseif worldCam.y > maxY then
-                worldCam.y = fore.math.lerp(worldCam.y, maxY, dt * 5)
+                worldCam.y = foreRef.math.lerp(worldCam.y, maxY, dt * 5)
             end
         end
     end
     
     -- Update world zoom
-    worldCam.zoom = fore.math.lerp(worldCam.zoom, worldCam.targetZoom, 1 - math.exp(-zoomSpeed * dt))
+    worldCam.zoom = foreRef.math.lerp(worldCam.zoom, worldCam.targetZoom, 1 - math.exp(-zoomSpeed * dt))
 end
 
 function Camera.push(category)

@@ -14,9 +14,9 @@ local freeze_thresholds = { start = 0, stop = 1 }
 T.is_frozen = false
 
 T.config = {
-    duration = 3.0,
+    duration = 2.2,
     dir = 1,
-    widthMult = 8.0,
+    widthMult = 7.0,
     layers = {
         {count = 12, depth = 30, yShift = 400, color = {0, 20, 10, 130}, delay = 0, finishEarly = 0},
         {count = 12, depth = 30, yShift = 200, color = {5, 35, 35}, delay = 0.04, finishEarly = 0.04},

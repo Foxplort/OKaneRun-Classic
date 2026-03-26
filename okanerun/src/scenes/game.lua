@@ -91,8 +91,8 @@ local function damagePlayer(amount, timeMod)
         p.hp.count = p.hp.count - amount
 
         -- camera feedback
-        gameData.systems.camera.addShake("world", 3)
-        gameData.systems.camera.addShake("ui", 3)
+        fore.camera.addShake("world", 3)
+        fore.camera.addShake("ui", 3)
 
         if p.hp.count <= 0 then
             fore.save.set("deaths", fore.save.get("deaths") + 1)
@@ -155,7 +155,6 @@ function Scene.enter()
             ui = require("okanerun.src.render.ui"),
         },
         systems = {
-            camera = require("okanerun.src.systems.camera"),
             tail = require("okanerun.src.systems.playerTail"),
             particles = require("okanerun.src.systems.particles"),
         },
@@ -166,8 +165,8 @@ function Scene.enter()
         },
     }
 
-    gameData.systems.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
-    gameData.systems.camera.setPosition(
+    fore.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
+    fore.camera.setPosition(
         GameState.player.pos.x + GameState.player.stat.body.w / 2,
         GameState.player.pos.y + GameState.player.stat.body.h / 2,
         true
@@ -684,8 +683,8 @@ function Scene.update(dt)
         local camTargetX = GameState.player.pos.x + GameState.player.stat.body.w / 2
         local camTargetY = GameState.player.pos.y + GameState.player.stat.body.h / 2
 
-        gameData.systems.camera.update(camTargetX, camTargetY, dt)
-        gameData.systems.camera.setCategoryZoom("world", GameState.player.camZoom, false)
+        fore.camera.update(camTargetX, camTargetY, dt)
+        fore.camera.setCategoryZoom("world", GameState.player.camZoom, false)
 
         -- Tails Math
         local speed = math.sqrt(
@@ -751,7 +750,7 @@ function Scene.draw()
         love.graphics.setShader(monoShader)
     end
 
-    gameData.systems.camera.push("world", true)
+    fore.camera.push("world", true)
 
     -- ## BASE DRAW PART ##
 
@@ -801,11 +800,11 @@ function Scene.draw()
         end
     end
 
-    gameData.systems.camera.pop()
+    fore.camera.pop()
 
     -- ## USER INERTFACE ##
 
-    gameData.systems.camera.push("ui", false)
+    fore.camera.push("ui", false)
 
     gameData.render.ui.draw()
 
@@ -817,7 +816,7 @@ function Scene.draw()
         menuStack:draw()
     end
 
-    gameData.systems.camera.pop()
+    fore.camera.pop()
 
     -- ## END OF UI ##
 end

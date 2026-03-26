@@ -7,6 +7,7 @@
 ---@field data table
 ---@field debug any
 ---@field version string
+---@field camera fore.camera
 ---@field hooks table<string, function[]>
 local Fore = {
     version = "0.0.0",
@@ -58,6 +59,7 @@ function Fore.init(config)
     Fore.save.init(config.save or {})
 
     Fore.transition = require("fore.systems.transition")
+    Fore.camera = require("fore.systems.camera")
 
     return Fore
 end
@@ -82,6 +84,7 @@ function Fore:start()
         love.window.setIcon(love.image.newImageData(self.data.icon))
     end
 
+    self.camera.systemInit(self)
     self.graphics.init()
     Fore.transition.init()
     self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
