@@ -27,7 +27,7 @@ end
 function Scene.enter()
     -- Recalculate logScore
     local deaths = fore.save.get("deaths") or 0
-    local coins = fore.save.get("coint_deposited") or 0
+    local coins = fore.save.get("coins_deposited") or 0
     local effects = fore.save.get("effects_obtained") or 0
     logScore = deaths * 3 + coins + effects
 

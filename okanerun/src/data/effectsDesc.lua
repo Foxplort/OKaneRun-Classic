@@ -13,7 +13,7 @@ local EffectsDesc =
     confused = "Reverses movement controls.",
     sticky = "Delays the jump by [c=255,0,0]0.1 [/c]seconds.",
     windy = "Randomly pushes the player in a random direction.",
-    slippery = "Increases dash duration by [c=255,0,0]0.1 [/c]seconds and dash speed by [c=255,0,0]20[/c].",
+    slippery = "Increases dash duration by [c=255,0,0]0.1 [/c]seconds and dash speed by [c=255,0,0]20%[/c].",
     coins = "Decreases friction by [c=255,0,0]20%[/c], acceleration by [c=255,0,0]30%[/c], maximum velocity by [c=255,0,0]3% [/c]and jump height by [c=255,0,0]5%[/c].",
     charged = "Basic jump is only [c=255,0,0]70% [/c]power, holding jump for [c=255,0,0]0.8 [/c]seconds increases power up to [c=255,0,0]130%[/c].",
 }

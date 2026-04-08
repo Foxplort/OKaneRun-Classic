@@ -63,6 +63,13 @@ function SceneManager:goTo(name)
     end
 end
 
+---Get scene
+---@param name string
+---@return table
+function SceneManager:get(name)
+    return self.scenes[name]
+end
+
 ---Update scene manager
 ---@param dt number delta time
 ---@return nil

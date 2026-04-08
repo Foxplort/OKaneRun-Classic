@@ -73,6 +73,7 @@ function EffectUI.draw(player)
             )
 
             fore.graphics.text(tostring(id), 10, 65, 1)
+            fore.graphics.text("Debug; press B to return", 10, 55, 1)
         end
 
         -- icon (safe)

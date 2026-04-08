@@ -52,9 +52,11 @@ function Player.new()
             cooldown = 0,
             cdMax = 1.75,
             power = 400,
-            time = 0.75,
+            time = 0.5,
             timer = 0,
-            dir = {x=0,y=0}
+            dir = {x=0,y=0},
+            flat = 220,
+            mult = 1.2,
         },
 
         anim = {
@@ -77,9 +79,9 @@ function Player.new()
         -- BASE STATS (immutable)
         base = {
             move = {
-                accel = 600,
-                maxVel = 120,
-                fri = 400,
+                accel = 800,
+                maxVel = 160,
+                fri = 500,
             },
             jump = {
                 vel = 260,

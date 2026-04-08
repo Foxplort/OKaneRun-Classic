@@ -134,7 +134,7 @@ effects.scanline = {
         local py = player.pos.y
 
         if not inst.safeTimer and py > inst.y and py < inst.y + inst.h and player.grounded then
-            player.damage(1)
+            player.damage(1, 1, "scanline")
         end
     end,
 
@@ -197,7 +197,7 @@ effects.trail = {
             local dy = player.pos.y - p.y
 
             if dx*dx + dy*dy < 16 and player.grounded then
-                player.damage(1)
+                player.damage(1, 1, "trail")
                 break
             end
         end
@@ -325,9 +325,9 @@ effects.explosive = {
                 if mine.state == "idle" then
                     mine.state = "blinking"
                     mine.timer = 0
-                    player.damage(1)
+                    player.damage(1, 1, "explosive_contact")
                 elseif mine.state == "blinking" then
-                    player.damage(1)
+                    player.damage(1, 1, "explosive_contact")
                 end
             end
 
@@ -348,7 +348,7 @@ effects.explosive = {
                     local dist = math.sqrt(dx*dx + dy*dy)
                     
                     if dist < mine.explodeRadius*0.9 and player.pos.z > mine.explodeRadius*-0.9 and player.pos.z < mine.explodeRadius*0.9 then
-                        player.damage(mine.explodeDamage, 2)
+                        player.damage(mine.explodeDamage, 2, "explosive_explosion")
                     end
                 end
                 
@@ -514,12 +514,12 @@ effects.slippery = {
 
     onApply = function(player)
         player.dash.time = player.dash.time + 0.1
-        player.dash.power = player.dash.power + 20
+        player.dash.mult = player.dash.mult + 0.2
     end,
 
     onRemove = function(player)
         player.dash.time = player.dash.time - 0.1
-        player.dash.power = player.dash.power - 20
+        player.dash.mult = player.dash.mult - 0.2
     end,
 }
 

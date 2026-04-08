@@ -76,9 +76,8 @@ function Scene.draw()
 
         if state == "warning" then
             fore.graphics.text("WARNING", 0, 80-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
-            lineText("This is an early version of the game")
-            lineText("Many assets are still a work in progress")
-            lineText("Expect changes to gameplay and code as development progresses")
+            lineText("This is an early arcade prototype released as-is.")
+            lineText("Systems are simple and not fully balanced.")
             lineText("-- Also --")
             lineText("Flashing lights and other effects may appear")
             lineText("")

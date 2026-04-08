@@ -29,7 +29,7 @@ local function createMenus()
                 txt = "Foxplort",
                 link = "https://github.com/foxplort",
                 desc = [[
-                Director, Code, Music, Sounds.[br]
+                Code, Art, Music, Sounds.[br]
                 Hello! I hope you enjoy this little project
                 and have a great day <3
                 ]]
@@ -39,7 +39,8 @@ local function createMenus()
                 txt = "FÖRE Engine",
                 link = "https://github.com/Foxplort/OkaneRun",
                 desc = [[
-                Initially part of the game's code[br]
+                Custom game engine for OkaneRun Classic.
+                Available under MPL 2.0 license.[br]
                 ]]
             },
             {
@@ -72,20 +73,12 @@ local function createMenus()
                 action = function()
                     fore.save.set("total_runs", fore.save.get("total_runs") + 1)
                     fore.save.write()
+                    GameState.score = 0
                     fore.transition.start("spike", function()
                         fore.scenes:goTo("selection")
                     end, nil, 0, 0.7)
                 end,
             },
-            {
-                txt = "Records",
-                action = function()
-                    fore.transition.start("dither", function()
-                        fore.scenes:goTo("records")
-                    end)
-                end
-            },
-            { txt = "Options", disabled = true },
             { txt = "Credits", push = function() return credits end },
             { txt = "Exit",    push = function() return exit end },
         }
@@ -95,7 +88,7 @@ local function createMenus()
 end
 
 function Scene.enter()
-    fore.graphics.scheduleLoad("logo", "okanerun/assets/images/ui/logo-smooth.png", "linear")
+    fore.graphics.scheduleLoad("logo", "okanerun/assets/images/ui/OkaneRun_classic.png", "linear")
     fore.graphics.scheduleLoad("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
     fore.graphics.scheduleLoad("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
 
@@ -115,7 +108,7 @@ function Scene.enter()
 
     GameState.player = require("okanerun.src.data.player").new()
 
-    logScore = fore.save.get("deaths")*3 + fore.save.get("coint_deposited") + fore.save.get("effects_obtained")
+    logScore = fore.save.get("deaths")*3 + fore.save.get("coins_deposited") + fore.save.get("effects_obtained")
 end
 
 function Scene.onComplete()
@@ -189,9 +182,9 @@ function Scene.draw()
     local logow, logoh = fore.graphics.getImage("logo"):getDimensions()
     fore.graphics.imageScaled(
         "logo",
-        PANEL_WIDTH + (fore.data.width - PANEL_WIDTH - logow*0.5) / 2,
+        PANEL_WIDTH + (fore.data.width - PANEL_WIDTH - logow*0.35) / 2,
         20 + logoY,
-        0.5, 0.5
+        0.35, 0.35
     )
 
     fore.graphics.text(
@@ -202,6 +195,26 @@ function Scene.draw()
         {255,255,255},
         fore.data.width - PANEL_WIDTH,
         "center"
+    )
+
+    fore.graphics.text(
+        "High Score: " .. fore.save.get("personal_best"),
+        PANEL_WIDTH + 10,
+        fore.data.height - 35,
+        1,
+        {255,255,255},
+        fore.data.width - PANEL_WIDTH,
+        "left"
+    )
+
+    fore.graphics.text(
+        "Overall Progress: " .. logScore,
+        PANEL_WIDTH + 10,
+        fore.data.height - 20,
+        1,
+        {255,255,255},
+        fore.data.width - PANEL_WIDTH,
+        "left"
     )
 
     fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {5, 35, 35})

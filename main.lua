@@ -1,7 +1,9 @@
 ffi = require("ffi")
+local game_version = "1.0.0"
 fore = require("fore.core.init").init({
     name = "OkaneRun",
-    version = "0.1.0-dev",
+    title = "OkaneRun Classic v" .. game_version,
+    version = game_version,
     startScene = "intro",
     pixelBank = 64,
     icon = "okanerun/assets/images/system/icon.png",
@@ -9,7 +11,8 @@ fore = require("fore.core.init").init({
         total_runs = 0,
         deaths = 0,
         effects_obtained = 0,
-        coint_deposited = 0,
+        coins_deposited = 0,
+        personal_best = 0,
     },
 })
 
@@ -27,6 +30,7 @@ fore.scenes:reg("game", "okanerun.src.scenes.game")
 fore.scenes:reg("shop", "okanerun.src.scenes.shop")
 fore.scenes:reg("selection", "okanerun.src.scenes.selection")
 fore.scenes:reg("records", "okanerun.src.scenes.records")
+fore.scenes:reg("death", "okanerun.src.scenes.death")
 
 
 fore.input:registerAll({
@@ -44,7 +48,7 @@ fore.input:registerAll({
         buttons = { "rightstick" }
     },
     jump = {
-        keys = { "space", "up" },
+        keys = { "space" },
         buttons = { "a" }
     },
     dash = {

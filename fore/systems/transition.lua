@@ -61,7 +61,8 @@ end
 ---@param callback_complete function? Called when animation finishes
 ---@param f_start number? Progress (0-1) to freeze game (default 0)
 ---@param f_stop number? Progress (0-1) to unfreeze game (default 1)
-function T.start(style, callback_covered, callback_complete, f_start, f_stop)
+---@param load_icon boolean? Show loading icon (default false)
+function T.start(style, callback_covered, callback_complete, f_start, f_stop, load_icon)
     if active and progress < 0.85 then return end
     
     active = true
@@ -78,7 +79,9 @@ function T.start(style, callback_covered, callback_complete, f_start, f_stop)
     -- Initial check in case start is 0
     T.is_frozen = progress >= freeze_thresholds.start and progress < freeze_thresholds.stop
     
-    la.start()
+    if load_icon == nil or load_icon == true then
+        la.start()
+    end
 end
 
 function T.update(dt)

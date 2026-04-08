@@ -27,18 +27,30 @@ local function followTarget(coin, tx, ty, tz, dt)
     local dz = coin.z - tz
 
     local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-    if dist == 0 then return end
+    if dist < 0.1 then return end
 
-    local desired = coin.spacing
-    local diff = dist - desired
+    local spacing = coin.spacing
+    if dist > spacing then
+        -- Instead of a fixed pull velocity, we move towards the "ideal" point
+        -- which is at 'spacing' distance from the target.
+        local ratio = spacing / dist
+        local targetX = tx + dx * ratio
+        local targetY = ty + dy * ratio
+        
+        -- High responsiveness (15) ensures it keeps up with the player
+        coin.x = fore.math.lerp(coin.x, targetX, 15 * dt)
+        coin.y = fore.math.lerp(coin.y, targetY, 15 * dt)
+    end
+    
+    -- Z follow
+    coin.z = fore.math.approach(coin.z, tz, 200 * dt)
+end
 
-    -- Soft clamp
-    local pull = fore.math.clamp(diff * 8, -200, 200)
-
-    coin.x = coin.x - (dx / dist) * pull * dt
-    coin.y = coin.y - (dy / dist) * pull * dt
-    --coin.z = coin.z - (dz / dist) * pull * dt
-    coin.z = coin.z + (tz - coin.z) * 6 * dt
+local function checkPB()
+    local pb = fore.save.get("personal_best")
+    if GameState.score > pb then
+        fore.save.set("personal_best", GameState.score)
+    end
 end
 
 -- Deep copy + apply modifiers recursively
@@ -57,6 +69,8 @@ end
 
 local function statPerp()
     GameState.player.stat = applyMods(GameState.player.base, GameState.player.mod)
+    local d = GameState.player.dash
+    d.power = d.flat + (GameState.player.stat.move.maxVel * d.mult)
 end
 
 local function getActiveCore(hb)
@@ -80,7 +94,7 @@ end
 -- ######################### --
 
 local invTime = 0
-local function damagePlayer(amount, timeMod)
+local function damagePlayer(amount, timeMod, source)
     if invTime <= 0 then
         local p = GameState.player
 
@@ -89,6 +103,7 @@ local function damagePlayer(amount, timeMod)
         amount = amount or 1
 
         p.hp.count = p.hp.count - amount
+        p.lastDamageSource = source
 
         -- camera feedback
         fore.camera.addShake("world", 3)
@@ -110,7 +125,7 @@ end
 local function damageHandler(dt)
     -- Fall into the pit
     if GameState.player.pos.z <= -150 then
-        damagePlayer(1)
+        damagePlayer(1, 1, "pit")
 
         -- Safe Teleport
         GameState.player.pos.x = GameState.area.spawn.x - GameState.player.base.body.hitbox.w/2
@@ -253,11 +268,27 @@ end
 function Scene.update(dt)
     if GameState.player.dead then
         if not deathPause then
-            table.remove(menu.options, 1)
-            menu.title = "YOU DIED" 
             deathPause = true
+            fore.audio.stopCategory("music")
+            fore.audio.stopCategory("sfx")
+            fore.audio.play("coin_pickup", {
+                pitch = 0.08,
+                volume = 0.09
+            })
+            fore.audio.play("coin_pickup", {
+                pitch = 0.5,
+                volume = 0.05
+            })
+            fore.audio.play("coin_pickup", {
+                pitch = 0.3,
+                volume = 0.07
+            })
+            fore.transition.start("dither", function()
+                love.timer.sleep(2.5)
+                fore.scenes:goTo("death")
+            end, nil, 0, 1.2, false)
         end
-        pause = true
+        return
     end
     if pause then
         if fore.input:pressed("cancel") then pause = false end
@@ -419,8 +450,6 @@ function Scene.update(dt)
                 GameState.player.vel.y = GameState.player.vel.y * s
             end
         else
-            GameState.player.dash.timer = GameState.player.dash.timer - dt
-
             local d = GameState.player.dash
             local t = d.timer / d.time
             local speedMul = 0.6 + 0.4 * t
@@ -440,7 +469,7 @@ function Scene.update(dt)
                     d.dir.x, d.dir.y = d.dir.x/len, d.dir.y/len
                 end
             end
-
+            
             GameState.player.vel.x = d.dir.x * d.power * speedMul
             GameState.player.vel.y = d.dir.y * d.power * speedMul
         end
@@ -569,9 +598,14 @@ function Scene.update(dt)
                 -- Deposit ONE coin
                 table.remove(GameState.player.coinChain, 1)
                 GameState.player.coins = GameState.player.coins + 1
+                GameState.score = GameState.score + 10
+                checkPB()
+
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
-                fore.save.set("coint_deposited", fore.save.get("coint_deposited") + 1)
+                fore.save.set("coins_deposited", fore.save.get("coins_deposited") + 1)
                 if #GameState.area.coins == 0 and #GameState.player.coinChain == 0 then
+                    GameState.score = GameState.score + 20
+                    checkPB()
                     fore.transition.start("dither", function() fore.scenes:goTo("selection") end, nil, 0, 0.6)
                 end
 
@@ -814,6 +848,8 @@ function Scene.draw()
         love.graphics.setShader()
         --fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
         menuStack:draw()
+    elseif deathPause then
+        fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
     end
 
     fore.camera.pop()
