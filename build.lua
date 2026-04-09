@@ -7,6 +7,8 @@ return {
     ignore = {'.gitignore', '.git'},
     icon = 'okanerun/assets/images/system/fm.png',
 
+    identifier = "com.foxplort.okanerunclassic",
+
     use32bit = true,
     platforms = {'windows', 'macos', 'linux'}
 }
