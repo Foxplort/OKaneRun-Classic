@@ -4,6 +4,7 @@
 ---@field prev table<string, boolean>
 ---@field axes table<string, number>
 ---@field joysticks table
+---@field lastInputMethod "keyboard"|"gamepad"
 ---@field deadzone number
 local Input = {}
 Input.__index = Input
@@ -19,6 +20,7 @@ function Input.init(deadzone)
         axes = {},
         joysticks = {},
         deadzone = deadzone or 0.4,
+        lastInputMethod = "keyboard",
     }, Input)
     
     -- Register core engine actions
@@ -165,6 +167,18 @@ function Input:clear()
     self.state = {}
     self.prev = {}
     self.axes = {}
+end
+
+---Get the last input method used
+---@return "keyboard"|"gamepad"
+function Input:getMethod()
+    return self.lastInputMethod
+end
+
+---Set the last input method used
+---@param method "keyboard"|"gamepad"
+function Input:setMethod(method)
+    self.lastInputMethod = method
 end
 
 return Input

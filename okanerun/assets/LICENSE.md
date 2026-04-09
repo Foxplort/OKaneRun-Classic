@@ -1,4 +1,4 @@
-# OkaneRun Asset License
+# OkaneRun Classic Asset License
 
 Copyright (c) 2026 foxplort
 

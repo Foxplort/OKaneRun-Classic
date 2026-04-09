@@ -1,6 +1,6 @@
-![Logo](okanerun/assets/images/ui/logo-smooth.png)
+![Logo](okanerun/assets/images/ui/OkaneRun_classic.png)
 
-OkaneRun is a small action game built with **LÖVE (Love2D)**.
+OkaneRun Classic is a small action game built with **LÖVE (Love2D)**.
 
 This repository contains the full source code.  
 The project is open for learning, experimentation, and collaboration.
@@ -14,15 +14,6 @@ You’ll need **LÖVE 11.x** installed.
 ```bash
 love .
 ```
-
----
-
-## Project status
-
-Active development.
-
-Features, structure, and content may change at any time.  
-Expect unfinished systems and placeholder gameplay.
 
 ---
 

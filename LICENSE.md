@@ -4,7 +4,7 @@ Copyright (c) 2026 foxplort
 
 This repository contains multiple components with different licenses.
 
-## OkaneRun Game Code
+## OkaneRun Classic Game Code
 
 Location: `src/`
 
@@ -12,7 +12,7 @@ Licensed under a **non-commercial license**.
 
 See `src/LICENSE.md` for details.
 
-## OkaneRun Assets
+## OkaneRun Classic Assets
 
 Location: `assets/`
 

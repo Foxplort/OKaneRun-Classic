@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering contributing to OkaneRun!
+Thanks for considering contributing to OkaneRun Classic!
 
 ## Guidelines
 - Keep changes focused and readable

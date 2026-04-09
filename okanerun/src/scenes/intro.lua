@@ -25,7 +25,7 @@ local yChange = 0
 
 local function lineText(text)
     c = {255, 255, 255, textAlpha}
-    fore.graphics.text(text, 0, 115 + 15 * (textLine-1) - yChange, 1, c, fore.data.width, "center")
+    fore.graphics.text(text, 0, 125 + 15 * (textLine-1) - yChange, 1, c, fore.data.width, "center")
     textLine = textLine+1
 end
 
@@ -75,13 +75,17 @@ function Scene.draw()
         textAlpha = 255 - (hold / HOLD_TIME) * 255
 
         if state == "warning" then
-            fore.graphics.text("WARNING", 0, 80-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
+            fore.graphics.text("WARNING", 0, 90-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
             lineText("This is an early arcade prototype released as-is.")
             lineText("Systems are simple and not fully balanced.")
             lineText("-- Also --")
             lineText("Flashing lights and other effects may appear")
             lineText("")
-            lineText("Hold SPACE to continue")
+            if fore.input:getMethod() == "keyboard" then
+                lineText("Hold SPACE to continue")
+            else
+                lineText("Hold A to continue")
+            end
         end
 
 

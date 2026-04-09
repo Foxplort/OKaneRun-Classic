@@ -1,4 +1,4 @@
-# OkaneRun Game Code License
+# OkaneRun Classic Game Code License
 
 Copyright (c) 2026 foxplort
 

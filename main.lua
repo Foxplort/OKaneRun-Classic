@@ -1,7 +1,7 @@
 ffi = require("ffi")
 local game_version = "1.0.0"
 fore = require("fore.core.init").init({
-    name = "OkaneRun",
+    name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
     version = game_version,
     startScene = "intro",
@@ -42,7 +42,10 @@ fore.input:registerAll({
         keys = { "backspace", "escape" },
         buttons = { "b" }
     },
-    
+    pause = {
+        keus = { "backspace", "escape" },
+        buttons = { "start" }
+    },
     debugEffect = {
         keys = { "b", "f4" },
         buttons = { "rightstick" }
@@ -53,11 +56,11 @@ fore.input:registerAll({
     },
     dash = {
         keys = { "lshift", "rshift" },
-        buttons = { "b" }
+        buttons = { "x" }
     },
     attack = {
         keys = { "e", "z" },
-        buttons = { "x" }
+        buttons = { "y" }
     },
     left = {
         keys = { "a", "left" },

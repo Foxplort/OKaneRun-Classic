@@ -37,7 +37,7 @@ local function createMenus()
             { txt = "--- TECH ---", isLabel = true },
             {
                 txt = "FÖRE Engine",
-                link = "https://github.com/Foxplort/OkaneRun",
+                link = "https://github.com/Foxplort/OkaneRun-Classic",
                 desc = [[
                 Custom game engine for OkaneRun Classic.
                 Available under MPL 2.0 license.[br]

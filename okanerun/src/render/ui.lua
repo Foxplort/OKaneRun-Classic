@@ -257,7 +257,11 @@ local function drawDashIndicator()
     
     -- Label
     if isReady then
-        fore.graphics.text("READY", x - 5, y, 0.8, {0,0,0,200}, w, "center")
+        local input_hint = "X to DASH"
+        if fore.input:getMethod() == "keyboard" then
+            input_hint = "SHIFT to DASH"
+        end
+        fore.graphics.text(input_hint, x - 5, y, 0.8, {0,0,0,200}, w, "center")
     end
 end
 

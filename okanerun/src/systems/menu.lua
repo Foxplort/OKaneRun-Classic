@@ -218,6 +218,16 @@ function Menu:drawContent(focused)
             fore.graphics.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,a*u})
         end
     end
+
+    local input_hint = "DPad - select\nA - confirm\nB - back"
+    if fore.input:getMethod() == "keyboard" then
+        input_hint = "WASD / Arrow Keys - select\nSpace - confirm\nEscape - back"
+    end
+
+    fore.graphics.textEx(
+        input_hint,
+        20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
+    )
 end
 
 -- ################### --

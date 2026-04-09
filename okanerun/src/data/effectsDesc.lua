@@ -10,7 +10,7 @@ local EffectsDesc =
     zoomed = "Increases camera zoom by [c=255,0,0]10%[/c].",
     explosive = "Spawns up to [c=255,0,0]5 [/c]mines every [c=255,0,0]1.5 [/c]second that explode after [c=255,0,0]1 [/c]second, dealing [c=255,0,0]1 [/c]damage on contact and [c=255,0,0]2 [/c]damage from explosion.",
     bloodloss = "Deacreases invincibility frames duration by [c=255,0,0]40%[/c].",
-    confused = "Reverses movement controls.",
+    confused = "Reverses movement controls for the next [c=255,0,0]40 [/c]seconds.",
     sticky = "Delays the jump by [c=255,0,0]0.1 [/c]seconds.",
     windy = "Randomly pushes the player in a random direction.",
     slippery = "Increases dash duration by [c=255,0,0]0.1 [/c]seconds and dash speed by [c=255,0,0]20%[/c].",

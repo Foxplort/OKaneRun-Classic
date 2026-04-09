@@ -450,7 +450,7 @@ effects.bloodloss = {
 effects.confused = {
     id = "confused",
     type = "debuff",
-    duration = nil,
+    duration = 40,
     maxAmount = 1,
 
     -- Reverse controls. In player controls.

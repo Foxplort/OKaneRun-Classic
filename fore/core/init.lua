@@ -100,6 +100,10 @@ function Fore:start()
     love.update = function(dt) self:update(dt) end
     love.draw = function() self:draw() end
     love.keypressed = function(key) self:keypressed(key) end
+    love.mousepressed = function(x, y, button) self:mousepressed(x, y, button) end
+    love.mousemoved = function(x, y, dx, dy) self:mousemoved(x, y, dx, dy) end
+    love.gamepadpressed = function(j, b) self:gamepadpressed(j, b) end
+    love.gamepadaxis = function(j, a, v) self:gamepadaxis(j, a, v) end
     love.joystickadded = function(j) self:joystickadded(j) end
     love.joystickremoved = function (j) self:joystickremoved(j) end
 end
@@ -258,16 +262,37 @@ function Fore:draw()
 end
 
 function Fore:keypressed(key)
+    self.input:setMethod("keyboard")
     self.debug.keypressed(key)
     self.scenes:keypressed(key)
 end
 
+function Fore:mousepressed(x, y, button)
+    self.input:setMethod("keyboard")
+end
+
+function Fore:mousemoved(x, y, dx, dy)
+    if math.abs(dx) > 0.1 or math.abs(dy) > 0.1 then
+        self.input:setMethod("keyboard")
+    end
+end
+
+function Fore:gamepadpressed(joystick, button)
+    self.input:setMethod("gamepad")
+end
+
+function Fore:gamepadaxis(joystick, axis, value)
+    if math.abs(value) > self.input.deadzone then
+        self.input:setMethod("gamepad")
+    end
+end
+
 function Fore:joystickadded(j)
-    Fx.input:addJoystick(j)
+    self.input:addJoystick(j)
 end
 
 function Fore:joystickremoved(j)
-    Fx.input:removeJoystick(j)
+    self.input:removeJoystick(j)
 end
 
 ---Creates a new canvas based on current size of the window

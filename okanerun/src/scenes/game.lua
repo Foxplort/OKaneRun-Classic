@@ -291,7 +291,7 @@ function Scene.update(dt)
         return
     end
     if pause then
-        if fore.input:pressed("cancel") then pause = false end
+        if fore.input:pressed("pause") or fore.input:pressed("cancel") then pause = false end
         menuStack:input()
         menuStack:update(dt)
     else
@@ -394,7 +394,7 @@ function Scene.update(dt)
                 if fore.input:down("left") then mx = mx - 1 end
                 if fore.input:down("up") then my = my - 1 end
                 if fore.input:down("down") then my = my + 1 end
-                if fore.input:pressed("cancel") then pause = true; menu:resetAnimation() end
+                if fore.input:pressed("pause") then pause = true; menu:resetAnimation() end
                 if GameState.player.effectRef.confused then
                     mx = -mx
                     my = -my
