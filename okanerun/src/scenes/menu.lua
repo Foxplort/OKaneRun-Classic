@@ -27,7 +27,7 @@ local function createMenus()
             { txt = "--- CREW ---", isLabel = true },
             {
                 txt = "Foxplort",
-                link = "https://github.com/foxplort",
+                link = "https://www.foxplort.com",
                 desc = [[
                 Code, Art, Music, Sounds.[br]
                 Hello! I hope you enjoy this little project
