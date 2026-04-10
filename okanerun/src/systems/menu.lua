@@ -90,6 +90,13 @@ function Menu:new(def)
     self.animTime = 0
     self.lastFocused = false
 
+    -- scrolling variables
+    m.scrollY = 0
+    m.targetScrollY = 0
+    m.viewBottomOffset = def.viewBottomOffset or 80
+    m.scrollPadding = def.scrollPadding or 60
+    m.fadeSize = def.fadeSize or 10
+
     return m
 end
 
@@ -119,6 +126,23 @@ function Menu:update(dt, focused)
             and not opt.isLabel and not opt.disabled and 1 or 0
         self.underline[i] = fore.math.lerp(self.underline[i], targetUnderline, math.min(dt * 12, 1))
     end
+
+    -- Scroll logic
+    local yStart = PANEL_TOP + 60
+    local itemY = yStart + (self.selection - 1) * 30
+    local projectedY = itemY - self.targetScrollY
+    
+    local safeTop = yStart + self.scrollPadding
+    local safeBottom = (fore.data.height - self.viewBottomOffset) - self.scrollPadding
+    if safeBottom < safeTop then safeBottom = safeTop end
+
+    if projectedY < safeTop then
+        self.targetScrollY = self.targetScrollY + (projectedY - safeTop)
+    elseif projectedY > safeBottom then
+        self.targetScrollY = self.targetScrollY + (projectedY - safeBottom)
+    end
+    if self.targetScrollY < 0 then self.targetScrollY = 0 end
+    self.scrollY = fore.math.lerp(self.scrollY, self.targetScrollY, math.min(dt * 15, 1))
     
     -- Description
     local opt = self.options[self.selection]
@@ -190,6 +214,15 @@ function Menu:resetAnimation()
     self.slideX = 1
     self.alpha  = 0
     self.selection = self:findFirstSelectable()
+
+    local yStart = PANEL_TOP + 60
+    local itemY = yStart + (self.selection - 1) * 30
+    local safeTop = yStart + self.scrollPadding
+    local safeBottom = (fore.data.height - self.viewBottomOffset) - self.scrollPadding
+    if safeBottom < safeTop then safeBottom = safeTop end
+
+    self.targetScrollY = math.max(0, itemY - safeTop)
+    self.scrollY = self.targetScrollY
 end
 
 -- ###################### --
@@ -218,32 +251,47 @@ function Menu:drawContent(focused)
     local titleX = getTextX(self.align, panelX, panelW, titleWidth)
     fore.graphics.text(self.title, titleX, y, 2, {1,1,1,a})
 
+    local viewTop = y + 60 - 10
+    local viewBottom = fore.data.height - self.viewBottomOffset
+    local fontSize = fore.data.phone and 1.2 or 1
+
     for i, opt in ipairs(self.options) do
-        local yy = y + 60 + (i-1)*30
-        local c = {0.6,0.6,0.6,a}
+        local yy = y + 60 + (i-1)*30 - self.scrollY
 
-        if focused and i == self.selection then c = {1,1,1,a}
-        elseif opt.isLabel then c = {0.7,0.7,0.4,a}
-        elseif opt.disabled then c = {0.2,0.2,0.2,a} end
+        local positionAlpha = 1
+        if yy < viewTop + self.fadeSize then
+            positionAlpha = math.max(0, (yy - viewTop) / self.fadeSize)
+        elseif yy > viewBottom - self.fadeSize then
+            positionAlpha = math.max(0, (viewBottom - yy) / self.fadeSize)
+        end
 
-        -- Calculate text width
-        local textWidth = fore.graphics.getTextWidth(opt.txt, 1)
-        local textX = getTextX(self.align, panelX, panelW, textWidth)
+        if positionAlpha > 0 then
+            local optionAlpha = a * positionAlpha
+            local c = {0.6,0.6,0.6,optionAlpha}
 
-        fore.graphics.text(opt.txt, textX, yy, 1, c)
+            if focused and i == self.selection then c = {1,1,1,optionAlpha}
+            elseif opt.isLabel then c = {0.7,0.7,0.4,optionAlpha}
+            elseif opt.disabled then c = {0.2,0.2,0.2,optionAlpha} end
 
-        -- Underline positioned based on alignment
-        local u = self.underline[i]
-        if u > 0.01 then
-            local underlineX
-            if self.align == "center" then
-                underlineX = panelX + (panelW - textWidth * u) / 2
-            elseif self.align == "right" then
-                underlineX = panelX + panelW - textWidth * u
-            else -- left
-                underlineX = panelX + 20
+            -- Calculate text width
+            local textWidth = fore.graphics.getTextWidth(opt.txt, 1) * fontSize
+            local textX = getTextX(self.align, panelX, panelW, textWidth)
+
+            fore.graphics.text(opt.txt, textX, yy, fontSize, c)
+
+            -- Underline positioned based on alignment
+            local u = self.underline[i]
+            if u > 0.01 then
+                local underlineX
+                if self.align == "center" then
+                    underlineX = panelX + (panelW - textWidth * u) / 2
+                elseif self.align == "right" then
+                    underlineX = panelX + panelW - textWidth * u
+                else -- left
+                    underlineX = panelX + 20
+                end
+                fore.graphics.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,optionAlpha*u})
             end
-            fore.graphics.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,a*u})
         end
     end
 
@@ -251,7 +299,7 @@ function Menu:drawContent(focused)
     if fore.input:getMethod() == "keyboard" then
         input_hint = "WASD / Arrow Keys - select\nSpace - confirm\nEscape - back"
     elseif fore.input:getMethod() == "touch" then
-        input_hint = "Swipe - select\nTap - confirm\nDouble Tap - back"
+        input_hint = "Swipe - select\nTap - confirm"
     end
 
     if fore.data.phone then

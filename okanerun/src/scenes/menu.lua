@@ -188,7 +188,7 @@ function Scene.draw()
     )
 
     fore.graphics.text(
-        "--- V" .. fore.conf.version .. " ---",
+        "--- v" .. fore.conf.version .. " ---",
         PANEL_WIDTH,
         85 + logoY,
         1,

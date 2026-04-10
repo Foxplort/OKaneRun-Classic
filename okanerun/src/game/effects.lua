@@ -153,6 +153,98 @@ effects.scanline = {
     end,
 }
 
+effects.laser = {
+    id = "laser",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 2,
+
+    onApply = function(player, inst)
+        inst.width = 18
+        inst.spawnDuration = 4
+        inst.activeDuration = 3
+        inst.lasers = {
+            {x = 0, state = "spawning", timer = 0},
+            {x = 0, state = "spawning", timer = 0}
+        }
+    end,
+
+    onReset = function(player, inst)
+        for i, laser in ipairs(inst.lasers) do
+            laser.x = math.random(50, GameState.area.mapWidth - 50)
+            laser.state = "spawning"
+            laser.timer = (i-1) * -0.5 -- Stagger them slightly
+        end
+    end,
+
+    onUpdate = function(player, inst, dt)
+        if not GameState.area.mapWidth then return end
+        
+        for _, laser in ipairs(inst.lasers) do
+            laser.timer = laser.timer + dt
+            
+            if laser.timer < 0 then goto continue end
+
+            if laser.state == "spawning" then
+                if laser.timer >= inst.spawnDuration then
+                    laser.state = "active"
+                    laser.timer = 0
+                end
+            elseif laser.state == "active" then
+                if laser.timer >= inst.activeDuration then
+                    laser.state = "spawning"
+                    laser.timer = 0
+                    laser.x = math.random(50, GameState.area.mapWidth - 50)
+                else
+                    -- Collision
+                    local px = player.pos.x + player.base.body.w/2
+                    if math.abs(px - laser.x) < inst.width/2 and player.grounded then
+                        player.damage(1, 1, "laser")
+                    end
+                end
+            end
+            ::continue::
+        end
+    end,
+
+    onDraw = function(player, inst)
+        if not GameState.area.mapHeight then return end
+
+        for _, laser in ipairs(inst.lasers) do
+            if laser.timer < 0 then goto next_laser end
+
+            local col = {255, 0, 127, 90}
+            local drawWidth = 0
+            
+            if laser.state == "spawning" then
+                local progress = math.max(0, laser.timer / inst.spawnDuration)
+                -- Pulse while spawning to look like it's charging
+                local pulse = (math.sin(love.timer.getTime() * 6) + 1) / 2
+                col[4] = 50 + 20 * pulse
+                drawWidth = inst.width * progress
+            elseif laser.state == "active" then
+                col = {255, 0, 0, 120}
+                drawWidth = inst.width
+                local pulse = (math.sin(love.timer.getTime() * 10) + 1) / 2
+                col[4] = 130 + 20 * pulse
+            end
+            
+            if drawWidth > 0 then
+                fore.queuer.submit(L.ACTOR, -1000, function()
+                    fore.graphics.rect(
+                        laser.x - drawWidth/2,
+                        -600,
+                        drawWidth,
+                        GameState.area.mapHeight + 1200,
+                        col
+                    )
+                end)
+            end
+            ::next_laser::
+        end
+    end,
+}
+
 effects.trail = {
     id = "trail",
     type = "debuff",
@@ -564,5 +656,23 @@ effects.charged = {
         end
     end,
 }
+
+effects.chance = {
+    id = "chance",
+    type = "buff",
+    duration = nil,
+    maxAmount = 2,
+
+    onApply = function(player)
+        if not player.effectRef.chance then player.effectRef.chance = 0 end
+        player.effectRef.chance = player.effectRef.chance + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.chance = player.effectRef.chance - 1
+    end,
+}
+
+
 
 return effects

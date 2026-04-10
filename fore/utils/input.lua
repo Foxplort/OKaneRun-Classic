@@ -12,9 +12,10 @@ local Input = {}
 Input.__index = Input
 
 ---Create new input handler
+---@param fore fore Engine instance
 ---@param deadzone number? Analog deadzone (default 0.4)
 ---@return Input
-function Input.init(deadzone)
+function Input.init(fore, deadzone)
     local self = setmetatable({
         actions = {},
         state = {},
@@ -22,6 +23,7 @@ function Input.init(deadzone)
         axes = {},
         joysticks = {},
         deadzone = deadzone or 0.4,
+        fore = fore,
         lastInputMethod = "keyboard",
         touches = {},
         gestures = {
@@ -132,7 +134,7 @@ function Input:update(dt)
             elseif action == "left" and self.gestures.swipes.left then down = true
             elseif action == "right" and self.gestures.swipes.right then down = true
             elseif action == "accept" and self.gestures.taps.any and not self.gestures.taps.double then down = true
-            elseif action == "cancel" and self.gestures.taps.double then down = true
+            --elseif action == "cancel" and self.gestures.taps.double then down = true
             end
         end
 

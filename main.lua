@@ -1,5 +1,5 @@
 ffi = require("ffi")
-local game_version = "1.1.0-dev"
+local game_version = "1.1.0"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
@@ -86,7 +86,7 @@ fore.input:registerAll({
 
 GameState = require("okanerun.src.game.state").new()
 GameState.player = require("okanerun.src.data.player").new()
-GameState.area = {}
+GameState.area = Fx.ll.load("okanerun/src/data/levels/testLevel.lua")
 
 local bgfx = require("okanerun.src.systems.borderFX")
 

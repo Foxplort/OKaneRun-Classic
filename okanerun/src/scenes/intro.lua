@@ -36,6 +36,11 @@ end
 function Scene.enter()
     fore.audio.load("warning", "okanerun/assets/sounds/ui/warning.wav", false, "sfx")
     fore.audio.load("intro", "okanerun/assets/sounds/ui/intro.wav", false, "sfx")
+
+    if fore.data.phone then
+        BAR_HEIGHT = 3
+        capH = BAR_HEIGHT + 4
+    end
 end
 
 function Scene.onComplete()

@@ -35,7 +35,7 @@ function Fore.init(config)
     Fore.conf = require("fore.core.config").init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
     Fore.data.OS = love.system.getOS()
-    Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS") or true
+    Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
@@ -52,7 +52,7 @@ function Fore.init(config)
 
     Fore.debug = require("fore.systems.debug")
     Fore.scenes = require("fore.systems.scenes").init(Fore)
-    Fore.input = require("fore.utils.input").init(Fore.data.deadzone)
+    Fore.input = require("fore.utils.input").init(Fore, Fore.data.deadzone)
 
     Fore.audio.load("system_volume_change", "fore/assets/sounds/volume.ogg", false, "sfx")
     Fore._volumeIndicator = require("fore.systems.volumeUI"):init(Fore)
@@ -104,8 +104,8 @@ function Fore:start()
     love.update = function(dt) self:update(dt) end
     love.draw = function() self:draw() end
     love.keypressed = function(key) self:keypressed(key) end
-    love.mousepressed = function(x, y, button) self:mousepressed(x, y, button) end
-    love.mousemoved = function(x, y, dx, dy) self:mousemoved(x, y, dx, dy) end
+    love.mousepressed = function(x, y, button, istouch) self:mousepressed(x, y, button, istouch) end
+    love.mousemoved = function(x, y, dx, dy, istouch) self:mousemoved(x, y, dx, dy, istouch) end
     love.gamepadpressed = function(j, b) self:gamepadpressed(j, b) end
     love.gamepadaxis = function(j, a, v) self:gamepadaxis(j, a, v) end
     love.joystickadded = function(j) self:joystickadded(j) end
@@ -278,11 +278,13 @@ function Fore:keypressed(key)
     self.scenes:keypressed(key)
 end
 
-function Fore:mousepressed(x, y, button)
+function Fore:mousepressed(x, y, button, istouch)
+    if istouch then return end
     self.input:setMethod("keyboard")
 end
 
-function Fore:mousemoved(x, y, dx, dy)
+function Fore:mousemoved(x, y, dx, dy, istouch)
+    if istouch then return end
     if math.abs(dx) > 0.1 or math.abs(dy) > 0.1 then
         self.input:setMethod("keyboard")
     end

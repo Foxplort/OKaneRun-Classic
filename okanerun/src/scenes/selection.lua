@@ -14,6 +14,7 @@ local CARD_SPACING = 30
 local ROW_SPACING = 50
 local MARGIN_TOP = 80
 local MARGIN_LEFT = 60
+local FONT_S = 1.0
 
 -- State
 local rows = {
@@ -161,6 +162,16 @@ function Scene.enter()
             vy = (math.random() * 5) + 5,
             a = math.random() * 0.3 + 0.1
         })
+    end
+
+    if fore.data.phone then
+       CARD_W = 120*1.2
+       CARD_H = 160*1.2
+       FONT_S = 1.2
+       --CARD_SPACING = 30
+       --ROW_SPACING = 50
+       --MARGIN_TOP = 80
+       --MARGIN_LEFT = 60
     end
 end
 
@@ -345,8 +356,7 @@ function Scene.draw()
     end
 
     -- Header
-    fore.graphics.text("SELECTION", 60, 25, 2.5, {255, 250, 240})
-    fore.graphics.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100})
+    fore.graphics.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100}, 130, "right")
 
     love.graphics.push()
     love.graphics.translate(0, -verticalScroll)
@@ -362,14 +372,14 @@ function Scene.draw()
             local isRowFocused = (i == currentRow)
             
             -- Alpha fade when scrolling up
-            local yInView = ry - verticalScroll + 20
+            local yInView = ry - verticalScroll + 40
             local topFade = math.min(1, (yInView - 40) / 60)
             local rowAlpha = math.min(1, (animTimer - i * 0.15) * 4) * math.max(0, topFade)
             
             if rowAlpha > 0 then
                 -- Row title
                 local titleColor = isRowFocused and {255, 255, 255, rowAlpha * 255} or {127, 127, 127, rowAlpha * 180}
-                fore.graphics.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1, titleColor)
+                fore.graphics.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1 * FONT_S, titleColor)
 
                 -- Items
                 love.graphics.push()
@@ -431,10 +441,10 @@ function Scene.draw()
                         fore.graphics.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, iconTint)
                         
                         -- ID/Name
-                        fore.graphics.text(item.def.id:upper(), rx + 5, ry + 50, 1, txtCol, CARD_W - 10, "center")
+                        fore.graphics.text(item.def.id:upper(), rx + 5, ry + 50, 1 * FONT_S, txtCol, CARD_W - 10, "center")
                         
                         -- Desc
-                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8, txtCol, CARD_W - 20, "left")
+                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8 * FONT_S, txtCol, CARD_W - 20, "left")
 
                         -- Price for buffs
                         if isShop then
@@ -476,14 +486,14 @@ function Scene.draw()
     local input_hint = "DPad - select\nA - confirm"
     if fore.input:getMethod() == "keyboard" then
         input_hint = "WASD / Arrow Keys - select\nSpace - confirm"
-    elseif fore.input:getMethod() == "touch" then
-        input_hint = "Swipe - select\nTap - confirm"
     end
 
-    fore.graphics.textEx(
-        input_hint,
-        fore.data.width - 170, fore.data.height - 30, 0.75, {255, 255, 255, 70}, 150, "right"
-    )
+    if not fore.data.phone then
+        fore.graphics.textEx(
+            input_hint,
+            fore.data.width - 170, fore.data.height - 30, 0.75, {255, 255, 255, 70}, 150, "right"
+        )
+    end
 end
 
 

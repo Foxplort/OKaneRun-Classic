@@ -103,6 +103,14 @@ local function damagePlayer(amount, timeMod, source)
         if p.dead then return end
 
         amount = amount or 1
+        local voided = 0
+
+        if GameState.player.effectRef.chance then
+            if math.random() < 0.2 * GameState.player.effectRef.chance then
+                amount = 0
+                voided = GameState.player.effectRef.chance
+            end
+        end
 
         p.hp.count = p.hp.count - amount
         p.lastDamageSource = source
@@ -119,7 +127,7 @@ local function damagePlayer(amount, timeMod, source)
         invTime = 1.2
         if timeMod then invTime = invTime * timeMod end
         if GameState.player.effectRef.bloodloss then
-            invTime = invTime * (0.6^GameState.player.effectRef.bloodloss)
+            invTime = invTime * (0.6^GameState.player.effectRef.bloodloss) * (0.8^voided)
         end
     end
 end
@@ -641,7 +649,7 @@ function Scene.update(dt)
 
         -- Collect coins
         for i, c in ipairs(GameState.area.coins) do
-            if fore.math.aabb(Fx.cl.getPlayerHitbox(), {x=c.x, y=c.y-3, w=10, h=6}) and GameState.player.pos.z < 16 then
+            if fore.math.aabb(Fx.cl.getPlayerHitbox(), {x=c.x-3, y=c.y-6, w=16, h=12}) and GameState.player.pos.z < 16 then
                 local SPACING = 10
 
                 local coin = {
@@ -843,7 +851,7 @@ function Scene.draw()
         end
 
         for _, c in ipairs(GameState.area.coins) do
-            local ch = {x=c.x, y=c.y-3, w=10, h=6}
+            local ch = {x=c.x-3, y=c.y-5, w=16, h=12}
             fore.graphics.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 

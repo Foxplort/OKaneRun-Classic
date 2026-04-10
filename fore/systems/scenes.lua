@@ -30,6 +30,7 @@ function SceneManager.init(fore)
     local self = setmetatable({
         scenes = {},
         current = nil,
+        last = nil,
         next = nil,
         minDT = minDT,
         canvas = nil,
@@ -60,7 +61,12 @@ end
 function SceneManager:goTo(name)
     if name ~= self.current and self.scenes[name] then
         self.next = name
+        self.last = name
     end
+end
+
+function SceneManager:reload()
+    self.next = self.last
 end
 
 ---Get scene
