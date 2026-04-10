@@ -52,8 +52,35 @@ local function getSpikePolygon(x, width, spikeCount, depth, yShift)
     return verts
 end
 
+---Creates dither image so that phone version doesn't crash on launch
+---@return Image
+local function createDitherData()
+    local data = love.image.newImageData(4, 4)
+    local matrix = {
+        0,  8,  2,  10,
+        12, 4,  14, 6,
+        3,  11, 1,  9,
+        15, 7,  13, 5
+    }
+    
+    for i, val in ipairs(matrix) do
+        local x = (i - 1) % 4
+        local y = math.floor((i - 1) / 4)
+        local c = val / 16
+        data:setPixel(x, y, c, c, c, 1)
+    end
+    
+    local tex = love.graphics.newImage(data)
+    -- Important: set wrap to repeat so the pattern tiles!
+    tex:setWrap("repeat", "repeat")
+    -- Use "nearest" filter to keep the dither sharp
+    tex:setFilter("nearest", "nearest")
+    return tex
+end
+
 function T.init()
     dither_shader = love.graphics.newShader("fore/assets/shaders/dither.glsl")
+    dither_shader:send("ditherTex", createDitherData())
 end
 
 ---@param style "spike"|"dither"

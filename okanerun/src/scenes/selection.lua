@@ -184,6 +184,41 @@ function Scene.update(dt)
         messageTimer = messageTimer - dt
     end
 
+    -- Touch selection
+    if fore.input.gestures.taps.any then
+        local tx, ty = fore.input.gestures.taps.x, fore.input.gestures.taps.y
+        local adjTy = ty + verticalScroll
+        
+        local currentY = MARGIN_TOP
+        for i, row in ipairs(rows) do
+            local rowHeight = (row.type == "buttons" and 60 or (CARD_H + ROW_SPACING))
+            if #row.items > 0 then
+                if adjTy >= currentY - 20 and adjTy <= currentY + rowHeight then
+                    -- Hit this row
+                    for j, item in ipairs(row.items) do
+                        local rx = MARGIN_LEFT + (j - 1) * (CARD_W + CARD_SPACING) - row.scroll
+                        local rw = (row.type == "buttons" and 140 or CARD_W)
+                        local rh = (row.type == "buttons" and 40 or CARD_H)
+                        
+                        if tx >= rx and tx <= rx + rw and
+                           adjTy >= currentY and adjTy <= currentY + rh then
+                            if currentRow == i and row.selected == j then
+                                -- Trigger accept logic
+                                fore.input.state["accept"] = true
+                            else
+                                currentRow = i
+                                row.selected = j
+                                fore.audio.play("select", { volume = 0.1 })
+                            end
+                            break
+                        end
+                    end
+                end
+                currentY = currentY + rowHeight
+            end
+        end
+    end
+
     -- Handle Input
     local prevRow = currentRow
     local prevSelect = rows[currentRow].selected
@@ -257,6 +292,7 @@ function Scene.update(dt)
             if item.action then item.action() end
         end
     end
+
     -- Scrolling logic
     for _, row in ipairs(rows) do
         local targetScroll = 0
@@ -440,6 +476,8 @@ function Scene.draw()
     local input_hint = "DPad - select\nA - confirm"
     if fore.input:getMethod() == "keyboard" then
         input_hint = "WASD / Arrow Keys - select\nSpace - confirm"
+    elseif fore.input:getMethod() == "touch" then
+        input_hint = "Swipe - select\nTap - confirm"
     end
 
     fore.graphics.textEx(

@@ -116,10 +116,16 @@ function Player.new()
         },
 
         -- DERIVED (computed every frame)
-        stat = {}
+        stat = {},
+
+        effectsChanged = false,
     }
 
-    playerData.tail = makeTail(playerData, 24, 1.9)
+    if fore.data.phone then
+        playerData.tail = makeTail(playerData, 12, 3.8)
+    else
+        playerData.tail = makeTail(playerData, 24, 1.9)
+    end
 
     return playerData
 end

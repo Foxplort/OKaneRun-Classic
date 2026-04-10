@@ -158,6 +158,34 @@ function Menu:activate(stack)
     if o.action then o.action() end
 end
 
+function Menu:click(tx, ty, stack)
+    local xOffset = -self.slideX * 60
+    local panelX = PANEL_X + 40 + xOffset - 15
+    local panelW = PANEL_W - 40
+    local y = PANEL_TOP
+
+    for i, opt in ipairs(self.options) do
+        if not opt.isLabel and not opt.disabled then
+            local yy = y + 60 + (i-1)*30
+            local textWidth = fore.graphics.getTextWidth(opt.txt, 1)
+            local textX = getTextX(self.align, panelX, panelW, textWidth)
+            
+            -- Hitbox: expand a bit for easier tapping
+            if tx >= textX - 20 and tx <= textX + textWidth + 20 and
+               ty >= yy and ty <= yy + 25 then
+                if self.selection == i then
+                    self:activate(stack)
+                else
+                    self.selection = i
+                    fore.audio.play("select", { volume = 0.1 })
+                end
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function Menu:resetAnimation()
     self.slideX = 1
     self.alpha  = 0
@@ -222,12 +250,21 @@ function Menu:drawContent(focused)
     local input_hint = "DPad - select\nA - confirm\nB - back"
     if fore.input:getMethod() == "keyboard" then
         input_hint = "WASD / Arrow Keys - select\nSpace - confirm\nEscape - back"
+    elseif fore.input:getMethod() == "touch" then
+        input_hint = "Swipe - select\nTap - confirm\nDouble Tap - back"
     end
 
-    fore.graphics.textEx(
-        input_hint,
-        20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
-    )
+    if fore.data.phone then
+        fore.graphics.textEx(
+            input_hint,
+            20, fore.data.height - 40, 1, {255, 255, 255, 120}
+        )
+    else
+        fore.graphics.textEx(
+            input_hint,
+            20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
+        )
+    end
 end
 
 -- ################### --
@@ -309,6 +346,10 @@ function MenuStack:input()
     if fore.input:pressed("down") then m:move(1) end
     if fore.input:pressed("cancel") then self:pop() end
     if fore.input:pressed("accept") then m:activate(self) end
+
+    if fore.input.gestures.taps.any then
+        m:click(fore.input.gestures.taps.x, fore.input.gestures.taps.y, self)
+    end
 end
 
 return {

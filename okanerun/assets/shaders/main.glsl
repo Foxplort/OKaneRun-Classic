@@ -1,3 +1,7 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
 extern number time;
 
 float hash(vec2 p) {

@@ -1,3 +1,7 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
 extern float time;
 extern float b_intensity;
 extern float b_speed;

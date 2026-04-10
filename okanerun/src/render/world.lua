@@ -121,41 +121,88 @@ function World.renderCoins()
 end
 
 function World.renderCores()
-    for _, i in ipairs(GameState.area.cores) do
-        fore.queuer.submit(L.SHADOW, i.y, function()
-            -- wall
-            fore.graphics.rect(
-                i.x,
-                i.y,
-                i.w,
-                i.h,
-                {0, 190, 80},
-                false
-            )
-        end)
+    if fore.data.phone then
+        for _, i in ipairs(GameState.area.cores) do
+            fore.queuer.submit(L.SHADOW, i.y, function()
+                -- wall
+                fore.graphics.rect(
+                    i.x,
+                    i.y,
+                    i.w,
+                    i.h,
+                    {0, 190, 80},
+                    false
+                )
+                fore.graphics.rect(
+                    i.x+1,
+                    i.y+1,
+                    i.w-2,
+                    i.h-2,
+                    {0, 190, 80},
+                    false
+                )
+            end)
+        end
+    else
+        for _, i in ipairs(GameState.area.cores) do
+            fore.queuer.submit(L.SHADOW, i.y, function()
+                -- wall
+                fore.graphics.rect(
+                    i.x,
+                    i.y,
+                    i.w,
+                    i.h,
+                    {0, 190, 80},
+                    false
+                )
+            end)
+        end
     end
 end
 
 function World.renderGround()
-    for _, g in ipairs(GameState.area.ground) do
-        fore.queuer.submit(L.FLOOR, g.y, function()
-            -- The Floor
-            fore.graphics.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
+    if fore.data.phone then
+        for _, g in ipairs(GameState.area.ground) do
+            fore.queuer.submit(L.FLOOR, g.y, function()
+                -- The Floor
+                fore.graphics.rect(g.x, g.y, g.w, g.h, {18, 27, 38})
 
-            for gx = g.x, g.x + g.w, 40 do
-                for gy = g.y, g.y + g.h, 40 do
-                    -- Draw a tiny 1x1 dot or a subtle cross
-                    fore.graphics.rect(gx, gy, 1, 1, {150, 200, 255, 20})
+                for gx = g.x, g.x + g.w-2, 40 do
+                    for gy = g.y, g.y + g.h-2, 40 do
+                        -- Draw a tiny 1x1 dot or a subtle cross
+                        fore.graphics.rect(gx, gy, 2, 2, {150, 200, 255, 20})
+                    end
                 end
-            end
-        end)
-        fore.queuer.submit(L.FLOOR_DEC, g.y+g.w, function()
-            -- The Floor
-            fore.graphics.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
-            fore.graphics.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
-            fore.graphics.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
-            fore.graphics.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
-        end)
+            end)
+            fore.queuer.submit(L.FLOOR_DEC, g.y+g.w, function()
+                -- The Floor
+                fore.graphics.rect(g.x, g.y+20, g.w, g.h+20, {18, 27, 38, 30})
+                fore.graphics.rect(g.x, g.y+15, g.w, g.h+15, {18, 27, 38, 30})
+                fore.graphics.rect(g.x, g.y+10, g.w, g.h+10, {18, 27, 38, 30})
+                fore.graphics.rect(g.x, g.y+5, g.w, g.h+5, {18, 27, 38, 30})
+            end)
+        end
+    else
+        for _, g in ipairs(GameState.area.ground) do
+            fore.queuer.submit(L.FLOOR, g.y, function()
+                -- The Floor
+                fore.graphics.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
+
+                for gx = g.x, g.x + g.w-1, 40 do
+                    for gy = g.y, g.y + g.h-1, 40 do
+                        -- Draw a tiny 1x1 dot or a subtle cross
+                        fore.graphics.rect(gx, gy, 1, 1, {150, 200, 255, 20})
+                    end
+                end
+            end)
+            fore.queuer.submit(L.FLOOR_DEC, g.y+g.w, function()
+                -- The Floor
+                fore.graphics.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
+                fore.graphics.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
+                fore.graphics.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
+                fore.graphics.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
+            end)
+        end
     end
 end
 

@@ -36,6 +36,8 @@ function EffectSystem.apply(player, buffDef)
 
     fore.save.set("effects_obtained", fore.save.get("effects_obtained") + 1)
 
+    player.effectsChanged = true
+
     return true
 end
 
@@ -83,6 +85,8 @@ function EffectSystem.remove(player, id, amount)
             break
         end
     end
+
+    player.effectsChanged = true
 end
 
 

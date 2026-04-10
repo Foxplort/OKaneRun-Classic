@@ -32,6 +32,8 @@ function Renderer.updateFonts()
     
     scale = math.max(0.1, scale)
 
+    if scale < 2 then scale = scale * 2 end
+
     Renderer.fonts = {
         small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.small * scale)),
         medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.medium * scale)),

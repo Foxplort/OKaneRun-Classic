@@ -8,6 +8,13 @@ local THICKNESS = 4
 
 function Loading.start()
     active, angle = true, 0
+    if fore.data.phone then
+        RADIUS = 10
+        THICKNESS = 8
+    else
+        RADIUS = 8
+        THICKNESS = 4
+    end
 end
 
 function Loading.update(dt)

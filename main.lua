@@ -1,11 +1,11 @@
 ffi = require("ffi")
-local game_version = "1.0.0"
+local game_version = "1.1.0-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
     version = game_version,
     startScene = "intro",
-    pixelBank = 64,
+    pixelBank = 128,
     icon = "okanerun/assets/images/system/fm.png",
     save = {
         total_runs = 0,
@@ -43,7 +43,7 @@ fore.input:registerAll({
         buttons = { "b" }
     },
     pause = {
-        keus = { "backspace", "escape" },
+        keys = { "backspace", "escape" },
         buttons = { "start" }
     },
     debugEffect = {

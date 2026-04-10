@@ -34,6 +34,8 @@ function Fore.init(config)
 
     Fore.conf = require("fore.core.config").init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
+    Fore.data.OS = love.system.getOS()
+    Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS") or true
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
@@ -60,6 +62,8 @@ function Fore.init(config)
 
     Fore.transition = require("fore.systems.transition")
     Fore.camera = require("fore.systems.camera")
+
+    Fore.mobileControls = require("fore.systems.mobileControls").init(Fore)
 
     return Fore
 end
@@ -106,6 +110,9 @@ function Fore:start()
     love.gamepadaxis = function(j, a, v) self:gamepadaxis(j, a, v) end
     love.joystickadded = function(j) self:joystickadded(j) end
     love.joystickremoved = function (j) self:joystickremoved(j) end
+    love.touchpressed = function(id, x, y) self:touchpressed(id, x, y) end
+    love.touchreleased = function(id, x, y) self:touchreleased(id, x, y) end
+    love.resize = function(w,h) self:resize(w,h) end
 end
 
 ---Introduces new functions into the main loop
@@ -139,6 +146,8 @@ function Fore:update(dt)
 
     self.graphics.update_loading()
     self.input:update()
+    if self.mobileControls then self.mobileControls:update(dt) end
+    
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
@@ -180,6 +189,11 @@ function Fore:update(dt)
     end
 end
 
+function Fore:resize(w,h)
+    self.graphics.updateFonts()
+    self.last_font_scale = self.data.scale
+end
+
 function Fore:draw()
     --COMPUTE RESOLUTION
     local pW, pH, vW, vH = self:computeInternalResolution()
@@ -187,11 +201,6 @@ function Fore:draw()
     self.data.width = vW
     self.data.height = vH
     local screenW, screenH = love.graphics.getDimensions()
-
-    if self.data.scale ~= self.last_font_scale then
-        self.graphics.updateFonts()
-        self.last_font_scale = self.data.scale
-    end
 
     -- CLEAR SCREEN
     love.graphics.clear(8/255, 15/255, 20/255)
@@ -230,6 +239,8 @@ function Fore:draw()
     self._volumeIndicator:draw()
 
     -- Post-draw hooks
+    if self.mobileControls then self.mobileControls:draw() end
+
     for _, cb in ipairs(self.hooks.postDraw) do
         cb()
     end
@@ -293,6 +304,35 @@ end
 
 function Fore:joystickremoved(j)
     self.input:removeJoystick(j)
+end
+
+function Fore:touchpressed(id, x, y)
+    -- Convert screen coordinates to canvas coordinates if necessary
+    local pW, pH, vW, vH = self:computeInternalResolution()
+    local screenW, screenH = love.graphics.getDimensions()
+    local offsetX = (screenW - pW) / 2
+    local offsetY = (screenH - pH) / 2
+    
+    local tx = (x * screenW - offsetX) / self.data.scale
+    local ty = (y * screenH - offsetY) / self.data.scale
+    
+    if self.mobileControls and self.mobileControls:isHit(tx, ty) then
+        return
+    end
+
+    self.input:touchpressed(id, tx, ty)
+end
+
+function Fore:touchreleased(id, x, y)
+    local pW, pH, vW, vH = self:computeInternalResolution()
+    local screenW, screenH = love.graphics.getDimensions()
+    local offsetX = (screenW - pW) / 2
+    local offsetY = (screenH - pH) / 2
+    
+    local tx = (x * screenW - offsetX) / self.data.scale
+    local ty = (y * screenH - offsetY) / self.data.scale
+    
+    self.input:touchreleased(id, tx, ty)
 end
 
 ---Creates a new canvas based on current size of the window

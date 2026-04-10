@@ -7,6 +7,7 @@ local Scene = {}
 local gameData = nil
 local loadedImages = {}
 local pause = false
+local pauseLockout = 0
 local deathPause = false
 local menu = nil
 local menuStack = nil
@@ -68,6 +69,7 @@ local function applyMods(base, mod)
 end
 
 local function statPerp()
+    if not GameState.player.effectsChanged then return end
     GameState.player.stat = applyMods(GameState.player.base, GameState.player.mod)
     local d = GameState.player.dash
     d.power = d.flat + (GameState.player.stat.move.maxVel * d.mult)
@@ -160,6 +162,7 @@ function Scene.enter()
     GameState.player.coinChain = {}
     GameState.player.damage = damagePlayer
     GameState.player.afterimages = {}
+    GameState.player.effectsChanged = true
 
     statPerp()
 
@@ -167,7 +170,7 @@ function Scene.enter()
         render = {
             player = require("okanerun.src.render.player"),
             world = require("okanerun.src.render.world"),
-            ui = require("okanerun.src.render.ui"),
+            ui = require("okanerun.src.render.ui" .. (fore.data.phone and "Phone" or "")),
         },
         systems = {
             tail = require("okanerun.src.systems.playerTail"),
@@ -222,7 +225,7 @@ function Scene.enter()
         title = "PAUSED",
         style = "spikes",  -- optional: "plain" or "spikes"
         options = {
-            {txt="Resume", action=function() pause = false end},
+            {txt="Resume", action=function() pause = false; fore.mobileControls:show() end},
             {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end, nil, 0, 0.6) end},
             {txt="Quit", action=function() love.event.quit() end},
         }
@@ -247,9 +250,13 @@ function Scene.enter()
             end
         end
     end
+
+    fore.mobileControls:show()
+    pauseLockout = 0
 end
 
 function Scene.exit()
+    fore.mobileControls:hide()
     gameData = nil
     fore.debug.remove("Player")
 
@@ -291,8 +298,14 @@ function Scene.update(dt)
         return
     end
     if pause then
-        if fore.input:pressed("pause") or fore.input:pressed("cancel") then pause = false end
-        menuStack:input()
+        pauseLockout = math.max(0, pauseLockout - dt)
+        if pauseLockout <= 0 then
+            if fore.input:pressed("pause") or fore.input:pressed("cancel") then 
+                pause = false 
+                fore.mobileControls:show()
+            end
+            menuStack:input()
+        end
         menuStack:update(dt)
     else
         statPerp()
@@ -394,7 +407,12 @@ function Scene.update(dt)
                 if fore.input:down("left") then mx = mx - 1 end
                 if fore.input:down("up") then my = my - 1 end
                 if fore.input:down("down") then my = my + 1 end
-                if fore.input:pressed("pause") then pause = true; menu:resetAnimation() end
+                if fore.input:pressed("pause") then 
+                    pause = true
+                    pauseLockout = 0.2
+                    fore.mobileControls:hide()
+                    menu:resetAnimation() 
+                end
                 if GameState.player.effectRef.confused then
                     mx = -mx
                     my = -my

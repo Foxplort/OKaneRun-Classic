@@ -1,3 +1,7 @@
+#ifdef GL_ES
+precision mediump float;
+#endif
+
 extern number levels;   // number of grayscale steps (e.g. 4, 6, 8)
 extern number strength; // 0..1 blend between original and mono
 

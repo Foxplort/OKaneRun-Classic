@@ -58,7 +58,7 @@ local function drawCoinIndicator()
     fore.graphics.text(coinText, fore.data.width-80, 35, 1, 255, 80, "center")
 
     local centerX, centerY = fore.data.width - 40, 40
-    local radius, baseThick = 20, 3
+    local radius, baseThick = 22, 4
     local time = love.timer.getTime()
     
     fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
@@ -136,7 +136,7 @@ local function drawHealthIndicator()
     local maxHp = GameState.player.hp.max
     if maxHp <= 0 then return end
     
-    local startX, y = 0, fore.data.height - 45
+    local startX, y = 10, 70
     local size, spacing = 20, 24
     local perRow = 6
     local rows = math.ceil(maxHp / perRow)
@@ -144,8 +144,8 @@ local function drawHealthIndicator()
     local lastRowCrystals = maxHp - (rows-1) * perRow
     local totalWidth = (math.min(maxHp, perRow) - 1) * spacing + size
     local bgHeight = rows * (size + 16)/2 - 4
-    local bgTop = y - (rows-1) * (size + 16)/2 - size/2 - 6
-    local bgBottom = bgTop + bgHeight + 8
+    local bgTop = y - size/2 - 6
+    local bgBottom = bgTop + 24 + ((rows-1) * (size + 16)/2)
     
     local bgPoints = {
         startX - 20, bgTop,
@@ -160,7 +160,7 @@ local function drawHealthIndicator()
     y = y - 5
     
     for row = 0, rows - 1 do
-        local rowY = y - row * (size - 4)
+        local rowY = y + row * (size - 4)
         local rowStart = row * perRow + 1
         local rowEnd = math.min(maxHp, rowStart + perRow - 1)
         
@@ -178,7 +178,7 @@ local function drawHealthIndicator()
     end
     
     for row = 0, rows - 1 do
-        local rowY = y - row * (size - 4)
+        local rowY = y + row * (size - 4)
         local rowStart = row * perRow + 1
         local rowEnd = math.min(maxHp, rowStart + perRow - 1)
         
@@ -222,8 +222,8 @@ local function drawDashIndicator()
     local dash = p.dash
     local progress = 1 - (dash.cooldown / dash.cdMax)
     local isReady = dash.cooldown <= 0
-    local x, y = 15, fore.data.height - 25
-    local w, h = 100, 6
+    local x, y = 25, 35
+    local w, h = 100, 10
     local tilt = 8
     
     -- Background
@@ -263,7 +263,7 @@ local function drawDashIndicator()
         elseif fore.input:getMethod() == "touch" then
             input_hint = "DASH READY"
         end
-        fore.graphics.text(input_hint, x - 5, y, 0.8, {0,0,0,200}, w, "center")
+        fore.graphics.text(input_hint, x - 5, y, 1, {0,0,0,200}, w, "center")
     end
 end
 

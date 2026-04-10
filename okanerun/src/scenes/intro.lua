@@ -45,7 +45,9 @@ end
 function Scene.update(dt)
     yChange = (fore.conf.height - fore.data.height)/2
     if state == "warning" or state == "waiting" then
-        if fore.input:down("accept") and state == "warning" then
+        local isAccepting = fore.input:down("accept") or (fore.input:getMethod() == "touch" and fore.input:isTouching())
+        
+        if isAccepting and state == "warning" then
             hold = math.min(hold + dt, HOLD_TIME)
             if hold >= HOLD_TIME then
                 state = "waiting"
@@ -81,9 +83,11 @@ function Scene.draw()
             lineText("-- Also --")
             lineText("Flashing lights and other effects may appear")
             lineText("")
-            if fore.input:getMethod() == "keyboard" then
+            if fore.data.phone then
+                lineText("Hold to continue")
+            elseif fore.input:getMethod() == "keyboard" then
                 lineText("Hold SPACE to continue")
-            else
+            elseif fore.input:getMethod() == "gamepad" then
                 lineText("Hold A to continue")
             end
         end
