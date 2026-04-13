@@ -34,9 +34,40 @@ end
 
 -- Main loader
 function LevelLoader.load(path)
-    -- load file as Lua table
-    local chunk = love.filesystem.load(path)
-    local data = chunk()
+    local data
+    if path:match("%.json$") then
+        local json = require("fore.utils.json")
+        local content, err = love.filesystem.read(path)
+        if not content then error("Could not load " .. path .. ": " .. tostring(err)) end
+        local raw = json.decode(content)
+        
+        -- Transform editor raw objects back into game's level format
+        data = { ground = {}, coins = {}, cores = {}, spawn = {x=150, y=150} }
+        if raw.objects then
+            for _, obj in ipairs(raw.objects) do
+                if obj.type == "ground" then
+                    table.insert(data.ground, {x = obj.x, y = obj.y, xp = obj.x + obj.w, yp = obj.y + obj.h, w = obj.w, h = obj.h})
+                elseif obj.type == "coins" then
+                    table.insert(data.coins, {x = obj.x, y = obj.y})
+                elseif obj.type == "cores" then
+                    table.insert(data.cores, {x = obj.x, y = obj.y, w = obj.w, h = obj.h})
+                elseif obj.type == "spawn" then
+                    data.spawn = {x = obj.x, y = obj.y}
+                end
+            end
+        end
+        -- Add mapWidth / mapHeight for camera constraints
+        data.mapWidth = raw.mapWidth or 2000
+        data.mapHeight = raw.mapHeight or 2000
+    else
+        -- load file as Lua table
+        local chunk = love.filesystem.load(path)
+        if chunk then
+            data = chunk()
+        else
+            error("Could not load lua map: " .. path)
+        end
+    end
 
     -- Merge defaults
     applyDefaults(data, defaults)

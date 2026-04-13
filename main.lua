@@ -1,5 +1,5 @@
 ffi = require("ffi")
-local game_version = "1.1.0"
+local game_version = "1.2.0-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
@@ -108,6 +108,8 @@ fore:introduce("load", function()
         love.image.newImageData("okanerun/assets/images/system/cursor.png"),
         0, 0
     ))
+
+    require("okanerun.src.systems.gameEditor").init(fore)
 end)
 
 fore:introduce("update", function(dt)

@@ -57,6 +57,8 @@ function Fore.init(config)
     Fore.audio.load("system_volume_change", "fore/assets/sounds/volume.ogg", false, "sfx")
     Fore._volumeIndicator = require("fore.systems.volumeUI"):init(Fore)
 
+    Fore.editor = require("fore.systems.editor").init(Fore)
+
     Fore.save = require("fore.systems.save")
     Fore.save.init(config.save or {})
 
@@ -106,12 +108,14 @@ function Fore:start()
     love.keypressed = function(key) self:keypressed(key) end
     love.mousepressed = function(x, y, button, istouch) self:mousepressed(x, y, button, istouch) end
     love.mousemoved = function(x, y, dx, dy, istouch) self:mousemoved(x, y, dx, dy, istouch) end
+    love.mousereleased = function(x, y, button, istouch) self:mousereleased(x, y, button, istouch) end
     love.gamepadpressed = function(j, b) self:gamepadpressed(j, b) end
     love.gamepadaxis = function(j, a, v) self:gamepadaxis(j, a, v) end
     love.joystickadded = function(j) self:joystickadded(j) end
     love.joystickremoved = function (j) self:joystickremoved(j) end
     love.touchpressed = function(id, x, y) self:touchpressed(id, x, y) end
     love.touchreleased = function(id, x, y) self:touchreleased(id, x, y) end
+    love.wheelmoved = function(x, y) self:wheelmoved(x, y) end
     love.resize = function(w,h) self:resize(w,h) end
 end
 
@@ -149,10 +153,16 @@ function Fore:update(dt)
     if self.mobileControls then self.mobileControls:update(dt) end
     
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
+    if self.input:pressed("editor") then self.editor.enabled = not self.editor.enabled end
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
         love.window.setFullscreen(self.data.fullscreen, "desktop")
         self.graphics.updateFonts()
+    end
+
+    if self.editor.enabled then
+        self.editor.update(dt)
+        return -- Skip the rest of game updates
     end
 
     -- Update hooks
@@ -223,14 +233,18 @@ function Fore:draw()
     end
 
     -- Game rendering
-    self.scenes:draw()
+    if not self.editor.enabled then
+        self.scenes:draw()
 
-    -- Draw hooks
-    for _, cb in ipairs(self.hooks.draw) do
-        cb()
+        -- Draw hooks
+        for _, cb in ipairs(self.hooks.draw) do
+            cb()
+        end
+        
+        self.transition.draw()
+    else
+        self.editor.draw()
     end
-    
-    self.transition.draw()
 
     -- Debug UI
     if self.debug.enabled then
@@ -275,12 +289,14 @@ end
 function Fore:keypressed(key)
     self.input:setMethod("keyboard")
     self.debug.keypressed(key)
+    if self.editor.enabled then self.editor.keypressed(key) end
     self.scenes:keypressed(key)
 end
 
 function Fore:mousepressed(x, y, button, istouch)
     if istouch then return end
     self.input:setMethod("keyboard")
+    if self.editor.enabled then self.editor.mousepressed(x, y, button, istouch) end
 end
 
 function Fore:mousemoved(x, y, dx, dy, istouch)
@@ -288,6 +304,15 @@ function Fore:mousemoved(x, y, dx, dy, istouch)
     if math.abs(dx) > 0.1 or math.abs(dy) > 0.1 then
         self.input:setMethod("keyboard")
     end
+    if self.editor.enabled then self.editor.mousemoved(x, y, dx, dy, istouch) end
+end
+
+function Fore:mousereleased(x, y, button, istouch)
+    if self.editor.enabled then self.editor.mousereleased(x, y, button, istouch) end
+end
+
+function Fore:wheelmoved(x, y)
+    if self.editor.enabled then self.editor.wheelmoved(x, y) end
 end
 
 function Fore:gamepadpressed(joystick, button)

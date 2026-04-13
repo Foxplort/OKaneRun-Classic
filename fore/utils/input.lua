@@ -50,6 +50,9 @@ function Input.init(fore, deadzone)
         volumeDown = {
             keys = { "-" }
         },
+        editor = {
+            keys = { "f8" }
+        }
     })
     
     return self

@@ -158,8 +158,13 @@ end
 function Scene.enter()
     -- LOAD THE LEVEL
     local levelList = require("okanerun.src.data.levels")
-    GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
-    --GameState.area = Fx.ll.load("okanerun/src/data/levels/testLevel.lua")
+    
+    if fore.editor and fore.editor.playCustom and love.filesystem.getInfo("custom.json") then
+        GameState.area = Fx.ll.load("custom.json")
+        fore.editor.playCustom = false
+    else
+        GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
+    end
 
     -- RESET VARIABLES
     pause = false
