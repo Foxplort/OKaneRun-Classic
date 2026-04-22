@@ -8,7 +8,7 @@ local json = require("fore.utils.json")
 Editor.enabled = false
 Editor.types = {}
 Editor.objects = {}
-Editor.globalToggles = {}
+Editor.globalToggles = { showGrid = true }
 Editor.playCustom = false
 
 Editor.mapWidth = 1000
@@ -23,16 +23,27 @@ Editor.activeTool = "Select"
 Editor.activeBuildType = nil
 Editor.selectedObject = nil
 
-Editor.snap = 10
+Editor.snap = 20
 Editor.camera = { x = 0, y = 0, zoom = 1, dragging = false }
 Editor.mouse = { px = 0, py = 0, sx = 0, sy = 0, wx = 0, wy = 0, dragging = false, dragObj = nil, dragOffsetX = 0, dragOffsetY = 0, rectStartX = 0, rectStartY = 0 }
-Editor.uiRects = {} -- format: {x,y,w,h,inputId,action}
+Editor.uiRects = {} 
 
--- Layout metrics
+-- Layout metrics (dynamic botH)
 local topH = 40
 local leftW = 200
 local rightW = 250
 local botH = 80
+
+-- Palette Colors
+local P_BG_TOP = {0.15, 0.16, 0.18, 0.95}
+local P_BG_SIDE = {0.18, 0.19, 0.22, 0.95}
+local P_BG_BOT = {0.12, 0.13, 0.15, 0.95}
+local P_BORDER = {0.3, 0.35, 0.4, 0.5}
+
+local P_BTN_IDLE = {0.25, 0.28, 0.32, 1.0}
+local P_BTN_HOVER = {0.35, 0.4, 0.45, 1.0}
+local P_BTN_ACTIVE = {0.4, 0.5, 0.65, 1.0}
+local P_BTN_BORDER = {0.6, 0.65, 0.7, 0.3}
 
 function Editor.init(fore)
     foreRef = fore
@@ -101,7 +112,6 @@ function Editor.mousepressed(px, py, button, istouch)
     local hitUI = false
     local clickedInputId = nil
 
-    -- Check UI hits using physical (OS window) coordinates
     for _, rect in ipairs(Editor.uiRects) do
         if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
             rect.action()
@@ -110,7 +120,6 @@ function Editor.mousepressed(px, py, button, istouch)
         end
     end
     
-    -- Handle text input focus switching and commits
     if Editor.activeInputId and Editor.activeInputId ~= clickedInputId then
         local num = tonumber(Editor.inputText)
         if num and Editor.onInputCommit then Editor.onInputCommit(num) end
@@ -118,7 +127,6 @@ function Editor.mousepressed(px, py, button, istouch)
         if not clickedInputId then Editor.onInputCommit = nil end
     end
 
-    -- Fast hit block if we click over the panels
     local screenW, screenH = love.graphics.getDimensions()
     if py < topH or py > screenH - botH or px < leftW or px > screenW - rightW then
         hitUI = true
@@ -294,21 +302,22 @@ end
 local function drawButton(id, txt, x, y, w, h, active, action)
     table.insert(Editor.uiRects, {x=x, y=y, w=w, h=h, action=action})
     
-    if active then
-        love.graphics.setColor(0.3, 0.6, 0.9, 1)
-    else
-        love.graphics.setColor(0.2, 0.2, 0.2, 1)
-    end
-    
     local mx, my = Editor.mouse.px, Editor.mouse.py
-    if mx >= x and mx <= x+w and my >= y and my <= y+h then
-        love.graphics.setColor(0.4, 0.7, 1.0, 1)
-    end
+    local isHover = mx >= x and mx <= x+w and my >= y and my <= y+h
     
+    if active then
+        love.graphics.setColor(P_BTN_ACTIVE)
+    elseif isHover then
+        love.graphics.setColor(P_BTN_HOVER)
+    else
+        love.graphics.setColor(P_BTN_IDLE)
+    end
     love.graphics.rectangle("fill", x, y, w, h)
-    love.graphics.setColor(1,1,1,1)
+    
+    love.graphics.setColor(P_BTN_BORDER)
     love.graphics.rectangle("line", x, y, w, h)
     
+    love.graphics.setColor(1,1,1,1)
     local font = love.graphics.getFont()
     local th = font:getHeight()
     local tw = font:getWidth(txt)
@@ -334,13 +343,22 @@ local function drawNumberInput(id, label, value, x, y, w, h, onCommit)
         end
     end})
     
-    if active then love.graphics.setColor(0.3, 0.6, 0.9, 1) else love.graphics.setColor(0.2, 0.2, 0.2, 1) end
     local mx, my = Editor.mouse.px, Editor.mouse.py
-    if mx >= bx and mx <= bx+bw and my >= y and my <= y+h then love.graphics.setColor(0.4, 0.7, 1.0, 1) end
+    local isHover = mx >= bx and mx <= bx+bw and my >= y and my <= y+h
     
+    if active then 
+        love.graphics.setColor(P_BTN_ACTIVE)
+    elseif isHover then
+        love.graphics.setColor(P_BTN_HOVER)
+    else 
+        love.graphics.setColor(P_BTN_IDLE)
+    end
     love.graphics.rectangle("fill", bx, y, bw, h)
-    love.graphics.setColor(1,1,1,1)
+    
+    love.graphics.setColor(P_BTN_BORDER)
     love.graphics.rectangle("line", bx, y, bw, h)
+    
+    love.graphics.setColor(1,1,1,1)
     love.graphics.print(displayVal .. (active and "_" or ""), bx + 5, y + (h - Editor.uiFont:getHeight())/2)
 end
 
@@ -353,12 +371,37 @@ function Editor.drawWorld()
     love.graphics.translate(-Editor.camera.x, -Editor.camera.y)
     
     -- Level Boundaries Outline
-    love.graphics.setColor(1, 0, 0, 0.5)
+    love.graphics.setColor(1, 0, 0, 0.4)
     love.graphics.rectangle("line", 0, 0, Editor.mapWidth, Editor.mapHeight)
     
-    -- Snapping Grid
-    if Editor.snap > 1 then
-        love.graphics.setColor(1, 1, 1, 0.1)
+    for _, obj in ipairs(Editor.objects) do
+        local typ = Editor.types[obj.type]
+        if typ then
+            if not Editor.globalToggles["simpleView"] and typ.gameDraw then
+                typ.gameDraw(obj, true)
+            else
+                if typ.color then love.graphics.setColor(typ.color) else love.graphics.setColor(0.8, 0.8, 0.8) end
+                if typ.shape == "point" then
+                    love.graphics.circle("fill", obj.x, obj.y, 5)
+                elseif typ.shape == "rectangle" then
+                    love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
+                end
+            end
+            
+            if obj == Editor.selectedObject then
+                love.graphics.setColor(1, 1, 1, 0.9)
+                if typ.shape == "point" then
+                    love.graphics.circle("line", obj.x, obj.y, 8)
+                else
+                    love.graphics.rectangle("line", obj.x, obj.y, obj.w or 20, obj.h or 20)
+                end
+            end
+        end
+    end
+    
+    -- Snapping Grid drawn OVER objects
+    if Editor.snap > 1 and Editor.globalToggles["showGrid"] ~= false then
+        love.graphics.setColor(1, 1, 1, 0.05)
         local cx, cy = Editor.camera.x, Editor.camera.y
         local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
         local snapVal = Editor.snap
@@ -370,33 +413,8 @@ function Editor.drawWorld()
         for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
     end
     
-    for _, obj in ipairs(Editor.objects) do
-        local typ = Editor.types[obj.type]
-        if typ then
-            if not Editor.globalToggles["simpleView"] and typ.gameDraw then
-                typ.gameDraw(obj, true) -- true arg signifies isEditor
-            else
-                if typ.color then love.graphics.setColor(typ.color) else love.graphics.setColor(0.8, 0.8, 0.8) end
-                if typ.shape == "point" then
-                    love.graphics.circle("fill", obj.x, obj.y, 5)
-                elseif typ.shape == "rectangle" then
-                    love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
-                end
-            end
-            
-            if obj == Editor.selectedObject then
-                love.graphics.setColor(1, 1, 1, 1)
-                if typ.shape == "point" then
-                    love.graphics.circle("line", obj.x, obj.y, 8)
-                else
-                    love.graphics.rectangle("line", obj.x, obj.y, obj.w or 20, obj.h or 20)
-                end
-            end
-        end
-    end
-    
     if Editor.mouse.draggingRect then
-        love.graphics.setColor(1, 1, 1, 0.5)
+        love.graphics.setColor(1, 1, 1, 0.3)
         local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
         love.graphics.rectangle("fill", 
             math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY),
@@ -416,17 +434,30 @@ function Editor.drawUI()
     end
     love.graphics.setFont(Editor.uiFont)
     
+    -- Calculate Bottom Panel Rows dynamically
+    local toolX = 140
+    local rows = 1
+    for id, def in pairs(Editor.types) do
+        local w = Editor.uiFont:getWidth(" + " .. id) + 30
+        if toolX + w > screenW - 170 then
+            toolX = 140
+            rows = rows + 1
+        end
+        toolX = toolX + w + 10
+    end
+    botH = 20 + rows * 40
+    
     -- Panel Backgrounds
-    love.graphics.setColor(0.08, 0.08, 0.08, 0.95)
+    love.graphics.setColor(P_BG_TOP)
     love.graphics.rectangle("fill", 0, 0, screenW, topH)
-    love.graphics.setColor(0.12, 0.12, 0.12, 0.95)
+    love.graphics.setColor(P_BG_SIDE)
     love.graphics.rectangle("fill", 0, topH, leftW, screenH - topH - botH)
     love.graphics.rectangle("fill", screenW - rightW, topH, rightW, screenH - topH - botH)
-    love.graphics.setColor(0.05, 0.05, 0.05, 0.95)
+    love.graphics.setColor(P_BG_BOT)
     love.graphics.rectangle("fill", 0, screenH - botH, screenW, botH)
     
     -- Panel Borders
-    love.graphics.setColor(0.3, 0.3, 0.3, 1)
+    love.graphics.setColor(P_BORDER)
     love.graphics.line(0, topH, screenW, topH)
     love.graphics.line(leftW, topH, leftW, screenH - botH)
     love.graphics.line(screenW - rightW, topH, screenW - rightW, screenH - botH)
@@ -450,8 +481,9 @@ function Editor.drawUI()
                 if data and data.objects then
                     Editor.objects = data.objects
                     if data.globals then Editor.globalToggles = data.globals end
-                    Editor.mapWidth = data.mapWidth or 2000
-                    Editor.mapHeight = data.mapHeight or 2000
+                    Editor.mapWidth = data.mapWidth or 1000
+                    Editor.mapHeight = data.mapHeight or 1000
+                    if Editor.globalToggles["showGrid"] == nil then Editor.globalToggles["showGrid"] = true end
                 end
             end
         end
@@ -480,7 +512,7 @@ function Editor.drawUI()
     -- ===================
     -- LEFT PANEL (Hierarchy)
     -- ===================
-    love.graphics.setColor(1,1,1,1)
+    love.graphics.setColor(0.8, 0.8, 0.8, 1)
     love.graphics.print("-- Scene Objects --", 10, topH + 10)
     
     local listY = topH + 40
@@ -497,19 +529,23 @@ function Editor.drawUI()
     -- ===================
     -- BOTTOM PANEL (Tools)
     -- ===================
-    love.graphics.setColor(1,1,1,1)
+    love.graphics.setColor(0.8, 0.8, 0.8, 1)
     love.graphics.print("-- Tools --", 10, screenH - botH + 10)
     
-    local toolX = 10
-    local toolY = screenH - botH + 35
+    toolX = 10
+    local toolY = screenH - botH + 10
     
-    drawButton("btn_tool_select", "Select Model", toolX, toolY, 120, 35, Editor.activeTool=="Select", function()
+    drawButton("btn_tool_select", "Select Mode", toolX, toolY, 120, 35, Editor.activeTool=="Select", function()
         Editor.activeTool = "Select"
     end)
     toolX = toolX + 130
     
     for id, def in pairs(Editor.types) do
-        local w = love.graphics.getFont():getWidth(" + " .. id) + 30
+        local w = Editor.uiFont:getWidth(" + " .. id) + 30
+        if toolX + w > screenW - 170 then
+            toolX = 140
+            toolY = toolY + 40
+        end
         local isActive = (Editor.activeTool == "Place" and Editor.activeBuildType == id)
         drawButton("btn_tool_"..id, " + " .. id, toolX, toolY, w, 35, isActive, function()
             Editor.activeTool = "Place"
@@ -519,7 +555,7 @@ function Editor.drawUI()
         toolX = toolX + w + 10
     end
     
-    drawButton("btn_tool_delete", "Delete Selected", screenW - 160, toolY, 150, 35, false, function()
+    drawButton("btn_tool_delete", "Delete Selected", screenW - 160, screenH - botH + 10, 150, 35, false, function()
         if Editor.selectedObject then
             for i, v in ipairs(Editor.objects) do
                 if v == Editor.selectedObject then
@@ -535,7 +571,7 @@ function Editor.drawUI()
     -- RIGHT PANEL (Inspector)
     -- ===================
     local inspX = screenW - rightW + 10
-    love.graphics.setColor(1,1,1,1)
+    love.graphics.setColor(0.8, 0.8, 0.8, 1)
     
     if Editor.selectedObject then
         love.graphics.print("-- Properties --", inspX, topH + 10)
@@ -555,7 +591,7 @@ function Editor.drawUI()
             sy = sy + 30
         end
         
-        love.graphics.setColor(0.5,0.5,0.5,1)
+        love.graphics.setColor(0.5, 0.5, 0.5, 1)
         love.graphics.print("(Use Delete action at bottom", inspX, sy + 15)
         love.graphics.print(" or DEL key to remove)", inspX, sy + 30)
     else
@@ -566,6 +602,7 @@ function Editor.drawUI()
         drawNumberInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, function(v) Editor.mapHeight = v end)
         gy = gy + 40
         
+        love.graphics.setColor(0.8, 0.8, 0.8, 1)
         love.graphics.print("-- Global Toggles --", inspX, gy)
         gy = gy + 30
         for id, val in pairs(Editor.globalToggles) do

@@ -247,12 +247,6 @@ function Fore:draw()
         self.editor.drawWorld()
     end
 
-    -- Debug UI
-    if self.debug.enabled then
-        self.debug.draw()
-    end
-    self._volumeIndicator:draw()
-
     -- Post-draw hooks
     if self.mobileControls then self.mobileControls:draw() end
 
@@ -284,6 +278,12 @@ function Fore:draw()
     if self.editor.enabled then
         self.editor.drawUI()
     end
+
+    -- Debug UI
+    if self.debug.enabled then
+        self.debug.draw()
+    end
+    self._volumeIndicator:draw()
 
     -- Update debug draw calls
     if self.debug.enabled then
