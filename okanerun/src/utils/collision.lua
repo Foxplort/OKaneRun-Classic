@@ -20,12 +20,8 @@ function Collision.getWallHitbox(w)
 end
 
 function Collision.getGroundHitbox(g)
-    return {
-        x = g.x,
-        y = g.y,
-        w = g.w,
-        h = g.h,
-    }
+    local Objects = require("okanerun.src.data.objects")
+    return Objects["ground"].hitbox(g)
 end
 
 return Collision

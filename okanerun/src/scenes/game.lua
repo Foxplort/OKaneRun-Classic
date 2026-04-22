@@ -166,6 +166,9 @@ function Scene.enter()
         GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
     end
 
+    --GameState.area = Fx.ll.load("okanerun/src/data/levels/dotedPath.json")
+
+
     -- RESET VARIABLES
     pause = false
     deathPause = false
@@ -652,9 +655,10 @@ function Scene.update(dt)
         end
 
 
+        local Objects = require("okanerun.src.data.objects")
         -- Collect coins
         for i, c in ipairs(GameState.area.coins) do
-            if fore.math.aabb(Fx.cl.getPlayerHitbox(), {x=c.x-3, y=c.y-6, w=16, h=12}) and GameState.player.pos.z < 16 then
+            if fore.math.aabb(Fx.cl.getPlayerHitbox(), Objects["coin"].hitbox(c)) and GameState.player.pos.z < 16 then
                 local SPACING = 10
 
                 local coin = {

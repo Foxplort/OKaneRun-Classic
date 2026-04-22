@@ -1,48 +1,11 @@
+local Objects = require("okanerun.src.data.objects")
+
 local World = {}
 
 function World.renderCoins()
     -- Real coins
     for _, c in ipairs(GameState.area.coins) do
-        -- Coin
-        fore.queuer.submit(L.ACTOR, c.y, function()
-            fore.graphics.circ(c.x-1, c.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
-            fore.graphics.circ(c.x, c.y-15, 10, 15, {255, 200, 0}, true, 7) -- body
-            fore.graphics.circ(c.x+4, c.y-13, 2, 10, {230, 140, 0}, true, 4) -- middle
-            fore.graphics.circ(c.x+6, c.y-13, 4, 5, {255, 255, 160}, true, 5) -- highlight
-            fore.graphics.circ(c.x+7.5, c.y-12, 2, 3, {255, 255, 255}, true, 5) -- highlight
-        end)
-
-        -- Shadow
-        fore.queuer.submit(L.SHADOW, c.y, function()
-            local z = 5
-            local cw, ch = 10, 7
-
-            -- base shadow size from [coin] size
-            local baseW = cw * 1.2
-            local baseH = ch * 0.35
-
-            -- shrink with jump
-            local shadowZ = math.max(0, z) -- Don't go below floor
-            local shrink = math.max(0.45, 1 - shadowZ / 80)
-
-            local w = baseW * shrink
-            local h = baseH * shrink
-
-            -- fade slightly with height
-            local alpha = math.max(60, 160 - z * 1.5)
-
-            -- center under feet
-            local cx = c.x + cw * 0.5
-            local cy = c.y - 2
-
-            fore.graphics.circ(
-                cx - w * 0.5,
-                cy - h * 0.5 + 2,
-                w,
-                h,
-                {0, 0, 0, alpha}
-            )
-        end)
+        Objects["coin"].render(c, false)
     end
 
     -- Coins that follow the player
@@ -121,88 +84,14 @@ function World.renderCoins()
 end
 
 function World.renderCores()
-    if fore.data.phone then
-        for _, i in ipairs(GameState.area.cores) do
-            fore.queuer.submit(L.SHADOW, i.y, function()
-                -- wall
-                fore.graphics.rect(
-                    i.x,
-                    i.y,
-                    i.w,
-                    i.h,
-                    {0, 190, 80},
-                    false
-                )
-                fore.graphics.rect(
-                    i.x+1,
-                    i.y+1,
-                    i.w-2,
-                    i.h-2,
-                    {0, 190, 80},
-                    false
-                )
-            end)
-        end
-    else
-        for _, i in ipairs(GameState.area.cores) do
-            fore.queuer.submit(L.SHADOW, i.y, function()
-                -- wall
-                fore.graphics.rect(
-                    i.x,
-                    i.y,
-                    i.w,
-                    i.h,
-                    {0, 190, 80},
-                    false
-                )
-            end)
-        end
+    for _, i in ipairs(GameState.area.cores) do
+        Objects["core"].render(i, false)
     end
 end
 
 function World.renderGround()
-    if fore.data.phone then
-        for _, g in ipairs(GameState.area.ground) do
-            fore.queuer.submit(L.FLOOR, g.y, function()
-                -- The Floor
-                fore.graphics.rect(g.x, g.y, g.w, g.h, {18, 27, 38})
-
-                for gx = g.x, g.x + g.w-2, 40 do
-                    for gy = g.y, g.y + g.h-2, 40 do
-                        -- Draw a tiny 1x1 dot or a subtle cross
-                        fore.graphics.rect(gx, gy, 2, 2, {150, 200, 255, 20})
-                    end
-                end
-            end)
-            fore.queuer.submit(L.FLOOR_DEC, g.y+g.w, function()
-                -- The Floor
-                fore.graphics.rect(g.x, g.y+20, g.w, g.h+20, {18, 27, 38, 30})
-                fore.graphics.rect(g.x, g.y+15, g.w, g.h+15, {18, 27, 38, 30})
-                fore.graphics.rect(g.x, g.y+10, g.w, g.h+10, {18, 27, 38, 30})
-                fore.graphics.rect(g.x, g.y+5, g.w, g.h+5, {18, 27, 38, 30})
-            end)
-        end
-    else
-        for _, g in ipairs(GameState.area.ground) do
-            fore.queuer.submit(L.FLOOR, g.y, function()
-                -- The Floor
-                fore.graphics.rect(g.x, g.y, g.w, g.h, {15, 20, 28})
-
-                for gx = g.x, g.x + g.w-1, 40 do
-                    for gy = g.y, g.y + g.h-1, 40 do
-                        -- Draw a tiny 1x1 dot or a subtle cross
-                        fore.graphics.rect(gx, gy, 1, 1, {150, 200, 255, 20})
-                    end
-                end
-            end)
-            fore.queuer.submit(L.FLOOR_DEC, g.y+g.w, function()
-                -- The Floor
-                fore.graphics.rect(g.x, g.y+20, g.w, g.h+20, {15, 20, 28, 30})
-                fore.graphics.rect(g.x, g.y+15, g.w, g.h+15, {15, 20, 28, 30})
-                fore.graphics.rect(g.x, g.y+10, g.w, g.h+10, {15, 20, 28, 30})
-                fore.graphics.rect(g.x, g.y+5, g.w, g.h+5, {15, 20, 28, 30})
-            end)
-        end
+    for _, g in ipairs(GameState.area.ground) do
+        Objects["ground"].render(g, false)
     end
 end
 

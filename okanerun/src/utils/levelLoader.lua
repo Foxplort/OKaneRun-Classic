@@ -47,11 +47,11 @@ function LevelLoader.load(path)
             for _, obj in ipairs(raw.objects) do
                 if obj.type == "ground" then
                     table.insert(data.ground, {x = obj.x, y = obj.y, xp = obj.x + obj.w, yp = obj.y + obj.h, w = obj.w, h = obj.h})
-                elseif obj.type == "coins" then
+                elseif obj.type == "coin" then
                     table.insert(data.coins, {x = obj.x, y = obj.y})
-                elseif obj.type == "cores" then
+                elseif obj.type == "core" then
                     table.insert(data.cores, {x = obj.x, y = obj.y, w = obj.w, h = obj.h})
-                elseif obj.type == "spawn" then
+                elseif obj.type == "playerSpawn" then
                     data.spawn = {x = obj.x, y = obj.y}
                 end
             end

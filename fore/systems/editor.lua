@@ -1,3 +1,4 @@
+local utf8 = require("utf8")
 local Editor = {}
 
 local foreRef = nil
@@ -10,6 +11,12 @@ Editor.objects = {}
 Editor.globalToggles = {}
 Editor.playCustom = false
 
+Editor.mapWidth = 1000
+Editor.mapHeight = 1000
+Editor.activeInputId = nil
+Editor.inputText = ""
+Editor.onInputCommit = nil
+
 -- UI State
 Editor.tools = {"Select", "Place"}
 Editor.activeTool = "Select"
@@ -18,8 +25,14 @@ Editor.selectedObject = nil
 
 Editor.snap = 10
 Editor.camera = { x = 0, y = 0, zoom = 1, dragging = false }
-Editor.mouse = { sx = 0, sy = 0, wx = 0, wy = 0, dragging = false, dragObj = nil, dragOffsetX = 0, dragOffsetY = 0, rectStartX = 0, rectStartY = 0 }
-Editor.uiRects = {} -- format: {x,y,w,h,action=function()}
+Editor.mouse = { px = 0, py = 0, sx = 0, sy = 0, wx = 0, wy = 0, dragging = false, dragObj = nil, dragOffsetX = 0, dragOffsetY = 0, rectStartX = 0, rectStartY = 0 }
+Editor.uiRects = {} -- format: {x,y,w,h,inputId,action}
+
+-- Layout metrics
+local topH = 40
+local leftW = 200
+local rightW = 250
+local botH = 80
 
 function Editor.init(fore)
     foreRef = fore
@@ -27,12 +40,9 @@ function Editor.init(fore)
 end
 
 function Editor.registerType(id, def)
-    -- def should have: shape="point"|"rectangle", color={r,g,b}, defaultParams={}
     Editor.types[id] = def
-    if Editor.tools[2] == "Place" then
-        if not Editor.activeBuildType then
-            Editor.activeBuildType = id
-        end
+    if not Editor.activeBuildType then
+        Editor.activeBuildType = id
     end
 end
 
@@ -45,29 +55,39 @@ function Editor.getGlobalToggle(id)
 end
 
 function Editor.save()
-    local data = {
-        objects = {}
-    }
+    local data = { objects = {} }
     for _, obj in ipairs(Editor.objects) do
         table.insert(data.objects, {
             type = obj.type,
-            x = obj.x,
-            y = obj.y,
-            w = obj.w,
-            h = obj.h,
+            x = obj.x, y = obj.y, w = obj.w, h = obj.h,
             params = obj.params
         })
     end
     data.globals = Editor.globalToggles
-
+    data.mapWidth = Editor.mapWidth
+    data.mapHeight = Editor.mapHeight
     local jsonStr = json.encode(data)
     love.filesystem.write("custom.json", jsonStr)
-    print("Saved custom.json to", love.filesystem.getSaveDirectory())
 end
 
 function Editor.clear()
     Editor.objects = {}
     Editor.selectedObject = nil
+end
+
+function Editor.toggle()
+    Editor.enabled = not Editor.enabled
+    
+    local Objects = package.loaded["okanerun.src.data.objects"]
+    if Objects then
+        for _, def in pairs(Objects) do
+            if Editor.enabled then
+                if def.onEditorLoad then def.onEditorLoad() end
+            else
+                if def.onEditorUnload then def.onEditorUnload() end
+            end
+        end
+    end
 end
 
 local function snap(val)
@@ -79,23 +99,40 @@ end
 function Editor.mousepressed(px, py, button, istouch)
     local x, y = Editor.mouse.sx, Editor.mouse.sy
     local hitUI = false
+    local clickedInputId = nil
+
+    -- Check UI hits using physical (OS window) coordinates
     for _, rect in ipairs(Editor.uiRects) do
-        if x >= rect.x and x <= rect.x + rect.w and y >= rect.y and y <= rect.y + rect.h then
+        if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
             rect.action()
+            if rect.inputId then clickedInputId = rect.inputId end
             hitUI = true
         end
+    end
+    
+    -- Handle text input focus switching and commits
+    if Editor.activeInputId and Editor.activeInputId ~= clickedInputId then
+        local num = tonumber(Editor.inputText)
+        if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+        Editor.activeInputId = clickedInputId
+        if not clickedInputId then Editor.onInputCommit = nil end
+    end
+
+    -- Fast hit block if we click over the panels
+    local screenW, screenH = love.graphics.getDimensions()
+    if py < topH or py > screenH - botH or px < leftW or px > screenW - rightW then
+        hitUI = true
     end
 
     if hitUI then return end
 
-    if button == 2 then -- Right click pans camera
+    if button == 2 then
         Editor.camera.dragging = true
         return
     end
 
     if button == 1 then
         if Editor.activeTool == "Select" then
-            -- Try to select
             Editor.selectedObject = nil
             for i = #Editor.objects, 1, -1 do
                 local o = Editor.objects[i]
@@ -125,14 +162,14 @@ function Editor.mousepressed(px, py, button, istouch)
             if def.shape == "point" then
                 local obj = {
                     type = Editor.activeBuildType,
-                    x = snap(Editor.mouse.wx),
-                    y = snap(Editor.mouse.wy),
+                    x = snap(Editor.mouse.wx), y = snap(Editor.mouse.wy),
                     params = {}
                 }
                 if def.defaultParams then
                     for k, v in pairs(def.defaultParams) do obj.params[k] = v end
                 end
                 table.insert(Editor.objects, obj)
+                Editor.selectedObject = obj
             elseif def.shape == "rectangle" then
                 Editor.mouse.rectStartX = snap(Editor.mouse.wx)
                 Editor.mouse.rectStartY = snap(Editor.mouse.wy)
@@ -162,14 +199,14 @@ function Editor.mousereleased(px, py, button, istouch)
             if rw > 0 and rh > 0 then
                 local obj = {
                     type = Editor.activeBuildType,
-                    x = rx, y = ry, w = rw, h = rh,
-                    params = {}
+                    x = rx, y = ry, w = rw, h = rh, params = {}
                 }
                 local def = Editor.types[Editor.activeBuildType]
                 if def.defaultParams then
                     for k, v in pairs(def.defaultParams) do obj.params[k] = v end
                 end
                 table.insert(Editor.objects, obj)
+                Editor.selectedObject = obj
             end
             Editor.mouse.draggingRect = false
         end
@@ -177,7 +214,6 @@ function Editor.mousereleased(px, py, button, istouch)
 end
 
 function Editor.wheelmoved(x, y)
-    -- zooming
     if y > 0 then
         Editor.camera.zoom = Editor.camera.zoom * 1.1
     elseif y < 0 then
@@ -185,19 +221,29 @@ function Editor.wheelmoved(x, y)
     end
 end
 
-function Editor.mousemoved(x, y, dx, dy, istouch)
-    if Editor.camera.dragging then
-        Editor.camera.x = Editor.camera.x - dx / Editor.camera.zoom
-        Editor.camera.y = Editor.camera.y - dy / Editor.camera.zoom
-    end
-    
-    if Editor.mouse.dragObj then
-        Editor.mouse.dragObj.x = Editor.mouse.wx + Editor.mouse.dragOffsetX
-        Editor.mouse.dragObj.y = Editor.mouse.wy + Editor.mouse.dragOffsetY
+function Editor.textinput(t)
+    if Editor.activeInputId and t:match("[%d%-%.]") then
+        Editor.inputText = Editor.inputText .. t
     end
 end
 
 function Editor.keypressed(key)
+    if Editor.activeInputId then
+        if key == "backspace" then
+            local byteoffset = utf8.offset(Editor.inputText, -1)
+            if byteoffset then Editor.inputText = string.sub(Editor.inputText, 1, byteoffset - 1) end
+        elseif key == "return" or key == "kpenter" then
+            local num = tonumber(Editor.inputText)
+            if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+            Editor.activeInputId = nil
+            Editor.onInputCommit = nil
+        elseif key == "escape" then
+            Editor.activeInputId = nil
+            Editor.onInputCommit = nil
+        end
+        return
+    end
+
     if key == "delete" or key == "backspace" then
         if Editor.selectedObject then
             for i, v in ipairs(Editor.objects) do
@@ -211,11 +257,22 @@ function Editor.keypressed(key)
     end
 end
 
+function Editor.mousemoved(x, y, dx, dy, istouch)
+    if Editor.camera.dragging then
+        Editor.camera.x = Editor.camera.x - (dx / foreRef.data.scale) / Editor.camera.zoom
+        Editor.camera.y = Editor.camera.y - (dy / foreRef.data.scale) / Editor.camera.zoom
+    end
+    
+    if Editor.mouse.dragObj then
+        Editor.mouse.dragObj.x = Editor.mouse.wx + Editor.mouse.dragOffsetX
+        Editor.mouse.dragObj.y = Editor.mouse.wy + Editor.mouse.dragOffsetY
+    end
+end
+
 function Editor.update(dt)
     local screenW, screenH = love.graphics.getDimensions()
     local mx, my = love.mouse.getPosition()
     
-    -- In this custom editor scene, we bypass the main camera, but calculate world pos manually
     local pW, pH, vW, vH = foreRef:computeInternalResolution()
     local scale = foreRef.data.scale
     local offsetX = (screenW - pW) / 2
@@ -224,13 +281,13 @@ function Editor.update(dt)
     local internalMx = (mx - offsetX) / scale
     local internalMy = (my - offsetY) / scale
 
+    Editor.mouse.px = mx
+    Editor.mouse.py = my
     Editor.mouse.sx = internalMx
     Editor.mouse.sy = internalMy
     
-    -- Simple camera logic
     Editor.mouse.wx = (internalMx - vW/2) / Editor.camera.zoom + Editor.camera.x
     Editor.mouse.wy = (internalMy - vH/2) / Editor.camera.zoom + Editor.camera.y
-
 end
 
 -- Custom UI helper
@@ -243,7 +300,7 @@ local function drawButton(id, txt, x, y, w, h, active, action)
         love.graphics.setColor(0.2, 0.2, 0.2, 1)
     end
     
-    local mx, my = Editor.mouse.sx, Editor.mouse.sy
+    local mx, my = Editor.mouse.px, Editor.mouse.py
     if mx >= x and mx <= x+w and my >= y and my <= y+h then
         love.graphics.setColor(0.4, 0.7, 1.0, 1)
     end
@@ -251,45 +308,80 @@ local function drawButton(id, txt, x, y, w, h, active, action)
     love.graphics.rectangle("fill", x, y, w, h)
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("line", x, y, w, h)
-    love.graphics.print(txt, x + 5, y + 5)
+    
+    local font = love.graphics.getFont()
+    local th = font:getHeight()
+    local tw = font:getWidth(txt)
+    love.graphics.print(txt, x + (w - tw)/2, y + (h - th)/2)
 end
 
-function Editor.draw()
-    local pW, pH, vW, vH = foreRef:computeInternalResolution()
-    Editor.uiRects = {}
+local function drawNumberInput(id, label, value, x, y, w, h, onCommit)
+    local active = (Editor.activeInputId == id)
+    local displayVal = active and Editor.inputText or tostring(math.floor(value))
     
-    -- Draw World
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.print(label, x, y + (h - Editor.uiFont:getHeight())/2)
+    
+    local lw = Editor.uiFont:getWidth(label) + 10
+    local bx = x + lw
+    local bw = w - lw
+    
+    table.insert(Editor.uiRects, {x=bx, y=y, w=bw, h=h, inputId=id, action=function()
+        if Editor.activeInputId ~= id then
+            Editor.activeInputId = id
+            Editor.inputText = tostring(math.floor(value))
+            Editor.onInputCommit = onCommit
+        end
+    end})
+    
+    if active then love.graphics.setColor(0.3, 0.6, 0.9, 1) else love.graphics.setColor(0.2, 0.2, 0.2, 1) end
+    local mx, my = Editor.mouse.px, Editor.mouse.py
+    if mx >= bx and mx <= bx+bw and my >= y and my <= y+h then love.graphics.setColor(0.4, 0.7, 1.0, 1) end
+    
+    love.graphics.rectangle("fill", bx, y, bw, h)
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.rectangle("line", bx, y, bw, h)
+    love.graphics.print(displayVal .. (active and "_" or ""), bx + 5, y + (h - Editor.uiFont:getHeight())/2)
+end
+
+function Editor.drawWorld()
+    local pW, pH, vW, vH = foreRef:computeInternalResolution()
+    
     love.graphics.push()
     love.graphics.translate(vW/2, vH/2)
     love.graphics.scale(Editor.camera.zoom, Editor.camera.zoom)
     love.graphics.translate(-Editor.camera.x, -Editor.camera.y)
     
-    -- Draw Grid
-    love.graphics.setColor(1, 1, 1, 0.1)
-    local cx, cy = Editor.camera.x, Editor.camera.y
-    local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
-    local snapVal = Editor.snap > 1 and Editor.snap or 10
-    local startX = math.floor((cx - hw) / snapVal) * snapVal
-    local endX = math.floor((cx + hw) / snapVal) * snapVal
-    local startY = math.floor((cy - hh) / snapVal) * snapVal
-    local endY = math.floor((cy + hh) / snapVal) * snapVal
-    for x = startX, endX, snapVal do love.graphics.line(x, startY, x, endY) end
-    for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
+    -- Level Boundaries Outline
+    love.graphics.setColor(1, 0, 0, 0.5)
+    love.graphics.rectangle("line", 0, 0, Editor.mapWidth, Editor.mapHeight)
     
-    -- Draw Objects
+    -- Snapping Grid
+    if Editor.snap > 1 then
+        love.graphics.setColor(1, 1, 1, 0.1)
+        local cx, cy = Editor.camera.x, Editor.camera.y
+        local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
+        local snapVal = Editor.snap
+        local startX = math.floor((cx - hw) / snapVal) * snapVal
+        local endX = math.floor((cx + hw) / snapVal) * snapVal
+        local startY = math.floor((cy - hh) / snapVal) * snapVal
+        local endY = math.floor((cy + hh) / snapVal) * snapVal
+        for x = startX, endX, snapVal do love.graphics.line(x, startY, x, endY) end
+        for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
+    end
+    
     for _, obj in ipairs(Editor.objects) do
         local typ = Editor.types[obj.type]
         if typ then
-            if typ.color then
-                love.graphics.setColor(typ.color)
+            if not Editor.globalToggles["simpleView"] and typ.gameDraw then
+                typ.gameDraw(obj, true) -- true arg signifies isEditor
             else
-                love.graphics.setColor(0.8, 0.8, 0.8)
-            end
-            
-            if typ.shape == "point" then
-                love.graphics.circle("fill", obj.x, obj.y, 5)
-            elseif typ.shape == "rectangle" then
-                love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
+                if typ.color then love.graphics.setColor(typ.color) else love.graphics.setColor(0.8, 0.8, 0.8) end
+                if typ.shape == "point" then
+                    love.graphics.circle("fill", obj.x, obj.y, 5)
+                elseif typ.shape == "rectangle" then
+                    love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
+                end
             end
             
             if obj == Editor.selectedObject then
@@ -303,57 +395,54 @@ function Editor.draw()
         end
     end
     
-    -- Dragging rect preview
     if Editor.mouse.draggingRect then
         love.graphics.setColor(1, 1, 1, 0.5)
         local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
         love.graphics.rectangle("fill", 
-            math.min(Editor.mouse.rectStartX, curX),
-            math.min(Editor.mouse.rectStartY, curY),
-            math.abs(curX - Editor.mouse.rectStartX),
-            math.abs(curY - Editor.mouse.rectStartY)
+            math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY),
+            math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
         )
     end
     
     love.graphics.pop()
+end
+
+function Editor.drawUI()
+    local screenW, screenH = love.graphics.getDimensions()
+    Editor.uiRects = {}
     
-    -- Draw UI Background Strip
-    love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-    love.graphics.rectangle("fill", 0, 0, vW, 40)
+    if not Editor.uiFont then
+        Editor.uiFont = love.graphics.newFont(16)
+    end
+    love.graphics.setFont(Editor.uiFont)
     
-    -- Draw Buttons
-    local bx = 10
-    drawButton("btn_select", "Select", bx, 5, 50, 30, Editor.activeTool=="Select", function() Editor.activeTool = "Select" Editor.selectedObject = nil end)
-    bx = bx + 60
-    drawButton("btn_place", "Place", bx, 5, 50, 30, Editor.activeTool=="Place", function() Editor.activeTool = "Place" Editor.selectedObject = nil end)
-    bx = bx + 70
+    -- Panel Backgrounds
+    love.graphics.setColor(0.08, 0.08, 0.08, 0.95)
+    love.graphics.rectangle("fill", 0, 0, screenW, topH)
+    love.graphics.setColor(0.12, 0.12, 0.12, 0.95)
+    love.graphics.rectangle("fill", 0, topH, leftW, screenH - topH - botH)
+    love.graphics.rectangle("fill", screenW - rightW, topH, rightW, screenH - topH - botH)
+    love.graphics.setColor(0.05, 0.05, 0.05, 0.95)
+    love.graphics.rectangle("fill", 0, screenH - botH, screenW, botH)
     
-    if Editor.activeTool == "Place" then
-        for id, def in pairs(Editor.types) do
-            local w = love.graphics.getFont():getWidth(id) + 10
-            drawButton("btn_type_"..id, id, bx, 5, w, 30, Editor.activeBuildType==id, function() Editor.activeBuildType = id end)
-            bx = bx + w + 10
-        end
+    -- Panel Borders
+    love.graphics.setColor(0.3, 0.3, 0.3, 1)
+    love.graphics.line(0, topH, screenW, topH)
+    love.graphics.line(leftW, topH, leftW, screenH - botH)
+    love.graphics.line(screenW - rightW, topH, screenW - rightW, screenH - botH)
+    love.graphics.line(0, screenH - botH, screenW, screenH - botH)
+    
+    -- ===================
+    -- TOP PANEL
+    -- ===================
+    local curX = 10
+    local curY = 5
+    local function addTopBtn(tag, label, rw, func)
+        drawButton("btn_"..tag, label, curX, curY, rw, 30, false, func)
+        curX = curX + rw + 10
     end
     
-    -- Right side buttons
-    local rbx = vW - 60
-    drawButton("btn_play", "Play", rbx, 5, 50, 30, false, function() 
-        Editor.playCustom = true
-        Editor.enabled = false
-        foreRef.scenes:goTo("game") 
-    end)
-    rbx = rbx - 60
-    drawButton("btn_save", "Save", rbx, 5, 50, 30, false, function() Editor.save() end)
-    rbx = rbx - 90
-    drawButton("btn_snap", "Snap: " .. Editor.snap, rbx, 5, 80, 30, false, function()
-        if Editor.snap == 10 then Editor.snap = 1 else Editor.snap = 10 end
-    end)
-    rbx = rbx - 120
-    drawButton("btn_clear", "Clear", rbx, 5, 50, 30, false, function() Editor.clear() end)
-    rbx = rbx - 100
-    drawButton("btn_load", "Load Editor", rbx, 5, 90, 30, false, function()
-        -- Helper strictly to deserialize custom.json back to editor
+    addTopBtn("load", "Load Custom", 120, function()
         if love.filesystem.getInfo("custom.json") then
             local str = love.filesystem.read("custom.json")
             if str then
@@ -361,35 +450,132 @@ function Editor.draw()
                 if data and data.objects then
                     Editor.objects = data.objects
                     if data.globals then Editor.globalToggles = data.globals end
+                    Editor.mapWidth = data.mapWidth or 2000
+                    Editor.mapHeight = data.mapHeight or 2000
                 end
             end
         end
     end)
+    addTopBtn("save", "Save", 80, function() Editor.save() end)
+    addTopBtn("snap", "Snap: " .. Editor.snap, 100, function()
+        local snaps = {1, 10, 20, 50}
+        for i, s in ipairs(snaps) do
+            if Editor.snap == s then
+                Editor.snap = snaps[(i % #snaps) + 1]
+                return
+            end
+        end
+        Editor.snap = 10
+    end)
+    addTopBtn("clear", "Clear Layout", 120, function() Editor.clear() end)
     
-    -- Global Toggles
-    local gy = 50
-    for id, val in pairs(Editor.globalToggles) do
-        local txt = id .. ": " .. tostring(val)
-        drawButton("tog_"..id, txt, 10, gy, 150, 30, val, function() 
-            Editor.globalToggles[id] = not val 
+    curX = screenW - 100
+    drawButton("btn_play", "Play", curX, curY, 80, 30, false, function()
+        Editor.save()
+        Editor.playCustom = true
+        Editor.toggle()
+        foreRef.scenes:goTo("game") 
+    end)
+    
+    -- ===================
+    -- LEFT PANEL (Hierarchy)
+    -- ===================
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.print("-- Scene Objects --", 10, topH + 10)
+    
+    local listY = topH + 40
+    for i, obj in ipairs(Editor.objects) do
+        local label = string.format("%03d | %s", i, obj.type)
+        drawButton("btn_obj_"..i, label, 10, listY, leftW - 20, 25, Editor.selectedObject == obj, function()
+            Editor.selectedObject = obj
+            Editor.activeTool = "Select"
         end)
-        gy = gy + 40
+        listY = listY + 30
+        if listY > screenH - botH - 30 then break end
     end
     
-    -- Inspector
+    -- ===================
+    -- BOTTOM PANEL (Tools)
+    -- ===================
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.print("-- Tools --", 10, screenH - botH + 10)
+    
+    local toolX = 10
+    local toolY = screenH - botH + 35
+    
+    drawButton("btn_tool_select", "Select Model", toolX, toolY, 120, 35, Editor.activeTool=="Select", function()
+        Editor.activeTool = "Select"
+    end)
+    toolX = toolX + 130
+    
+    for id, def in pairs(Editor.types) do
+        local w = love.graphics.getFont():getWidth(" + " .. id) + 30
+        local isActive = (Editor.activeTool == "Place" and Editor.activeBuildType == id)
+        drawButton("btn_tool_"..id, " + " .. id, toolX, toolY, w, 35, isActive, function()
+            Editor.activeTool = "Place"
+            Editor.activeBuildType = id
+            Editor.selectedObject = nil
+        end)
+        toolX = toolX + w + 10
+    end
+    
+    drawButton("btn_tool_delete", "Delete Selected", screenW - 160, toolY, 150, 35, false, function()
+        if Editor.selectedObject then
+            for i, v in ipairs(Editor.objects) do
+                if v == Editor.selectedObject then
+                    table.remove(Editor.objects, i)
+                    break
+                end
+            end
+            Editor.selectedObject = nil
+        end
+    end)
+
+    -- ===================
+    -- RIGHT PANEL (Inspector)
+    -- ===================
+    local inspX = screenW - rightW + 10
+    love.graphics.setColor(1,1,1,1)
+    
     if Editor.selectedObject then
-        love.graphics.setColor(0.1, 0.1, 0.1, 0.9)
-        love.graphics.rectangle("fill", vW - 150, 40, 150, vH - 40)
-        love.graphics.setColor(1,1,1,1)
-        love.graphics.print("Type: " .. Editor.selectedObject.type, vW - 140, 50)
-        love.graphics.print("X: " .. Editor.selectedObject.x, vW - 140, 70)
-        love.graphics.print("Y: " .. Editor.selectedObject.y, vW - 140, 90)
+        love.graphics.print("-- Properties --", inspX, topH + 10)
+        local sy = topH + 40
+        love.graphics.print("Type: " .. Editor.selectedObject.type, inspX, sy)
+        sy = sy + 30
         
-        -- Draw delete hint
-        love.graphics.setColor(1, 0.3, 0.3, 1)
-        love.graphics.print("DEL to delete", vW - 140, 110)
+        drawNumberInput("obj_x", "X:", Editor.selectedObject.x, inspX, sy, 180, 25, function(v) Editor.selectedObject.x = v end)
+        sy = sy + 30
+        drawNumberInput("obj_y", "Y:", Editor.selectedObject.y, inspX, sy, 180, 25, function(v) Editor.selectedObject.y = v end)
+        sy = sy + 30
+        
+        if Editor.selectedObject.w then
+            drawNumberInput("obj_w", "Width:", Editor.selectedObject.w, inspX, sy, 180, 25, function(v) Editor.selectedObject.w = v end)
+            sy = sy + 30
+            drawNumberInput("obj_h", "Height:", Editor.selectedObject.h, inspX, sy, 180, 25, function(v) Editor.selectedObject.h = v end)
+            sy = sy + 30
+        end
+        
+        love.graphics.setColor(0.5,0.5,0.5,1)
+        love.graphics.print("(Use Delete action at bottom", inspX, sy + 15)
+        love.graphics.print(" or DEL key to remove)", inspX, sy + 30)
+    else
+        love.graphics.print("-- Level Settings --", inspX, topH + 10)
+        local gy = topH + 40
+        drawNumberInput("map_w", "Map W:", Editor.mapWidth, inspX, gy, 180, 25, function(v) Editor.mapWidth = v end)
+        gy = gy + 30
+        drawNumberInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, function(v) Editor.mapHeight = v end)
+        gy = gy + 40
+        
+        love.graphics.print("-- Global Toggles --", inspX, gy)
+        gy = gy + 30
+        for id, val in pairs(Editor.globalToggles) do
+            local txt = string.format("%s: %s", id, tostring(val))
+            drawButton("tog_g_"..id, txt, inspX, gy, rightW - 20, 30, val, function() 
+                Editor.globalToggles[id] = not val 
+            end)
+            gy = gy + 40
+        end
     end
-    
 end
 
 return Editor

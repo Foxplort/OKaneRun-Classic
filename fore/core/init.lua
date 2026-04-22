@@ -10,7 +10,7 @@
 ---@field camera fore.camera
 ---@field hooks table<string, function[]>
 local Fore = {
-    version = "0.0.0",
+    version = "1.0.0",
 }
 
 ---Initialize the engine
@@ -117,6 +117,7 @@ function Fore:start()
     love.touchreleased = function(id, x, y) self:touchreleased(id, x, y) end
     love.wheelmoved = function(x, y) self:wheelmoved(x, y) end
     love.resize = function(w,h) self:resize(w,h) end
+    love.textinput = function(t) self:textinput(t) end
 end
 
 ---Introduces new functions into the main loop
@@ -153,7 +154,7 @@ function Fore:update(dt)
     if self.mobileControls then self.mobileControls:update(dt) end
     
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
-    if self.input:pressed("editor") then self.editor.enabled = not self.editor.enabled end
+    if self.input:pressed("editor") then self.editor.toggle() end
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
         love.window.setFullscreen(self.data.fullscreen, "desktop")
@@ -243,7 +244,7 @@ function Fore:draw()
         
         self.transition.draw()
     else
-        self.editor.draw()
+        self.editor.drawWorld()
     end
 
     -- Debug UI
@@ -280,6 +281,10 @@ function Fore:draw()
         cb()
     end
 
+    if self.editor.enabled then
+        self.editor.drawUI()
+    end
+
     -- Update debug draw calls
     if self.debug.enabled then
         self.debug.dc = love.graphics.getStats().drawcalls
@@ -313,6 +318,10 @@ end
 
 function Fore:wheelmoved(x, y)
     if self.editor.enabled then self.editor.wheelmoved(x, y) end
+end
+
+function Fore:textinput(t)
+    if self.editor.enabled and self.editor.textinput then self.editor.textinput(t) end
 end
 
 function Fore:gamepadpressed(joystick, button)
