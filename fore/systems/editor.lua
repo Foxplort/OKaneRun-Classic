@@ -8,27 +8,34 @@ local json = require("fore.utils.json")
 Editor.enabled = false
 Editor.types = {}
 Editor.objects = {}
-Editor.globalToggles = { showGrid = true }
+Editor.globalToggles = { gridLayer = "Behind", gridStyle = "Lines" }
 Editor.playCustom = false
+Editor.clipboard = {}
 
 Editor.mapWidth = 1000
 Editor.mapHeight = 1000
 Editor.activeInputId = nil
 Editor.inputText = ""
 Editor.onInputCommit = nil
+Editor.leftScroll = 0
 
 -- UI State
 Editor.tools = {"Select", "Place"}
 Editor.activeTool = "Select"
 Editor.activeBuildType = nil
-Editor.selectedObject = nil
+Editor.selectedObjects = {}
 
 Editor.snap = 20
 Editor.camera = { x = 0, y = 0, zoom = 1, dragging = false }
-Editor.mouse = { px = 0, py = 0, sx = 0, sy = 0, wx = 0, wy = 0, dragging = false, dragObj = nil, dragOffsetX = 0, dragOffsetY = 0, rectStartX = 0, rectStartY = 0 }
+Editor.mouse = { 
+    px = 0, py = 0, sx = 0, sy = 0, wx = 0, wy = 0, 
+    dragging = false, dragOffsets = {}, marqueeStart = nil, 
+    resizeCorner = nil, resizeObj = nil,
+    rectStartX = 0, rectStartY = 0, draggingRect = false
+}
 Editor.uiRects = {} 
 
--- Layout metrics (dynamic botH)
+-- Layout metrics
 local topH = 40
 local leftW = 200
 local rightW = 250
@@ -45,6 +52,21 @@ local P_BTN_HOVER = {0.35, 0.4, 0.45, 1.0}
 local P_BTN_ACTIVE = {0.4, 0.5, 0.65, 1.0}
 local P_BTN_BORDER = {0.6, 0.65, 0.7, 0.3}
 
+local function deepcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepcopy(orig_key)] = deepcopy(orig_value)
+        end
+        setmetatable(copy, deepcopy(getmetatable(orig)))
+    else
+        copy = orig
+    end
+    return copy
+end
+
 function Editor.init(fore)
     foreRef = fore
     return Editor
@@ -59,10 +81,6 @@ end
 
 function Editor.registerGlobalToggle(id, defaultVal)
     Editor.globalToggles[id] = defaultVal
-end
-
-function Editor.getGlobalToggle(id)
-    return Editor.globalToggles[id]
 end
 
 function Editor.save()
@@ -83,7 +101,7 @@ end
 
 function Editor.clear()
     Editor.objects = {}
-    Editor.selectedObject = nil
+    Editor.selectedObjects = {}
 end
 
 function Editor.toggle()
@@ -106,7 +124,6 @@ local function snap(val)
     return math.floor(val / Editor.snap + 0.5) * Editor.snap
 end
 
--- Input handlers
 function Editor.mousepressed(px, py, button, istouch)
     local x, y = Editor.mouse.sx, Editor.mouse.sy
     local hitUI = false
@@ -141,30 +158,76 @@ function Editor.mousepressed(px, py, button, istouch)
 
     if button == 1 then
         if Editor.activeTool == "Select" then
-            Editor.selectedObject = nil
-            for i = #Editor.objects, 1, -1 do
-                local o = Editor.objects[i]
+            local hitObj = nil
+            
+            -- 1. Check Resize Handles
+            if #Editor.selectedObjects == 1 then
+                local o = Editor.selectedObjects[1]
                 local typ = Editor.types[o.type]
-                if typ.shape == "point" then
-                    if math.abs(Editor.mouse.wx - o.x) < 10 and math.abs(Editor.mouse.wy - o.y) < 10 then
-                        Editor.selectedObject = o
-                        break
+                if typ.shape == "rectangle" then
+                    local hs = 10 / Editor.camera.zoom
+                    local w, h = o.w or 40, o.h or 40
+                    local corners = {
+                        {id="tl", x=o.x, y=o.y},
+                        {id="tr", x=o.x+w, y=o.y},
+                        {id="bl", x=o.x, y=o.y+h},
+                        {id="br", x=o.x+w, y=o.y+h}
+                    }
+                    for _, c in ipairs(corners) do
+                        if math.abs(Editor.mouse.wx - c.x) <= hs and math.abs(Editor.mouse.wy - c.y) <= hs then
+                            Editor.mouse.resizeCorner = c.id
+                            Editor.mouse.resizeObj = o
+                            hitObj = true
+                            break
+                        end
                     end
-                elseif typ.shape == "rectangle" then
-                    local w = o.w or 40
-                    local h = o.h or 40
-                    if Editor.mouse.wx >= o.x and Editor.mouse.wx <= o.x + w and Editor.mouse.wy >= o.y and Editor.mouse.wy <= o.y + h then
-                        Editor.selectedObject = o
-                        break
+                end
+            end
+            
+            -- 2. Check Object Click
+            if not hitObj then
+                for i = #Editor.objects, 1, -1 do
+                    local o = Editor.objects[i]
+                    local typ = Editor.types[o.type]
+                    if typ.shape == "point" then
+                        if math.abs(Editor.mouse.wx - o.x) < 10 and math.abs(Editor.mouse.wy - o.y) < 10 then
+                            hitObj = o; break
+                        end
+                    elseif typ.shape == "rectangle" then
+                        local w = o.w or 40; local h = o.h or 40
+                        if Editor.mouse.wx >= o.x and Editor.mouse.wx <= o.x + w and Editor.mouse.wy >= o.y and Editor.mouse.wy <= o.y + h then
+                            hitObj = o; break
+                        end
                     end
                 end
             end
 
-            if Editor.selectedObject then
-                Editor.mouse.dragObj = Editor.selectedObject
-                Editor.mouse.dragOffsetX = Editor.selectedObject.x - Editor.mouse.wx
-                Editor.mouse.dragOffsetY = Editor.selectedObject.y - Editor.mouse.wy
+            -- 3. Resolve Selection
+            if hitObj and type(hitObj) == "table" then
+                local inSelection = false
+                for _, s in ipairs(Editor.selectedObjects) do
+                    if s == hitObj then inSelection = true break end
+                end
+                
+                if not inSelection then
+                    if love.keyboard.isDown("lshift", "rshift") then
+                        table.insert(Editor.selectedObjects, hitObj)
+                    else
+                        Editor.selectedObjects = {hitObj}
+                    end
+                end
+                
+                Editor.mouse.dragOffsets = {}
+                for _, s in ipairs(Editor.selectedObjects) do
+                    Editor.mouse.dragOffsets[s] = {x = s.x - Editor.mouse.wx, y = s.y - Editor.mouse.wy}
+                end
+            elseif not hitObj then
+                if not love.keyboard.isDown("lshift", "rshift") then
+                    Editor.selectedObjects = {}
+                end
+                Editor.mouse.marqueeStart = {x = Editor.mouse.wx, y = Editor.mouse.wy}
             end
+
         elseif Editor.activeTool == "Place" and Editor.activeBuildType then
             local def = Editor.types[Editor.activeBuildType]
             if def.shape == "point" then
@@ -177,7 +240,7 @@ function Editor.mousepressed(px, py, button, istouch)
                     for k, v in pairs(def.defaultParams) do obj.params[k] = v end
                 end
                 table.insert(Editor.objects, obj)
-                Editor.selectedObject = obj
+                Editor.selectedObjects = {obj}
             elseif def.shape == "rectangle" then
                 Editor.mouse.rectStartX = snap(Editor.mouse.wx)
                 Editor.mouse.rectStartY = snap(Editor.mouse.wy)
@@ -193,10 +256,36 @@ function Editor.mousereleased(px, py, button, istouch)
         Editor.camera.dragging = false
     end
     if button == 1 then
-        if Editor.mouse.dragObj then
-            Editor.mouse.dragObj.x = snap(Editor.mouse.dragObj.x)
-            Editor.mouse.dragObj.y = snap(Editor.mouse.dragObj.y)
-            Editor.mouse.dragObj = nil
+        if next(Editor.mouse.dragOffsets) then
+            for _, s in ipairs(Editor.selectedObjects) do
+                s.x = snap(s.x)
+                s.y = snap(s.y)
+            end
+            Editor.mouse.dragOffsets = {}
+        end
+        if Editor.mouse.resizeCorner then
+            Editor.mouse.resizeCorner = nil
+            Editor.mouse.resizeObj = nil
+        end
+        if Editor.mouse.marqueeStart then
+            local rx = math.min(Editor.mouse.marqueeStart.x, Editor.mouse.wx)
+            local ry = math.min(Editor.mouse.marqueeStart.y, Editor.mouse.wy)
+            local rw = math.abs(Editor.mouse.wx - Editor.mouse.marqueeStart.x)
+            local rh = math.abs(Editor.mouse.wy - Editor.mouse.marqueeStart.y)
+            
+            for _, o in ipairs(Editor.objects) do
+                local typ = Editor.types[o.type]
+                if typ.shape == "point" then
+                    if o.x >= rx and o.x <= rx+rw and o.y >= ry and o.y <= ry+rh then
+                        table.insert(Editor.selectedObjects, o)
+                    end
+                elseif typ.shape == "rectangle" then
+                    if o.x < rx+rw and o.x+(o.w or 40) > rx and o.y < ry+rh and o.y+(o.h or 40) > ry then
+                        table.insert(Editor.selectedObjects, o)
+                    end
+                end
+            end
+            Editor.mouse.marqueeStart = nil
         end
         if Editor.mouse.draggingRect then
             local rx = math.min(Editor.mouse.rectStartX, snap(Editor.mouse.wx))
@@ -214,7 +303,7 @@ function Editor.mousereleased(px, py, button, istouch)
                     for k, v in pairs(def.defaultParams) do obj.params[k] = v end
                 end
                 table.insert(Editor.objects, obj)
-                Editor.selectedObject = obj
+                Editor.selectedObjects = {obj}
             end
             Editor.mouse.draggingRect = false
         end
@@ -222,6 +311,12 @@ function Editor.mousereleased(px, py, button, istouch)
 end
 
 function Editor.wheelmoved(x, y)
+    local screenW, screenH = love.graphics.getDimensions()
+    if Editor.mouse.px < leftW and Editor.mouse.py > topH and Editor.mouse.py < screenH - botH then
+        Editor.leftScroll = math.max(0, Editor.leftScroll - y * 40)
+        return
+    end
+
     if y > 0 then
         Editor.camera.zoom = Editor.camera.zoom * 1.1
     elseif y < 0 then
@@ -252,15 +347,47 @@ function Editor.keypressed(key)
         return
     end
 
+    if love.keyboard.isDown("lctrl", "rctrl") then
+        if key == "c" then
+            Editor.clipboard = deepcopy(Editor.selectedObjects)
+        elseif key == "v" and #Editor.clipboard > 0 then
+            -- Calculate bounding box center of clipboard items to paste relatively
+            local minX, minY = math.huge, math.huge
+            local maxX, maxY = -math.huge, -math.huge
+            for _, c in ipairs(Editor.clipboard) do
+                minX = math.min(minX, c.x)
+                minY = math.min(minY, c.y)
+                maxX = math.max(maxX, c.x + (c.w or 0))
+                maxY = math.max(maxY, c.y + (c.h or 0))
+            end
+            local cx = minX + (maxX - minX) / 2
+            local cy = minY + (maxY - minY) / 2
+            
+            local dx = snap(Editor.mouse.wx) - snap(cx)
+            local dy = snap(Editor.mouse.wy) - snap(cy)
+            
+            Editor.selectedObjects = {}
+            for _, c in ipairs(Editor.clipboard) do
+                local clone = deepcopy(c)
+                clone.x = snap(clone.x + dx)
+                clone.y = snap(clone.y + dy)
+                table.insert(Editor.objects, clone)
+                table.insert(Editor.selectedObjects, clone)
+            end
+        end
+    end
+
     if key == "delete" or key == "backspace" then
-        if Editor.selectedObject then
-            for i, v in ipairs(Editor.objects) do
-                if v == Editor.selectedObject then
-                    table.remove(Editor.objects, i)
-                    break
+        if #Editor.selectedObjects > 0 then
+            for _, s in ipairs(Editor.selectedObjects) do
+                for i, v in ipairs(Editor.objects) do
+                    if v == s then
+                        table.remove(Editor.objects, i)
+                        break
+                    end
                 end
             end
-            Editor.selectedObject = nil
+            Editor.selectedObjects = {}
         end
     end
 end
@@ -271,9 +398,36 @@ function Editor.mousemoved(x, y, dx, dy, istouch)
         Editor.camera.y = Editor.camera.y - (dy / foreRef.data.scale) / Editor.camera.zoom
     end
     
-    if Editor.mouse.dragObj then
-        Editor.mouse.dragObj.x = Editor.mouse.wx + Editor.mouse.dragOffsetX
-        Editor.mouse.dragObj.y = Editor.mouse.wy + Editor.mouse.dragOffsetY
+    if Editor.mouse.resizeObj and Editor.mouse.resizeCorner then
+        local o = Editor.mouse.resizeObj
+        local cx, cy = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
+        if Editor.mouse.resizeCorner == "br" then
+            o.w = math.max(10, cx - o.x)
+            o.h = math.max(10, cy - o.y)
+        elseif Editor.mouse.resizeCorner == "tl" then
+            local maxW, maxH = o.x + o.w, o.y + o.h
+            o.x = math.min(cx, maxW - 10)
+            o.y = math.min(cy, maxH - 10)
+            o.w = maxW - o.x
+            o.h = maxH - o.y
+        elseif Editor.mouse.resizeCorner == "tr" then
+            local maxH = o.y + o.h
+            o.w = math.max(10, cx - o.x)
+            o.y = math.min(cy, maxH - 10)
+            o.h = maxH - o.y
+        elseif Editor.mouse.resizeCorner == "bl" then
+            local maxW = o.x + o.w
+            o.x = math.min(cx, maxW - 10)
+            o.w = maxW - o.x
+            o.h = math.max(10, cy - o.y)
+        end
+    end
+    
+    if next(Editor.mouse.dragOffsets) and not Editor.mouse.resizeCorner then
+        for s, offsets in pairs(Editor.mouse.dragOffsets) do
+            s.x = Editor.mouse.wx + offsets.x
+            s.y = Editor.mouse.wy + offsets.y
+        end
     end
 end
 
@@ -374,6 +528,35 @@ function Editor.drawWorld()
     love.graphics.setColor(1, 0, 0, 0.4)
     love.graphics.rectangle("line", 0, 0, Editor.mapWidth, Editor.mapHeight)
     
+    local function drawGrid()
+        local layer = Editor.globalToggles["gridLayer"] or "Behind"
+        if layer == "Hidden" or Editor.snap <= 1 then return end
+        
+        local style = Editor.globalToggles["gridStyle"] or "Lines"
+        love.graphics.setColor(1, 1, 1, 0.1)
+        
+        local cx, cy = Editor.camera.x, Editor.camera.y
+        local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
+        local snapVal = Editor.snap
+        local startX = math.floor((cx - hw) / snapVal) * snapVal
+        local endX = math.floor((cx + hw) / snapVal) * snapVal
+        local startY = math.floor((cy - hh) / snapVal) * snapVal
+        local endY = math.floor((cy + hh) / snapVal) * snapVal
+        
+        if style == "Lines" then
+            for x = startX, endX, snapVal do love.graphics.line(x, startY, x, endY) end
+            for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
+        else
+            for x = startX, endX, snapVal do
+                for y = startY, endY, snapVal do
+                    love.graphics.rectangle("fill", x-1, y-1, 2, 2)
+                end
+            end
+        end
+    end
+    
+    if Editor.globalToggles["gridLayer"] == "Behind" then drawGrid() end
+    
     for _, obj in ipairs(Editor.objects) do
         local typ = Editor.types[obj.type]
         if typ then
@@ -387,33 +570,50 @@ function Editor.drawWorld()
                     love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
                 end
             end
-            
-            if obj == Editor.selectedObject then
-                love.graphics.setColor(1, 1, 1, 0.9)
-                if typ.shape == "point" then
-                    love.graphics.circle("line", obj.x, obj.y, 8)
-                else
-                    love.graphics.rectangle("line", obj.x, obj.y, obj.w or 20, obj.h or 20)
-                end
-            end
         end
     end
     
-    -- Snapping Grid drawn OVER objects
-    if Editor.snap > 1 and Editor.globalToggles["showGrid"] ~= false then
-        love.graphics.setColor(1, 1, 1, 0.05)
-        local cx, cy = Editor.camera.x, Editor.camera.y
-        local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
-        local snapVal = Editor.snap
-        local startX = math.floor((cx - hw) / snapVal) * snapVal
-        local endX = math.floor((cx + hw) / snapVal) * snapVal
-        local startY = math.floor((cy - hh) / snapVal) * snapVal
-        local endY = math.floor((cy + hh) / snapVal) * snapVal
-        for x = startX, endX, snapVal do love.graphics.line(x, startY, x, endY) end
-        for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
+    -- Selection Highlights
+    for _, sel in ipairs(Editor.selectedObjects) do
+        local typ = Editor.types[sel.type]
+        love.graphics.setColor(1, 1, 1, 0.9)
+        if typ.shape == "point" then
+            love.graphics.circle("line", sel.x, sel.y, 8)
+        else
+            love.graphics.rectangle("line", sel.x, sel.y, sel.w or 20, sel.h or 20)
+        end
     end
     
-    if Editor.mouse.draggingRect then
+    -- Resize Handles
+    if #Editor.selectedObjects == 1 then
+        local o = Editor.selectedObjects[1]
+        local typ = Editor.types[o.type]
+        if typ.shape == "rectangle" then
+            love.graphics.setColor(0, 0.5, 1, 1)
+            local hs = 5 / Editor.camera.zoom
+            local w, h = o.w or 40, o.h or 40
+            love.graphics.rectangle("fill", o.x - hs, o.y - hs, hs*2, hs*2)
+            love.graphics.rectangle("fill", o.x + w - hs, o.y - hs, hs*2, hs*2)
+            love.graphics.rectangle("fill", o.x - hs, o.y + h - hs, hs*2, hs*2)
+            love.graphics.rectangle("fill", o.x + w - hs, o.y + h - hs, hs*2, hs*2)
+        end
+    end
+    
+    if Editor.globalToggles["gridLayer"] == "Front" then drawGrid() end
+    
+    if Editor.mouse.marqueeStart then
+        love.graphics.setColor(0.3, 0.6, 1.0, 0.3)
+        local curX, curY = Editor.mouse.wx, Editor.mouse.wy
+        love.graphics.rectangle("fill", 
+            math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY),
+            math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
+        )
+        love.graphics.setColor(0.3, 0.6, 1.0, 0.8)
+        love.graphics.rectangle("line", 
+            math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY),
+            math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
+        )
+    elseif Editor.mouse.draggingRect then
         love.graphics.setColor(1, 1, 1, 0.3)
         local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
         love.graphics.rectangle("fill", 
@@ -434,7 +634,6 @@ function Editor.drawUI()
     end
     love.graphics.setFont(Editor.uiFont)
     
-    -- Calculate Bottom Panel Rows dynamically
     local toolX = 140
     local rows = 1
     for id, def in pairs(Editor.types) do
@@ -447,7 +646,6 @@ function Editor.drawUI()
     end
     botH = 20 + rows * 40
     
-    -- Panel Backgrounds
     love.graphics.setColor(P_BG_TOP)
     love.graphics.rectangle("fill", 0, 0, screenW, topH)
     love.graphics.setColor(P_BG_SIDE)
@@ -456,16 +654,13 @@ function Editor.drawUI()
     love.graphics.setColor(P_BG_BOT)
     love.graphics.rectangle("fill", 0, screenH - botH, screenW, botH)
     
-    -- Panel Borders
     love.graphics.setColor(P_BORDER)
     love.graphics.line(0, topH, screenW, topH)
     love.graphics.line(leftW, topH, leftW, screenH - botH)
     love.graphics.line(screenW - rightW, topH, screenW - rightW, screenH - botH)
     love.graphics.line(0, screenH - botH, screenW, screenH - botH)
     
-    -- ===================
     -- TOP PANEL
-    -- ===================
     local curX = 10
     local curY = 5
     local function addTopBtn(tag, label, rw, func)
@@ -483,7 +678,12 @@ function Editor.drawUI()
                     if data.globals then Editor.globalToggles = data.globals end
                     Editor.mapWidth = data.mapWidth or 1000
                     Editor.mapHeight = data.mapHeight or 1000
-                    if Editor.globalToggles["showGrid"] == nil then Editor.globalToggles["showGrid"] = true end
+                    
+                    -- Migrate legacy booleans
+                    if type(Editor.globalToggles["showGrid"]) == "boolean" then
+                        Editor.globalToggles["gridLayer"] = Editor.globalToggles["showGrid"] and "Behind" or "Hidden"
+                        Editor.globalToggles["showGrid"] = nil
+                    end
                 end
             end
         end
@@ -509,26 +709,27 @@ function Editor.drawUI()
         foreRef.scenes:goTo("game") 
     end)
     
-    -- ===================
     -- LEFT PANEL (Hierarchy)
-    -- ===================
+    love.graphics.setScissor(0, topH, leftW, screenH - topH - botH)
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
-    love.graphics.print("-- Scene Objects --", 10, topH + 10)
+    love.graphics.print("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll)
     
-    local listY = topH + 40
+    local listY = topH + 40 - Editor.leftScroll
     for i, obj in ipairs(Editor.objects) do
         local label = string.format("%03d | %s", i, obj.type)
-        drawButton("btn_obj_"..i, label, 10, listY, leftW - 20, 25, Editor.selectedObject == obj, function()
-            Editor.selectedObject = obj
-            Editor.activeTool = "Select"
-        end)
+        if listY + 25 > topH and listY < screenH - botH then
+            local isSelected = false
+            for _, s in ipairs(Editor.selectedObjects) do if s == obj then isSelected = true break end end
+            drawButton("btn_obj_"..i, label, 10, listY, leftW - 20, 25, isSelected, function()
+                Editor.selectedObjects = {obj}
+                Editor.activeTool = "Select"
+            end)
+        end
         listY = listY + 30
-        if listY > screenH - botH - 30 then break end
     end
+    love.graphics.setScissor()
     
-    -- ===================
     -- BOTTOM PANEL (Tools)
-    -- ===================
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
     love.graphics.print("-- Tools --", 10, screenH - botH + 10)
     
@@ -550,45 +751,53 @@ function Editor.drawUI()
         drawButton("btn_tool_"..id, " + " .. id, toolX, toolY, w, 35, isActive, function()
             Editor.activeTool = "Place"
             Editor.activeBuildType = id
-            Editor.selectedObject = nil
+            Editor.selectedObjects = {}
         end)
         toolX = toolX + w + 10
     end
     
     drawButton("btn_tool_delete", "Delete Selected", screenW - 160, screenH - botH + 10, 150, 35, false, function()
-        if Editor.selectedObject then
-            for i, v in ipairs(Editor.objects) do
-                if v == Editor.selectedObject then
-                    table.remove(Editor.objects, i)
-                    break
+        if #Editor.selectedObjects > 0 then
+            for _, s in ipairs(Editor.selectedObjects) do
+                for i, v in ipairs(Editor.objects) do
+                    if v == s then
+                        table.remove(Editor.objects, i)
+                        break
+                    end
                 end
             end
-            Editor.selectedObject = nil
+            Editor.selectedObjects = {}
         end
     end)
 
-    -- ===================
     -- RIGHT PANEL (Inspector)
-    -- ===================
     local inspX = screenW - rightW + 10
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
     
-    if Editor.selectedObject then
+    if #Editor.selectedObjects > 0 then
         love.graphics.print("-- Properties --", inspX, topH + 10)
         local sy = topH + 40
-        love.graphics.print("Type: " .. Editor.selectedObject.type, inspX, sy)
-        sy = sy + 30
         
-        drawNumberInput("obj_x", "X:", Editor.selectedObject.x, inspX, sy, 180, 25, function(v) Editor.selectedObject.x = v end)
-        sy = sy + 30
-        drawNumberInput("obj_y", "Y:", Editor.selectedObject.y, inspX, sy, 180, 25, function(v) Editor.selectedObject.y = v end)
-        sy = sy + 30
-        
-        if Editor.selectedObject.w then
-            drawNumberInput("obj_w", "Width:", Editor.selectedObject.w, inspX, sy, 180, 25, function(v) Editor.selectedObject.w = v end)
+        if #Editor.selectedObjects == 1 then
+            local o = Editor.selectedObjects[1]
+            love.graphics.print("Type: " .. o.type, inspX, sy)
             sy = sy + 30
-            drawNumberInput("obj_h", "Height:", Editor.selectedObject.h, inspX, sy, 180, 25, function(v) Editor.selectedObject.h = v end)
+            
+            drawNumberInput("obj_x", "X:", o.x, inspX, sy, 180, 25, function(v) o.x = v end)
             sy = sy + 30
+            drawNumberInput("obj_y", "Y:", o.y, inspX, sy, 180, 25, function(v) o.y = v end)
+            sy = sy + 30
+            
+            if o.w then
+                drawNumberInput("obj_w", "Width:", o.w, inspX, sy, 180, 25, function(v) o.w = v end)
+                sy = sy + 30
+                drawNumberInput("obj_h", "Height:", o.h, inspX, sy, 180, 25, function(v) o.h = v end)
+                sy = sy + 30
+            end
+        else
+            love.graphics.setColor(0.4, 0.7, 1.0, 1)
+            love.graphics.print("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy)
+            sy = sy + 40
         end
         
         love.graphics.setColor(0.5, 0.5, 0.5, 1)
@@ -605,13 +814,26 @@ function Editor.drawUI()
         love.graphics.setColor(0.8, 0.8, 0.8, 1)
         love.graphics.print("-- Global Toggles --", inspX, gy)
         gy = gy + 30
-        for id, val in pairs(Editor.globalToggles) do
-            local txt = string.format("%s: %s", id, tostring(val))
-            drawButton("tog_g_"..id, txt, inspX, gy, rightW - 20, 30, val, function() 
-                Editor.globalToggles[id] = not val 
-            end)
-            gy = gy + 40
-        end
+        
+        local gl = Editor.globalToggles["gridLayer"] or "Behind"
+        drawButton("tog_g_gridLayer", "Grid: " .. gl, inspX, gy, rightW - 20, 30, false, function() 
+            if gl == "Behind" then Editor.globalToggles["gridLayer"] = "Front"
+            elseif gl == "Front" then Editor.globalToggles["gridLayer"] = "Hidden"
+            else Editor.globalToggles["gridLayer"] = "Behind" end
+        end)
+        gy = gy + 40
+        
+        local gs = Editor.globalToggles["gridStyle"] or "Lines"
+        drawButton("tog_g_gridStyle", "Style: " .. gs, inspX, gy, rightW - 20, 30, false, function() 
+            Editor.globalToggles["gridStyle"] = (gs == "Lines") and "Dots" or "Lines"
+        end)
+        gy = gy + 40
+        
+        local sv = Editor.globalToggles["simpleView"] or false
+        drawButton("tog_g_simpleView", "simpleView: " .. tostring(sv), inspX, gy, rightW - 20, 30, sv, function() 
+            Editor.globalToggles["simpleView"] = not sv
+        end)
+        gy = gy + 40
     end
 end
 
