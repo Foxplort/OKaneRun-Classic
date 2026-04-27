@@ -22,12 +22,10 @@ love .
 This project contains an experimental version of the FÖRE engine.
 
 FÖRE focuses on:
-- code-first workflows
 - developer-defined tools
-- keyboard-oriented editing
 - minimal engine constraints
 
-The engine may later be separated into its own repository.
+Current code is partially fused/tangled with OkaneRun Classic's code.
 
 ---
 
