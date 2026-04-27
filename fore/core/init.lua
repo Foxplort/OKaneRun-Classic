@@ -36,6 +36,7 @@ function Fore.init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
     Fore.data.OS = love.system.getOS()
     Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
+    Fore.data.devmode = false
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
@@ -60,7 +61,7 @@ function Fore.init(config)
     Fore.editor = require("fore.systems.editor").init(Fore)
 
     Fore.save = require("fore.systems.save")
-    Fore.save.init(config.save or {})
+    Fore.save.init(config.save or {}, Fore)
 
     Fore.transition = require("fore.systems.transition")
     Fore.camera = require("fore.systems.camera")
@@ -153,8 +154,8 @@ function Fore:update(dt)
     self.input:update()
     if self.mobileControls then self.mobileControls:update(dt) end
     
-    if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
-    if self.input:pressed("editor") then self.editor.toggle() end
+    if self.input:pressed("debug") and self.data.devmode then self.debug.enabled = not self.debug.enabled end
+    if self.input:pressed("editor") and self.data.devmode then self.editor.toggle() end
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
         love.window.setFullscreen(self.data.fullscreen, "desktop")

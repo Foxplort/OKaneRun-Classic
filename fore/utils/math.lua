@@ -14,7 +14,12 @@ function MathP.clamp(value, min_val, max_val)
 end
 
 function MathP.lerp(a, b, t)
-    return a + (b - a) * t
+    -- If the change is very small, snap to target
+    local diff = b - a
+    if math.abs(diff) < 0.0001 then
+        return b
+    end
+    return a + diff * t
 end
 
 function MathP.aabb(a, b)

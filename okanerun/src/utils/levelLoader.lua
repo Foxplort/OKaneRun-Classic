@@ -59,6 +59,8 @@ function LevelLoader.load(path)
         -- Add mapWidth / mapHeight for camera constraints
         data.mapWidth = raw.mapWidth or 2000
         data.mapHeight = raw.mapHeight or 2000
+        data.levelAuthor = raw.levelAuthor
+        data.levelName = raw.levelName
     else
         -- load file as Lua table
         local chunk = love.filesystem.load(path)
@@ -67,6 +69,9 @@ function LevelLoader.load(path)
         else
             error("Could not load lua map: " .. path)
         end
+        data.levelName = string.match(path, "([^/\\]*)$")
+        if data.levelName then data.levelName = string.sub(data.levelName, 1, -5) end
+        data.levelAuthor = "foxplort"
     end
 
     -- Merge defaults

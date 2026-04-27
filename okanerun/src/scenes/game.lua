@@ -159,11 +159,21 @@ function Scene.enter()
     -- LOAD THE LEVEL
     local levelList = require("okanerun.src.data.levels")
     
-    if fore.editor and fore.editor.playCustom and love.filesystem.getInfo("custom.json") then
-        GameState.area = Fx.ll.load("custom.json")
+    if fore.editor and fore.editor.playCustom then
+        local target = "custom.json"
+        if love.filesystem.getInfo("play_queue.txt") then
+            target = love.filesystem.read("play_queue.txt")
+            love.filesystem.remove("play_queue.txt")
+        end
+        
+        if love.filesystem.getInfo(target) then
+            GameState.area = Fx.ll.load(target)
+        else
+            GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)])
+        end
         fore.editor.playCustom = false
     else
-        GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".lua")
+        GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)])
     end
 
     --GameState.area = Fx.ll.load("okanerun/src/data/levels/dotedPath.json")
@@ -207,6 +217,7 @@ function Scene.enter()
     )
     gameData.game.effectUI.load(gameData.game.effects, gameData.game.effectSys)
     gameData.systems.particles.reset()
+    gameData.render.ui.resetIntro()
 
     fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
@@ -333,7 +344,7 @@ function Scene.update(dt)
         local isSubmerged = GameState.player.pos.z < 0
         local mx, my = 0, 0
 
-        if fore.input:pressed("debugEffect") then
+        if fore.input:pressed("debugEffect") and fore.data.devmode then
             gameData.game.effectUI.Data.visible = not gameData.game.effectUI.Data.visible
         end
 
@@ -860,7 +871,7 @@ function Scene.draw()
         end
 
         for _, c in ipairs(GameState.area.coins) do
-            local ch = {x=c.x-3, y=c.y-5, w=16, h=12}
+            local ch = {x=c.x-8, y=c.y-6, w=16, h=12}
             fore.graphics.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 

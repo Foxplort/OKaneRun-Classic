@@ -108,7 +108,8 @@ end
 function Debug.draw()
     if not Debug.enabled then return end
     
-    local x, y, lh, pad = 6, 6, 12, 4
+    local uiScale = math.max(1, fore.data.scale / 1.5)
+    local x, y, lh, pad = 6 * uiScale, 6 * uiScale, 12 * uiScale, 4 * uiScale
     local lines = {}
     
     -- Header
@@ -153,11 +154,12 @@ function Debug.draw()
     end
     
     -- Panel size
+    fore.graphics.setFontScale(uiScale)
     local font = love.graphics.getFont()
-    local w = 0; for _,l in ipairs(lines) do w = math.max(w, font:getWidth(l)) end
+    local w = 0; for _,l in ipairs(lines) do w = math.max(w, font:getWidth(l) * uiScale) end
     w = w + pad * 2
-    local graphH = (Debug.page==1 and Debug.detailLevel>=2 and #frameHistory>1) and 45 or 0
-    local h = #lines * lh + pad * 2 + graphH + 10
+    local graphH = (Debug.page==1 and Debug.detailLevel>=2 and #frameHistory>1) and (45 * uiScale) or 0
+    local h = #lines * lh + pad * 2 + graphH + 10 * uiScale
     
     -- Panel bg
     fore.graphics.rect(x, y, w, h, {0,0,0,200})
@@ -166,23 +168,23 @@ function Debug.draw()
     -- Text
     for i,l in ipairs(lines) do
         local col = l:find("^%-") and {200,200,200} or {255,255,255}
-        fore.graphics.text(l, x+pad, y+pad + (i-1)*lh, 1, col)
+        fore.graphics.text(l, x+pad, y+pad + (i-1)*lh, uiScale, col)
     end
     
     -- Graph
     if graphH > 0 then
-        local gx, gy = x+pad, y + h - graphH - 2
+        local gx, gy = x+pad, y + h - graphH - 2 * uiScale
         local gw = w - pad*2
-        fore.graphics.text("Frame (ms)", gx, gy-12, 0.7, {200,200,200})
-        fore.graphics.graph(frameHistory, gx, gy, gw, graphH-15, {255,200,100}, 0, 33.33, 16.67)
-        fore.graphics.text("60", gx+gw-20, gy-10, 0.6, {100,255,100})
+        fore.graphics.text("Frame (ms)", gx, gy - 12 * uiScale, 0.7 * uiScale, {200,200,200})
+        fore.graphics.graph(frameHistory, gx, gy, gw, graphH - 15 * uiScale, {255,200,100}, 0, 33.33, 16.67)
+        fore.graphics.text("60", gx+gw - 20 * uiScale, gy - 10 * uiScale, 0.6 * uiScale, {100,255,100})
     end
     
     -- Hint with background
     local hint = "K:close Tab:page +/-:detail"
-    local hw, hh = font:getWidth(hint)*0.7, font:getHeight()*0.7
-    fore.graphics.rect(x, y+h+2, hw+6, hh+4, {0,0,0,180})
-    fore.graphics.text(hint, x+3, y+h+4, 0.7, {200,200,200})
+    local hw, hh = font:getWidth(hint) * uiScale * 0.7, font:getHeight() * uiScale * 0.7
+    fore.graphics.rect(x, y+h + 2 * uiScale, hw + 6 * uiScale, hh + 4 * uiScale, {0,0,0,180})
+    fore.graphics.text(hint, x + 3 * uiScale, y+h + 4 * uiScale, 0.7 * uiScale, {200,200,200})
 end
 
 return Debug

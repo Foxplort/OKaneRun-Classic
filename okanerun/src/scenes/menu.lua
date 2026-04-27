@@ -19,7 +19,24 @@ local breathShader = love.graphics.newShader("okanerun/assets/shaders/menu_breat
 local logScore = 0
 
 local function createMenus()
-    local main, credits, exit
+    local main, credits, exit, settings
+
+    local devOpt = {}
+    devOpt.txt = "Dev Mode: " .. tostring(fore.save.get_engine("dev_mode") == true)
+    devOpt.action = function()
+        local current = fore.save.get_engine("dev_mode") == true
+        fore.save.set_engine("dev_mode", not current)
+        fore.save.write()
+        devOpt.txt = "Dev Mode: " .. tostring(not current)
+    end
+
+    settings = Menu:new{
+        title = "SETTINGS",
+        options = {
+            devOpt,
+            { txt = "Back", pop = true }
+        }
+    }
 
     credits = Menu:new{
         title = "CREDITS",
@@ -65,23 +82,30 @@ local function createMenus()
         }
     }
 
+    local mainOptions = {
+        {
+            txt = "Play",
+            action = function()
+                fore.save.set("total_runs", fore.save.get("total_runs") + 1)
+                fore.save.write()
+                GameState.score = 0
+                fore.transition.start("spike", function()
+                    fore.scenes:goTo("selection")
+                end, nil, 0, 0.7)
+            end,
+        },
+        { txt = "Credits", push = function() return credits end },
+    }
+
+    if not fore.data.phone then
+        table.insert(mainOptions, { txt = "Settings", push = function() return settings end })
+    end
+
+    table.insert(mainOptions, { txt = "Exit", push = function() return exit end })
+
     main = Menu:new{
         title = "MAIN MENU",
-        options = {
-            {
-                txt = "Play",
-                action = function()
-                    fore.save.set("total_runs", fore.save.get("total_runs") + 1)
-                    fore.save.write()
-                    GameState.score = 0
-                    fore.transition.start("spike", function()
-                        fore.scenes:goTo("selection")
-                    end, nil, 0, 0.7)
-                end,
-            },
-            { txt = "Credits", push = function() return credits end },
-            { txt = "Exit",    push = function() return exit end },
-        }
+        options = mainOptions
     }
 
     return main

@@ -45,12 +45,16 @@ function VolumeIndicator:draw()
     
     self:update(love.timer.getDelta())
     
-    local x = self.fore.data.width - self.WIDTH - self.PADDING
-    local y = self.y
+    local uiScale = math.max(1, self.fore.data.scale / 1.5)
+    local screenW = love.graphics.getWidth()
+    local width, height, padding = self.WIDTH * uiScale, self.HEIGHT * uiScale, self.PADDING * uiScale
+    
+    local x = screenW - width - padding
+    local y = self.y * uiScale
     local alpha255 = math.floor(self.alpha * 255)
     
-    self.fore.graphics.rect(x, y, self.WIDTH, self.HEIGHT, {0, 0, 0, 204 * self.alpha})
-    self.fore.graphics.rect(x, y, self.WIDTH, self.HEIGHT, {100, 100, 100, 128 * self.alpha}, false)
+    self.fore.graphics.rect(x, y, width, height, {0, 0, 0, 204 * self.alpha})
+    self.fore.graphics.rect(x, y, width, height, {100, 100, 100, 128 * self.alpha}, false)
     
     local volumePercent = math.floor(self.volume)
     local textColor
@@ -65,14 +69,17 @@ function VolumeIndicator:draw()
         textColor = {150, 150, 255, alpha255}
     end
     
-    self.fore.graphics.text("Volume: " .. volumePercent .. "%", x + 10, y + 12, 1, textColor)
+    self.fore.graphics.text("Volume: " .. volumePercent .. "%", x + 10 * uiScale, y + 12 * uiScale, uiScale, textColor)
     
-    self.fore.graphics.rect(x + 10, y + self.HEIGHT - 15, self.WIDTH - 20, 8, {50, 50, 50, 128 * self.alpha})
+    local barX, barY, barH = x + 10 * uiScale, y + height - 15 * uiScale, 8 * uiScale
+    local fullBarW = width - 20 * uiScale
+    self.fore.graphics.rect(barX, barY, fullBarW, barH, {50, 50, 50, 128 * self.alpha})
     
-    local barWidth = (self.WIDTH - 20) * (self.volume / 2.0 / 100 / 1.5)
-    self.fore.graphics.rect(x + 10, y + self.HEIGHT - 15, barWidth, 8, {255, 255, 255, alpha255})
+    local barWidth = fullBarW * (self.volume / 2.0 / 100 / 1.5)
+    self.fore.graphics.rect(barX, barY, barWidth, barH, {255, 255, 255, alpha255})
     
-    self.fore.graphics.line({x + 10 + (self.WIDTH - 20) * 0.333, y + self.HEIGHT - 19, x + 10 + (self.WIDTH - 20) * 0.333, y + self.HEIGHT - 11}, {150, 150, 150, 77 * self.alpha}, 1)
+    local lineX = barX + fullBarW * 0.333
+    self.fore.graphics.line({lineX, barY - 4 * uiScale, lineX, barY + barH + 4 * uiScale}, {150, 150, 150, 77 * self.alpha}, 1 * uiScale)
 end
 
 return VolumeIndicator

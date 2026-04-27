@@ -73,7 +73,6 @@ function Menu:new(def)
     m.align     = def.align or "left"
 
     m.underline = {}
-    for i = 1, #m.options do m.underline[i] = 0 end
 
     -- animation state
     m.slideX = 1       -- 1 = offscreen left
@@ -100,6 +99,14 @@ function Menu:new(def)
     return m
 end
 
+function Menu:addOption(opt, index)
+    if index then
+        table.insert(self.options, index, opt)
+    else
+        table.insert(self.options, opt)
+    end
+end
+
 function Menu:update(dt, focused)
     self.spikeScroll = (self.spikeScroll + dt * 20) % 48
     
@@ -124,7 +131,7 @@ function Menu:update(dt, focused)
     for i, opt in ipairs(self.options) do
         local targetUnderline = focused and i == self.selection 
             and not opt.isLabel and not opt.disabled and 1 or 0
-        self.underline[i] = fore.math.lerp(self.underline[i], targetUnderline, math.min(dt * 12, 1))
+        self.underline[i] = fore.math.lerp(self.underline[i] or 0, targetUnderline, math.min(dt * 12, 1))
     end
 
     -- Scroll logic
@@ -280,7 +287,7 @@ function Menu:drawContent(focused)
             fore.graphics.text(opt.txt, textX, yy, fontSize, c)
 
             -- Underline positioned based on alignment
-            local u = self.underline[i]
+            local u = self.underline[i] or 0
             if u > 0.01 then
                 local underlineX
                 if self.align == "center" then

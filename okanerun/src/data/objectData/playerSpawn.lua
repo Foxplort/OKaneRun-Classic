@@ -8,7 +8,8 @@ return {
   },
 
   editor = {
-    gizmo = "point"
+    gizmo = "point",
+    color = {0.9, 0.9, 0.9, 1.0}
   },
 
   render = function(self, isEditor)

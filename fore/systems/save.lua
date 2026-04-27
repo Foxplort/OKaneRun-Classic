@@ -10,15 +10,21 @@ local save = {
             vsync = 1,
             fullscreen = false,
             volume = 100,
+            dev_mode = false,
         },
         game = {} -- User defined data goes here
     },
     _path = "fore_save.json"
 }
 
+local fore
+
 ---Initializes the save system and merges existing files with defaults.
 ---@param user_defaults table? Optional table of default game-specific stats/settings
-function save.init(user_defaults)
+---@param foreref fore engine reference
+function save.init(user_defaults, foreref)
+    fore = foreref
+
     if user_defaults then
         save._data.game = user_defaults
     end
@@ -37,6 +43,8 @@ function save.init(user_defaults)
             end
         end
     end
+
+    fore.data.devmode = save._data.engine.dev_mode
 end
 
 ---Writes the current state to the disk.
@@ -54,6 +62,11 @@ end
 ---@param value any
 function save.set_engine(key, value)
     save._data.engine[key] = value
+
+    if key == "dev_mode" then
+        fore.data.devmode = value
+        if fore.debug.enabled then fore.debug.enabled = false end
+    end
 end
 
 ---Gets an engine-level setting.

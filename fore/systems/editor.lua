@@ -12,9 +12,16 @@ Editor.globalToggles = { gridLayer = "Behind", gridStyle = "Lines" }
 Editor.playCustom = false
 Editor.clipboard = {}
 
+Editor.history = {}
+Editor.historyIndex = 0
+
+Editor.levelName = "Custom Level"
+Editor.levelAuthor = "Unknown"
 Editor.mapWidth = 1000
 Editor.mapHeight = 1000
+
 Editor.activeInputId = nil
+Editor.activeInputIsNumber = true
 Editor.inputText = ""
 Editor.onInputCommit = nil
 Editor.leftScroll = 0
@@ -24,6 +31,10 @@ Editor.tools = {"Select", "Place"}
 Editor.activeTool = "Select"
 Editor.activeBuildType = nil
 Editor.selectedObjects = {}
+
+Editor.loadMenuOpen = false
+Editor.loadMenuFiles = {}
+Editor.loadMenuScroll = 0
 
 Editor.snap = 20
 Editor.camera = { x = 0, y = 0, zoom = 1, dragging = false }
@@ -67,8 +78,51 @@ local function deepcopy(orig)
     return copy
 end
 
+function Editor.pushHistory()
+    while #Editor.history > Editor.historyIndex do table.remove(Editor.history) end
+    local state = {
+        objects = deepcopy(Editor.objects),
+        mapWidth = Editor.mapWidth, mapHeight = Editor.mapHeight,
+        levelName = Editor.levelName, levelAuthor = Editor.levelAuthor
+    }
+    table.insert(Editor.history, state)
+    Editor.historyIndex = #Editor.history
+end
+
+function Editor.undo()
+    if Editor.historyIndex > 1 then
+        Editor.historyIndex = Editor.historyIndex - 1
+        local s = Editor.history[Editor.historyIndex]
+        Editor.objects = deepcopy(s.objects)
+        Editor.mapWidth = s.mapWidth; Editor.mapHeight = s.mapHeight
+        Editor.levelName = s.levelName; Editor.levelAuthor = s.levelAuthor
+        Editor.selectedObjects = {}
+    end
+end
+
+function Editor.redo()
+    if Editor.historyIndex < #Editor.history then
+        Editor.historyIndex = Editor.historyIndex + 1
+        local s = Editor.history[Editor.historyIndex]
+        Editor.objects = deepcopy(s.objects)
+        Editor.mapWidth = s.mapWidth; Editor.mapHeight = s.mapHeight
+        Editor.levelName = s.levelName; Editor.levelAuthor = s.levelAuthor
+        Editor.selectedObjects = {}
+    end
+end
+
 function Editor.init(fore)
     foreRef = fore
+    
+    if love.filesystem.getInfo("editor_settings.json") then
+        local s = love.filesystem.read("editor_settings.json")
+        if s then
+            local data = json.decode(s)
+            if data and data.globals then Editor.globalToggles = data.globals end
+        end
+    end
+    
+    Editor.pushHistory()
     return Editor
 end
 
@@ -80,10 +134,20 @@ function Editor.registerType(id, def)
 end
 
 function Editor.registerGlobalToggle(id, defaultVal)
-    Editor.globalToggles[id] = defaultVal
+    if Editor.globalToggles[id] == nil then
+        Editor.globalToggles[id] = defaultVal
+    end
+end
+
+function Editor.saveSettings()
+    local d = { globals = Editor.globalToggles }
+    love.filesystem.write("editor_settings.json", json.encode(d))
 end
 
 function Editor.save()
+    Editor.saveSettings()
+    
+    -- Write Level Data
     local data = { objects = {} }
     for _, obj in ipairs(Editor.objects) do
         table.insert(data.objects, {
@@ -92,16 +156,73 @@ function Editor.save()
             params = obj.params
         })
     end
-    data.globals = Editor.globalToggles
     data.mapWidth = Editor.mapWidth
     data.mapHeight = Editor.mapHeight
-    local jsonStr = json.encode(data)
-    love.filesystem.write("custom.json", jsonStr)
+    data.levelName = Editor.levelName
+    data.levelAuthor = Editor.levelAuthor
+    
+    local safeName = Editor.levelName:gsub("[^%w_%- ]", "_")
+    if safeName == "" then safeName = "custom" end
+    local fileTarget = safeName .. ".json"
+    local previewTarget = safeName .. ".png"
+    
+    love.filesystem.write(fileTarget, json.encode(data))
+    
+    -- Generate Preview
+    local pW, pH, vW, vH = foreRef:computeInternalResolution()
+    local cvs = love.graphics.newCanvas(vW, vH)
+    love.graphics.setCanvas(cvs)
+    love.graphics.clear(0.05, 0.05, 0.05, 1)
+    
+    -- Temporarily draw world onto preview
+    local oldZoom = Editor.camera.zoom
+    local oldCamX = Editor.camera.x
+    local oldCamY = Editor.camera.y
+    -- Center camera on map
+    Editor.camera.x = Editor.mapWidth / 2
+    Editor.camera.y = Editor.mapHeight / 2
+    -- Zoom out to fit whole map
+    local zx = vW / (Editor.mapWidth + 100)
+    local zy = vH / (Editor.mapHeight + 100)
+    Editor.camera.zoom = math.min(zx, zy)
+    if Editor.camera.zoom == 0 then Editor.camera.zoom = 1 end
+    
+    Editor.drawWorld()
+    
+    Editor.camera.zoom = oldZoom
+    Editor.camera.x = oldCamX
+    Editor.camera.y = oldCamY
+    
+    love.graphics.setCanvas()
+    local imgData = cvs:newImageData()
+    imgData:encode("png", previewTarget)
+end
+
+function Editor.loadLevelFile(filename)
+    if love.filesystem.getInfo(filename) then
+        local str = love.filesystem.read(filename)
+        if str then
+            local data = json.decode(str)
+            if data and data.objects then
+                Editor.objects = data.objects
+                Editor.mapWidth = data.mapWidth or 1000
+                Editor.mapHeight = data.mapHeight or 1000
+                Editor.levelName = data.levelName or filename:gsub("%.json$", "")
+                Editor.levelAuthor = data.levelAuthor or "Unknown"
+                
+                -- Wipe history tracking for new load
+                Editor.history = {}
+                Editor.historyIndex = 0
+                Editor.pushHistory()
+            end
+        end
+    end
 end
 
 function Editor.clear()
     Editor.objects = {}
     Editor.selectedObjects = {}
+    Editor.pushHistory()
 end
 
 function Editor.toggle()
@@ -125,6 +246,16 @@ local function snap(val)
 end
 
 function Editor.mousepressed(px, py, button, istouch)
+    if Editor.loadMenuOpen then
+        for _, rect in ipairs(Editor.uiRects) do
+            if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
+                rect.action()
+                return
+            end
+        end
+        return
+    end
+
     local x, y = Editor.mouse.sx, Editor.mouse.sy
     local hitUI = false
     local clickedInputId = nil
@@ -138,8 +269,12 @@ function Editor.mousepressed(px, py, button, istouch)
     end
     
     if Editor.activeInputId and Editor.activeInputId ~= clickedInputId then
-        local num = tonumber(Editor.inputText)
-        if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+        if Editor.activeInputIsNumber then
+            local num = tonumber(Editor.inputText)
+            if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+        else
+            if Editor.onInputCommit then Editor.onInputCommit(Editor.inputText) end
+        end
         Editor.activeInputId = clickedInputId
         if not clickedInputId then Editor.onInputCommit = nil end
     end
@@ -160,7 +295,6 @@ function Editor.mousepressed(px, py, button, istouch)
         if Editor.activeTool == "Select" then
             local hitObj = nil
             
-            -- 1. Check Resize Handles
             if #Editor.selectedObjects == 1 then
                 local o = Editor.selectedObjects[1]
                 local typ = Editor.types[o.type]
@@ -184,7 +318,6 @@ function Editor.mousepressed(px, py, button, istouch)
                 end
             end
             
-            -- 2. Check Object Click
             if not hitObj then
                 for i = #Editor.objects, 1, -1 do
                     local o = Editor.objects[i]
@@ -202,7 +335,6 @@ function Editor.mousepressed(px, py, button, istouch)
                 end
             end
 
-            -- 3. Resolve Selection
             if hitObj and type(hitObj) == "table" then
                 local inSelection = false
                 for _, s in ipairs(Editor.selectedObjects) do
@@ -241,6 +373,7 @@ function Editor.mousepressed(px, py, button, istouch)
                 end
                 table.insert(Editor.objects, obj)
                 Editor.selectedObjects = {obj}
+                Editor.pushHistory()
             elseif def.shape == "rectangle" then
                 Editor.mouse.rectStartX = snap(Editor.mouse.wx)
                 Editor.mouse.rectStartY = snap(Editor.mouse.wy)
@@ -256,16 +389,19 @@ function Editor.mousereleased(px, py, button, istouch)
         Editor.camera.dragging = false
     end
     if button == 1 then
+        local requiresPush = false
         if next(Editor.mouse.dragOffsets) then
             for _, s in ipairs(Editor.selectedObjects) do
                 s.x = snap(s.x)
                 s.y = snap(s.y)
             end
             Editor.mouse.dragOffsets = {}
+            requiresPush = true
         end
         if Editor.mouse.resizeCorner then
             Editor.mouse.resizeCorner = nil
             Editor.mouse.resizeObj = nil
+            requiresPush = true
         end
         if Editor.mouse.marqueeStart then
             local rx = math.min(Editor.mouse.marqueeStart.x, Editor.mouse.wx)
@@ -304,13 +440,21 @@ function Editor.mousereleased(px, py, button, istouch)
                 end
                 table.insert(Editor.objects, obj)
                 Editor.selectedObjects = {obj}
+                requiresPush = true
             end
             Editor.mouse.draggingRect = false
         end
+        
+        if requiresPush then Editor.pushHistory() end
     end
 end
 
 function Editor.wheelmoved(x, y)
+    if Editor.loadMenuOpen then
+        Editor.loadMenuScroll = math.max(0, Editor.loadMenuScroll - y * 40)
+        return
+    end
+
     local screenW, screenH = love.graphics.getDimensions()
     if Editor.mouse.px < leftW and Editor.mouse.py > topH and Editor.mouse.py < screenH - botH then
         Editor.leftScroll = math.max(0, Editor.leftScroll - y * 40)
@@ -325,8 +469,12 @@ function Editor.wheelmoved(x, y)
 end
 
 function Editor.textinput(t)
-    if Editor.activeInputId and t:match("[%d%-%.]") then
-        Editor.inputText = Editor.inputText .. t
+    if Editor.activeInputId then
+        if Editor.activeInputIsNumber then
+            if t:match("[%d%-%.]") then Editor.inputText = Editor.inputText .. t end
+        else
+            Editor.inputText = Editor.inputText .. t
+        end
     end
 end
 
@@ -336,8 +484,12 @@ function Editor.keypressed(key)
             local byteoffset = utf8.offset(Editor.inputText, -1)
             if byteoffset then Editor.inputText = string.sub(Editor.inputText, 1, byteoffset - 1) end
         elseif key == "return" or key == "kpenter" then
-            local num = tonumber(Editor.inputText)
-            if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+            if Editor.activeInputIsNumber then
+                local num = tonumber(Editor.inputText)
+                if num and Editor.onInputCommit then Editor.onInputCommit(num) end
+            else
+                if Editor.onInputCommit then Editor.onInputCommit(Editor.inputText) end
+            end
             Editor.activeInputId = nil
             Editor.onInputCommit = nil
         elseif key == "escape" then
@@ -347,11 +499,15 @@ function Editor.keypressed(key)
         return
     end
 
+    if Editor.loadMenuOpen then
+        if key == "escape" then Editor.loadMenuOpen = false end
+        return
+    end
+
     if love.keyboard.isDown("lctrl", "rctrl") then
         if key == "c" then
             Editor.clipboard = deepcopy(Editor.selectedObjects)
         elseif key == "v" and #Editor.clipboard > 0 then
-            -- Calculate bounding box center of clipboard items to paste relatively
             local minX, minY = math.huge, math.huge
             local maxX, maxY = -math.huge, -math.huge
             for _, c in ipairs(Editor.clipboard) do
@@ -374,6 +530,15 @@ function Editor.keypressed(key)
                 table.insert(Editor.objects, clone)
                 table.insert(Editor.selectedObjects, clone)
             end
+            Editor.pushHistory()
+        elseif key == "z" then
+            if love.keyboard.isDown("lshift", "rshift") then
+                Editor.redo()
+            else
+                Editor.undo()
+            end
+        elseif key == "y" then
+            Editor.redo()
         end
     end
 
@@ -388,6 +553,7 @@ function Editor.keypressed(key)
                 end
             end
             Editor.selectedObjects = {}
+            Editor.pushHistory()
         end
     end
 end
@@ -478,9 +644,11 @@ local function drawButton(id, txt, x, y, w, h, active, action)
     love.graphics.print(txt, x + (w - tw)/2, y + (h - th)/2)
 end
 
-local function drawNumberInput(id, label, value, x, y, w, h, onCommit)
+local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
     local active = (Editor.activeInputId == id)
-    local displayVal = active and Editor.inputText or tostring(math.floor(value))
+    local rawDisplay = tostring(value or "")
+    if isNumber and not active then rawDisplay = tostring(math.floor(tonumber(value) or 0)) end
+    local displayVal = active and Editor.inputText or rawDisplay
     
     love.graphics.setColor(1,1,1,1)
     love.graphics.print(label, x, y + (h - Editor.uiFont:getHeight())/2)
@@ -492,7 +660,8 @@ local function drawNumberInput(id, label, value, x, y, w, h, onCommit)
     table.insert(Editor.uiRects, {x=bx, y=y, w=bw, h=h, inputId=id, action=function()
         if Editor.activeInputId ~= id then
             Editor.activeInputId = id
-            Editor.inputText = tostring(math.floor(value))
+            Editor.activeInputIsNumber = isNumber
+            Editor.inputText = rawDisplay
             Editor.onInputCommit = onCommit
         end
     end})
@@ -513,10 +682,15 @@ local function drawNumberInput(id, label, value, x, y, w, h, onCommit)
     love.graphics.rectangle("line", bx, y, bw, h)
     
     love.graphics.setColor(1,1,1,1)
+    -- Clip text so it doesn't bleed out of bounds
+    love.graphics.setScissor(bx, y, bw, h)
     love.graphics.print(displayVal .. (active and "_" or ""), bx + 5, y + (h - Editor.uiFont:getHeight())/2)
+    love.graphics.setScissor()
 end
 
 function Editor.drawWorld()
+    if Editor.loadMenuOpen then return end
+    
     local pW, pH, vW, vH = foreRef:computeInternalResolution()
     
     love.graphics.push()
@@ -634,6 +808,36 @@ function Editor.drawUI()
     end
     love.graphics.setFont(Editor.uiFont)
     
+    if Editor.loadMenuOpen then
+        love.graphics.setColor(0, 0, 0, 0.85)
+        love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+        
+        local modalW, modalH = 600, 500
+        local mx, my = (screenW - modalW)/2, (screenH - modalH)/2
+        love.graphics.setColor(P_BG_SIDE)
+        love.graphics.rectangle("fill", mx, my, modalW, modalH)
+        love.graphics.setColor(P_BORDER)
+        love.graphics.rectangle("line", mx, my, modalW, modalH)
+        
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.print("Select a Level to Load", mx + 20, my + 20)
+        drawButton("btn_close_menu", "Cancel", mx + modalW - 100, my + 15, 80, 30, false, function() Editor.loadMenuOpen = false end)
+        
+        love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 80)
+        local ly = my + 60 - Editor.loadMenuScroll
+        for i, file in ipairs(Editor.loadMenuFiles) do
+            if ly + 40 > my + 60 and ly < my + modalH - 20 then
+                drawButton("btn_load_"..i, file, mx + 20, ly, modalW - 40, 35, false, function()
+                    Editor.loadLevelFile(file)
+                    Editor.loadMenuOpen = false
+                end)
+            end
+            ly = ly + 45
+        end
+        love.graphics.setScissor()
+        return
+    end
+    
     local toolX = 140
     local rows = 1
     for id, def in pairs(Editor.types) do
@@ -668,25 +872,15 @@ function Editor.drawUI()
         curX = curX + rw + 10
     end
     
-    addTopBtn("load", "Load Custom", 120, function()
-        if love.filesystem.getInfo("custom.json") then
-            local str = love.filesystem.read("custom.json")
-            if str then
-                local data = json.decode(str)
-                if data and data.objects then
-                    Editor.objects = data.objects
-                    if data.globals then Editor.globalToggles = data.globals end
-                    Editor.mapWidth = data.mapWidth or 1000
-                    Editor.mapHeight = data.mapHeight or 1000
-                    
-                    -- Migrate legacy booleans
-                    if type(Editor.globalToggles["showGrid"]) == "boolean" then
-                        Editor.globalToggles["gridLayer"] = Editor.globalToggles["showGrid"] and "Behind" or "Hidden"
-                        Editor.globalToggles["showGrid"] = nil
-                    end
-                end
+    addTopBtn("load", "Load Level", 120, function()
+        Editor.loadMenuFiles = {}
+        for _, file in ipairs(love.filesystem.getDirectoryItems("")) do
+            if file:match("%.json$") and file ~= "editor_settings.json" and file ~= "fore_save.json" then
+                table.insert(Editor.loadMenuFiles, file)
             end
         end
+        Editor.loadMenuScroll = 0
+        Editor.loadMenuOpen = true
     end)
     addTopBtn("save", "Save", 80, function() Editor.save() end)
     addTopBtn("snap", "Snap: " .. Editor.snap, 100, function()
@@ -700,10 +894,15 @@ function Editor.drawUI()
         Editor.snap = 10
     end)
     addTopBtn("clear", "Clear Layout", 120, function() Editor.clear() end)
+    addTopBtn("folder", "Open Saves Folder", 180, function() love.system.openURL("file://"..love.filesystem.getSaveDirectory()) end)
     
     curX = screenW - 100
     drawButton("btn_play", "Play", curX, curY, 80, 30, false, function()
         Editor.save()
+        -- Expose our specific file to game routing
+        local safeName = Editor.levelName:gsub("[^%w_%- ]", "_")
+        if safeName == "" then safeName = "custom" end
+        love.filesystem.write("play_queue.txt", safeName .. ".json")
         Editor.playCustom = true
         Editor.toggle()
         foreRef.scenes:goTo("game") 
@@ -767,6 +966,7 @@ function Editor.drawUI()
                 end
             end
             Editor.selectedObjects = {}
+            Editor.pushHistory()
         end
     end)
 
@@ -783,15 +983,15 @@ function Editor.drawUI()
             love.graphics.print("Type: " .. o.type, inspX, sy)
             sy = sy + 30
             
-            drawNumberInput("obj_x", "X:", o.x, inspX, sy, 180, 25, function(v) o.x = v end)
+            drawInput("obj_x", "X:", o.x, inspX, sy, 180, 25, true, function(v) o.x = v; Editor.pushHistory() end)
             sy = sy + 30
-            drawNumberInput("obj_y", "Y:", o.y, inspX, sy, 180, 25, function(v) o.y = v end)
+            drawInput("obj_y", "Y:", o.y, inspX, sy, 180, 25, true, function(v) o.y = v; Editor.pushHistory() end)
             sy = sy + 30
             
             if o.w then
-                drawNumberInput("obj_w", "Width:", o.w, inspX, sy, 180, 25, function(v) o.w = v end)
+                drawInput("obj_w", "Width:", o.w, inspX, sy, 180, 25, true, function(v) o.w = v; Editor.pushHistory() end)
                 sy = sy + 30
-                drawNumberInput("obj_h", "Height:", o.h, inspX, sy, 180, 25, function(v) o.h = v end)
+                drawInput("obj_h", "Height:", o.h, inspX, sy, 180, 25, true, function(v) o.h = v; Editor.pushHistory() end)
                 sy = sy + 30
             end
         else
@@ -804,11 +1004,18 @@ function Editor.drawUI()
         love.graphics.print("(Use Delete action at bottom", inspX, sy + 15)
         love.graphics.print(" or DEL key to remove)", inspX, sy + 30)
     else
-        love.graphics.print("-- Level Settings --", inspX, topH + 10)
+        love.graphics.print("-- Level Meta --", inspX, topH + 10)
         local gy = topH + 40
-        drawNumberInput("map_w", "Map W:", Editor.mapWidth, inspX, gy, 180, 25, function(v) Editor.mapWidth = v end)
+        drawInput("map_n", "Name:", Editor.levelName, inspX, gy, 200, 25, false, function(v) Editor.levelName = v; Editor.pushHistory() end)
         gy = gy + 30
-        drawNumberInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, function(v) Editor.mapHeight = v end)
+        drawInput("map_a", "Author:", Editor.levelAuthor, inspX, gy, 200, 25, false, function(v) Editor.levelAuthor = v; Editor.pushHistory() end)
+        gy = gy + 40
+        
+        love.graphics.print("-- Level Settings --", inspX, gy)
+        gy = gy + 30
+        drawInput("map_w", "Map W:", Editor.mapWidth, inspX, gy, 180, 25, true, function(v) Editor.mapWidth = v; Editor.pushHistory() end)
+        gy = gy + 30
+        drawInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, true, function(v) Editor.mapHeight = v; Editor.pushHistory() end)
         gy = gy + 40
         
         love.graphics.setColor(0.8, 0.8, 0.8, 1)
@@ -820,18 +1027,21 @@ function Editor.drawUI()
             if gl == "Behind" then Editor.globalToggles["gridLayer"] = "Front"
             elseif gl == "Front" then Editor.globalToggles["gridLayer"] = "Hidden"
             else Editor.globalToggles["gridLayer"] = "Behind" end
+            Editor.saveSettings()
         end)
         gy = gy + 40
         
         local gs = Editor.globalToggles["gridStyle"] or "Lines"
         drawButton("tog_g_gridStyle", "Style: " .. gs, inspX, gy, rightW - 20, 30, false, function() 
             Editor.globalToggles["gridStyle"] = (gs == "Lines") and "Dots" or "Lines"
+            Editor.saveSettings()
         end)
         gy = gy + 40
         
         local sv = Editor.globalToggles["simpleView"] or false
         drawButton("tog_g_simpleView", "simpleView: " .. tostring(sv), inspX, gy, rightW - 20, 30, sv, function() 
             Editor.globalToggles["simpleView"] = not sv
+            Editor.saveSettings()
         end)
         gy = gy + 40
     end

@@ -3,6 +3,43 @@ local UI = {}
 local coinTrackers = {}
 local healthWave = 0
 
+local levelIntroTimer = 0
+local levelIntroName = ""
+local levelIntroAuthor = ""
+
+function UI.resetIntro()
+    levelIntroTimer = 3.5
+    if GameState.area then
+        levelIntroName = GameState.area.levelName
+        levelIntroAuthor = GameState.area.levelAuthor
+    else
+        levelIntroName = nil
+    end
+end
+
+local function drawLevelIntro()
+    if levelIntroTimer <= 0 then return end
+    if not levelIntroName then return end
+
+    local alpha = 1
+    if levelIntroTimer < 1.0 then
+        alpha = levelIntroTimer
+    end
+
+    local yOffset = 0
+    if levelIntroTimer > 3.0 then
+        yOffset = (levelIntroTimer - 3.0) * 100
+    end
+
+    local textY = 100 - yOffset
+
+    fore.graphics.text(levelIntroName, 0, textY, 2, {255, 255, 255, alpha * 255}, fore.data.width, "center")
+    
+    if levelIntroAuthor then
+        fore.graphics.text("by " .. levelIntroAuthor, 0, textY + 40, 1, {200, 200, 200, alpha * 255}, fore.data.width, "center")
+    end
+end
+
 local function updateCoinTrackers(dt)
     local p = GameState.player
     local coins = GameState.area.coins
@@ -270,9 +307,13 @@ end
 function UI.update(dt)
     updateCoinTrackers(dt)
     healthWave = healthWave + dt
+    if levelIntroTimer > 0 then
+        levelIntroTimer = levelIntroTimer - dt
+    end
 end
 
 function UI.draw()
+    --drawLevelIntro()
     drawHealthIndicator()
     drawDashIndicator()
     drawCoinIndicator()
