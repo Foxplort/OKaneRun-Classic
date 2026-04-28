@@ -1,5 +1,5 @@
 ffi = require("ffi")
-local game_version = "1.2.0-beta.1"
+local game_version = "1.2.0-beta.2-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,

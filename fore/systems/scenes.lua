@@ -86,6 +86,13 @@ function SceneManager:update(dt)
         end
 
         self.current = require(self.scenes[self.next])
+
+        if self.current.debug then
+            self.fore.debug.add("Scene", function()
+                return self.current.debug()
+            end)
+        end
+        
         self.next = nil
         
         if self.current.enter then
