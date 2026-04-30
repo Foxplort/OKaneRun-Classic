@@ -144,4 +144,6 @@ fore.editor.onPlay = function(levelName)
     fore.scenes:goTo("game")
 end
 
+require("okanerun.src.systems.gameEditor").init(fore)
+
 fore:start()

@@ -686,7 +686,9 @@ function Editor.drawWorld()
     love.graphics.translate(-Editor.camera.x, -Editor.camera.y)
     
     -- Level Boundaries Outline
-    foreRef.graphics.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
+    if not Editor.isPreview then
+        foreRef.graphics.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
+    end
     
     local function drawGrid()
         if Editor.isPreview then return end
@@ -734,45 +736,47 @@ function Editor.drawWorld()
         end
     end
     
-    -- Selection Highlights
-    for _, sel in ipairs(Editor.selectedObjects) do
-        local typ = Editor.types[sel.type]
-        local c = {1, 1, 1, 0.9}
-        if typ.shape == "point" then
-            foreRef.graphics.mCirc(sel.x, sel.y, 8, c, false)
-        else
-            foreRef.graphics.rect(sel.x, sel.y, sel.w or 20, sel.h or 20, c, false)
+    if not Editor.isPreview then
+        -- Selection Highlights
+        for _, sel in ipairs(Editor.selectedObjects) do
+            local typ = Editor.types[sel.type]
+            local c = {1, 1, 1, 0.9}
+            if typ.shape == "point" then
+                foreRef.graphics.mCirc(sel.x, sel.y, 8, c, false)
+            else
+                foreRef.graphics.rect(sel.x, sel.y, sel.w or 20, sel.h or 20, c, false)
+            end
         end
-    end
-    
-    -- Resize Handles
-    if Editor.activeTool == "Select" and #Editor.selectedObjects == 1 then
-        local o = Editor.selectedObjects[1]
-        local typ = Editor.types[o.type]
-        if typ.shape == "rectangle" then
-            local c = {0, 0.5, 1, 1}
-            local hs = 5 / Editor.camera.zoom
-            local w, h = o.w or 40, o.h or 40
-            foreRef.graphics.rect(o.x - hs, o.y - hs, hs*2, hs*2, c, true)
-            foreRef.graphics.rect(o.x + w - hs, o.y - hs, hs*2, hs*2, c, true)
-            foreRef.graphics.rect(o.x - hs, o.y + h - hs, hs*2, hs*2, c, true)
-            foreRef.graphics.rect(o.x + w - hs, o.y + h - hs, hs*2, hs*2, c, true)
+        
+        -- Resize Handles
+        if Editor.activeTool == "Select" and #Editor.selectedObjects == 1 then
+            local o = Editor.selectedObjects[1]
+            local typ = Editor.types[o.type]
+            if typ.shape == "rectangle" then
+                local c = {0, 0.5, 1, 1}
+                local hs = 5 / Editor.camera.zoom
+                local w, h = o.w or 40, o.h or 40
+                foreRef.graphics.rect(o.x - hs, o.y - hs, hs*2, hs*2, c, true)
+                foreRef.graphics.rect(o.x + w - hs, o.y - hs, hs*2, hs*2, c, true)
+                foreRef.graphics.rect(o.x - hs, o.y + h - hs, hs*2, hs*2, c, true)
+                foreRef.graphics.rect(o.x + w - hs, o.y + h - hs, hs*2, hs*2, c, true)
+            end
         end
-    end
-    
-    if Editor.globalToggles["gridLayer"] == "Front" then drawGrid() end
-    
-    if Editor.mouse.marqueeStart then
-        local curX, curY = Editor.mouse.wx, Editor.mouse.wy
-        local mx, my = math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY)
-        local mw, mh = math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
-        foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.3}, true)
-        foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.8}, false)
-    elseif Editor.mouse.draggingRect then
-        local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
-        local mx, my = math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY)
-        local mw, mh = math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
-        foreRef.graphics.rect(mx, my, mw, mh, {1, 1, 1, 0.3}, true)
+        
+        if Editor.globalToggles["gridLayer"] == "Front" then drawGrid() end
+        
+        if Editor.mouse.marqueeStart then
+            local curX, curY = Editor.mouse.wx, Editor.mouse.wy
+            local mx, my = math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY)
+            local mw, mh = math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
+            foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.3}, true)
+            foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.8}, false)
+        elseif Editor.mouse.draggingRect then
+            local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
+            local mx, my = math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY)
+            local mw, mh = math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
+            foreRef.graphics.rect(mx, my, mw, mh, {1, 1, 1, 0.3}, true)
+        end
     end
     
     love.graphics.pop()
