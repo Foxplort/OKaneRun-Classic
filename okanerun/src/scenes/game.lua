@@ -38,13 +38,15 @@ local function followTarget(coin, tx, ty, tz, dt)
         local targetX = tx + dx * ratio
         local targetY = ty + dy * ratio
         
-        -- High responsiveness (15) ensures it keeps up with the player
-        coin.x = fore.math.lerp(coin.x, targetX, 15 * dt)
-        coin.y = fore.math.lerp(coin.y, targetY, 15 * dt)
+        -- Framerate-independent exponential decay
+        local xySmooth = 1 - math.exp(-15 * dt)
+        coin.x = fore.math.lerp(coin.x, targetX, xySmooth)
+        coin.y = fore.math.lerp(coin.y, targetY, xySmooth)
     end
     
-    -- Z follow
-    coin.z = fore.math.approach(coin.z, tz, 200 * dt)
+    -- Z follow (framerate-independent exponential decay)
+    local zSmooth = 1 - math.exp(-12 * dt)
+    coin.z = fore.math.lerp(coin.z, tz, zSmooth)
 end
 
 local function checkPB()
@@ -148,6 +150,9 @@ local function damageHandler(dt)
             coin.y = GameState.player.pos.y
             coin.z = GameState.player.pos.z
         end
+
+        -- Reset Z history so coins don't replay the teleport
+        GameState.player.zHistory = {{z = GameState.player.pos.z, t = 0}}
     end
 end
 
@@ -189,6 +194,7 @@ function Scene.enter()
     GameState.player.damage = damagePlayer
     GameState.player.afterimages = {}
     GameState.player.effectsChanged = true
+    GameState.player.zHistory = {{z = 40, t = 0}}
 
     statPerp()
 
@@ -340,6 +346,19 @@ function Scene.update(dt)
         local lastX = GameState.player.pos.x
         local lastY = GameState.player.pos.y
         local lastZ = GameState.player.pos.z
+        
+        -- Record Z History for coin follow
+        -- Age existing entries
+        for _, entry in ipairs(GameState.player.zHistory) do
+            entry.t = entry.t + dt
+        end
+        -- Insert current Z at the front (newest = index 1, age 0)
+        table.insert(GameState.player.zHistory, 1, {z = GameState.player.pos.z, t = 0})
+        -- Trim entries older than 10 seconds
+        local MAX_HISTORY_TIME = 10
+        while #GameState.player.zHistory > 1 and GameState.player.zHistory[#GameState.player.zHistory].t > MAX_HISTORY_TIME do
+            table.remove(GameState.player.zHistory)
+        end
         
         local isSubmerged = GameState.player.pos.z < 0
         local mx, my = 0, 0
@@ -748,12 +767,31 @@ function Scene.update(dt)
             if i == 1 then
                 tx = GameState.player.pos.x
                 ty = GameState.player.pos.y
-                tz = GameState.player.pos.z + 4
             else
                 local prev = GameState.player.coinChain[i - 1]
                 tx = prev.x
                 ty = prev.y
-                tz = prev.z
+            end
+
+            -- Z following with time-based delay
+            local Z_DELAY_PER_COIN = 0.1  -- seconds of delay per coin in chain
+            local targetTime = i * Z_DELAY_PER_COIN
+            local zh = GameState.player.zHistory
+
+            -- Sample Z from history at the target time offset, with interpolation
+            tz = zh[#zh].z + 4  -- fallback: oldest entry
+            for j = 1, #zh do
+                if zh[j].t >= targetTime then
+                    if j > 1 then
+                        -- Interpolate between the two surrounding entries
+                        local a, b = zh[j - 1], zh[j]
+                        local frac = (targetTime - a.t) / (b.t - a.t)
+                        tz = a.z + (b.z - a.z) * frac + 4
+                    else
+                        tz = zh[j].z + 4
+                    end
+                    break
+                end
             end
 
             followTarget(coin, tx, ty, tz, dt)

@@ -10,11 +10,10 @@ function Config.init(userConfig)
         version = userConfig.version or "1.0.0",
         width = userConfig.width or 640,
         height = userConfig.height or 360,
-        scale = userConfig.scale or 2,
 
         -- Window settings
         minDT = userConfig.minDT ~= nil and userConfig.minDT or 1/20,
-        windowScale = userConfig.windowScale or 2,
+        scale = userConfig.scale or 2,
         
         -- Starting scene (must be provided)
         startScene = userConfig.startScene,
