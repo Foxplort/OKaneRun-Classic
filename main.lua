@@ -108,8 +108,6 @@ fore:introduce("load", function()
         love.image.newImageData("okanerun/assets/images/system/cursor.png"),
         0, 0
     ))
-
-    require("okanerun.src.systems.gameEditor").init(fore)
 end)
 
 fore:introduce("update", function(dt)
@@ -126,5 +124,24 @@ fore:introduce("preCanvasDraw", function()
 end)
 
 fore:introduce("rawPostDraw", function() love.graphics.setShader() end)
+
+fore.editor.onToggle = function(enabled)
+    local Objects = require("okanerun.src.data.objects")
+    if Objects then
+        for _, def in pairs(Objects) do
+            if enabled then
+                if def.onEditorLoad then def.onEditorLoad() end
+            else
+                if def.onEditorUnload then def.onEditorUnload() end
+            end
+        end
+    end
+end
+
+fore.editor.onPlay = function(levelName)
+    love.filesystem.write("play_queue.txt", levelName .. ".json")
+    if fore.editor.enabled then fore.editor.toggle() end
+    fore.scenes:goTo("game")
+end
 
 fore:start()

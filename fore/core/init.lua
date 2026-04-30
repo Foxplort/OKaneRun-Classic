@@ -31,12 +31,14 @@ function Fore.init(config)
     Fore.audio = require("fore.utils.audio")
     Fore.audio.init(Fore)
     Fore.queuer = require("fore.systems.queuer")
+    Fore.levelLoader = require("fore.utils.levelLoader")
 
     Fore.conf = require("fore.core.config").init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
     Fore.data.OS = love.system.getOS()
     Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
     Fore.data.devmode = false
+    Fore.editor = require("fore.systems.editor").init(Fore)
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything

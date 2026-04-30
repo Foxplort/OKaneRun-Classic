@@ -9,7 +9,6 @@ Editor.enabled = false
 Editor.types = {}
 Editor.objects = {}
 Editor.globalToggles = { gridLayer = "Behind", gridStyle = "Lines" }
-Editor.playCustom = false
 Editor.clipboard = {}
 
 Editor.history = {}
@@ -188,7 +187,9 @@ function Editor.save()
     Editor.camera.zoom = math.min(zx, zy)
     if Editor.camera.zoom == 0 then Editor.camera.zoom = 1 end
     
+    Editor.isPreview = true
     Editor.drawWorld()
+    Editor.isPreview = false
     
     Editor.camera.zoom = oldZoom
     Editor.camera.x = oldCamX
@@ -229,15 +230,8 @@ end
 function Editor.toggle()
     Editor.enabled = not Editor.enabled
     
-    local Objects = package.loaded["okanerun.src.data.objects"]
-    if Objects then
-        for _, def in pairs(Objects) do
-            if Editor.enabled then
-                if def.onEditorLoad then def.onEditorLoad() end
-            else
-                if def.onEditorUnload then def.onEditorUnload() end
-            end
-        end
+    if Editor.onToggle then
+        Editor.onToggle(Editor.enabled)
     end
 end
 
@@ -695,6 +689,7 @@ function Editor.drawWorld()
     foreRef.graphics.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
     
     local function drawGrid()
+        if Editor.isPreview then return end
         local layer = Editor.globalToggles["gridLayer"] or "Behind"
         if layer == "Hidden" or Editor.snap <= 1 then return end
         
@@ -870,13 +865,12 @@ function Editor.drawUI()
     curX = screenW - 100
     drawButton("btn_play", "Play", curX, curY, 80, 30, false, function()
         Editor.save()
-        -- Expose our specific file to game routing
         local safeName = Editor.levelName:gsub("[^%w_%- ]", "_")
         if safeName == "" then safeName = "custom" end
-        love.filesystem.write("play_queue.txt", safeName .. ".json")
-        Editor.playCustom = true
-        Editor.toggle()
-        foreRef.scenes:goTo("game") 
+        
+        if Editor.onPlay then
+            Editor.onPlay(safeName)
+        end
     end)
     
     -- LEFT PANEL (Hierarchy)
