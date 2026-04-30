@@ -27,6 +27,7 @@ Editor.onInputCommit = nil
 Editor.leftScroll = 0
 
 -- UI State
+Editor.uiScale = 1.6
 Editor.tools = {"Select", "Place"}
 Editor.activeTool = "Select"
 Editor.activeBuildType = nil
@@ -625,23 +626,19 @@ local function drawButton(id, txt, x, y, w, h, active, action)
     local mx, my = Editor.mouse.px, Editor.mouse.py
     local isHover = mx >= x and mx <= x+w and my >= y and my <= y+h
     
+    local color = P_BTN_IDLE
     if active then
-        love.graphics.setColor(P_BTN_ACTIVE)
+        color = P_BTN_ACTIVE
     elseif isHover then
-        love.graphics.setColor(P_BTN_HOVER)
-    else
-        love.graphics.setColor(P_BTN_IDLE)
+        color = P_BTN_HOVER
     end
-    love.graphics.rectangle("fill", x, y, w, h)
     
-    love.graphics.setColor(P_BTN_BORDER)
-    love.graphics.rectangle("line", x, y, w, h)
+    foreRef.graphics.rect(x, y, w, h, color, true)
+    foreRef.graphics.rect(x, y, w, h, P_BTN_BORDER, false)
     
-    love.graphics.setColor(1,1,1,1)
-    local font = love.graphics.getFont()
-    local th = font:getHeight()
-    local tw = font:getWidth(txt)
-    love.graphics.print(txt, x + (w - tw)/2, y + (h - th)/2)
+    local th = foreRef.graphics.getTextHeight(Editor.uiScale)
+    local tw = foreRef.graphics.getTextWidth(txt, Editor.uiScale)
+    foreRef.graphics.text(txt, x + (w - tw)/2, y + (h - th)/2, Editor.uiScale, {1,1,1,1})
 end
 
 local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
@@ -650,10 +647,9 @@ local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
     if isNumber and not active then rawDisplay = tostring(math.floor(tonumber(value) or 0)) end
     local displayVal = active and Editor.inputText or rawDisplay
     
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.print(label, x, y + (h - Editor.uiFont:getHeight())/2)
+    foreRef.graphics.text(label, x, y + (h - foreRef.graphics.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
     
-    local lw = Editor.uiFont:getWidth(label) + 10
+    local lw = foreRef.graphics.getTextWidth(label, Editor.uiScale) + 10
     local bx = x + lw
     local bw = w - lw
     
@@ -669,22 +665,19 @@ local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
     local mx, my = Editor.mouse.px, Editor.mouse.py
     local isHover = mx >= bx and mx <= bx+bw and my >= y and my <= y+h
     
+    local color = P_BTN_IDLE
     if active then 
-        love.graphics.setColor(P_BTN_ACTIVE)
+        color = P_BTN_ACTIVE
     elseif isHover then
-        love.graphics.setColor(P_BTN_HOVER)
-    else 
-        love.graphics.setColor(P_BTN_IDLE)
+        color = P_BTN_HOVER
     end
-    love.graphics.rectangle("fill", bx, y, bw, h)
     
-    love.graphics.setColor(P_BTN_BORDER)
-    love.graphics.rectangle("line", bx, y, bw, h)
+    foreRef.graphics.rect(bx, y, bw, h, color, true)
+    foreRef.graphics.rect(bx, y, bw, h, P_BTN_BORDER, false)
     
-    love.graphics.setColor(1,1,1,1)
     -- Clip text so it doesn't bleed out of bounds
     love.graphics.setScissor(bx, y, bw, h)
-    love.graphics.print(displayVal .. (active and "_" or ""), bx + 5, y + (h - Editor.uiFont:getHeight())/2)
+    foreRef.graphics.text(displayVal .. (active and "_" or ""), bx + 5, y + (h - foreRef.graphics.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
     love.graphics.setScissor()
 end
 
@@ -699,15 +692,14 @@ function Editor.drawWorld()
     love.graphics.translate(-Editor.camera.x, -Editor.camera.y)
     
     -- Level Boundaries Outline
-    love.graphics.setColor(1, 0, 0, 0.4)
-    love.graphics.rectangle("line", 0, 0, Editor.mapWidth, Editor.mapHeight)
+    foreRef.graphics.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
     
     local function drawGrid()
         local layer = Editor.globalToggles["gridLayer"] or "Behind"
         if layer == "Hidden" or Editor.snap <= 1 then return end
         
         local style = Editor.globalToggles["gridStyle"] or "Lines"
-        love.graphics.setColor(1, 1, 1, 0.1)
+        local gridColor = {1, 1, 1, 0.1}
         
         local cx, cy = Editor.camera.x, Editor.camera.y
         local hw, hh = vW/2/Editor.camera.zoom, vH/2/Editor.camera.zoom
@@ -718,12 +710,12 @@ function Editor.drawWorld()
         local endY = math.floor((cy + hh) / snapVal) * snapVal
         
         if style == "Lines" then
-            for x = startX, endX, snapVal do love.graphics.line(x, startY, x, endY) end
-            for y = startY, endY, snapVal do love.graphics.line(startX, y, endX, y) end
+            for x = startX, endX, snapVal do foreRef.graphics.line({x, startY, x, endY}, gridColor) end
+            for y = startY, endY, snapVal do foreRef.graphics.line({startX, y, endX, y}, gridColor) end
         else
             for x = startX, endX, snapVal do
                 for y = startY, endY, snapVal do
-                    love.graphics.rectangle("fill", x-1, y-1, 2, 2)
+                    foreRef.graphics.rect(x-1, y-1, 2, 2, gridColor, true)
                 end
             end
         end
@@ -737,11 +729,11 @@ function Editor.drawWorld()
             if not Editor.globalToggles["simpleView"] and typ.gameDraw then
                 typ.gameDraw(obj, true)
             else
-                if typ.color then love.graphics.setColor(typ.color) else love.graphics.setColor(0.8, 0.8, 0.8) end
+                local c = typ.color or {0.8, 0.8, 0.8}
                 if typ.shape == "point" then
-                    love.graphics.circle("fill", obj.x, obj.y, 5)
+                    foreRef.graphics.mCirc(obj.x, obj.y, 5, c, true)
                 elseif typ.shape == "rectangle" then
-                    love.graphics.rectangle("fill", obj.x, obj.y, obj.w or 20, obj.h or 20)
+                    foreRef.graphics.rect(obj.x, obj.y, obj.w or 20, obj.h or 20, c, true)
                 end
             end
         end
@@ -750,50 +742,42 @@ function Editor.drawWorld()
     -- Selection Highlights
     for _, sel in ipairs(Editor.selectedObjects) do
         local typ = Editor.types[sel.type]
-        love.graphics.setColor(1, 1, 1, 0.9)
+        local c = {1, 1, 1, 0.9}
         if typ.shape == "point" then
-            love.graphics.circle("line", sel.x, sel.y, 8)
+            foreRef.graphics.mCirc(sel.x, sel.y, 8, c, false)
         else
-            love.graphics.rectangle("line", sel.x, sel.y, sel.w or 20, sel.h or 20)
+            foreRef.graphics.rect(sel.x, sel.y, sel.w or 20, sel.h or 20, c, false)
         end
     end
     
     -- Resize Handles
-    if #Editor.selectedObjects == 1 then
+    if Editor.activeTool == "Select" and #Editor.selectedObjects == 1 then
         local o = Editor.selectedObjects[1]
         local typ = Editor.types[o.type]
         if typ.shape == "rectangle" then
-            love.graphics.setColor(0, 0.5, 1, 1)
+            local c = {0, 0.5, 1, 1}
             local hs = 5 / Editor.camera.zoom
             local w, h = o.w or 40, o.h or 40
-            love.graphics.rectangle("fill", o.x - hs, o.y - hs, hs*2, hs*2)
-            love.graphics.rectangle("fill", o.x + w - hs, o.y - hs, hs*2, hs*2)
-            love.graphics.rectangle("fill", o.x - hs, o.y + h - hs, hs*2, hs*2)
-            love.graphics.rectangle("fill", o.x + w - hs, o.y + h - hs, hs*2, hs*2)
+            foreRef.graphics.rect(o.x - hs, o.y - hs, hs*2, hs*2, c, true)
+            foreRef.graphics.rect(o.x + w - hs, o.y - hs, hs*2, hs*2, c, true)
+            foreRef.graphics.rect(o.x - hs, o.y + h - hs, hs*2, hs*2, c, true)
+            foreRef.graphics.rect(o.x + w - hs, o.y + h - hs, hs*2, hs*2, c, true)
         end
     end
     
     if Editor.globalToggles["gridLayer"] == "Front" then drawGrid() end
     
     if Editor.mouse.marqueeStart then
-        love.graphics.setColor(0.3, 0.6, 1.0, 0.3)
         local curX, curY = Editor.mouse.wx, Editor.mouse.wy
-        love.graphics.rectangle("fill", 
-            math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY),
-            math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
-        )
-        love.graphics.setColor(0.3, 0.6, 1.0, 0.8)
-        love.graphics.rectangle("line", 
-            math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY),
-            math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
-        )
+        local mx, my = math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY)
+        local mw, mh = math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
+        foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.3}, true)
+        foreRef.graphics.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.8}, false)
     elseif Editor.mouse.draggingRect then
-        love.graphics.setColor(1, 1, 1, 0.3)
         local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
-        love.graphics.rectangle("fill", 
-            math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY),
-            math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
-        )
+        local mx, my = math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY)
+        local mw, mh = math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
+        foreRef.graphics.rect(mx, my, mw, mh, {1, 1, 1, 0.3}, true)
     end
     
     love.graphics.pop()
@@ -803,24 +787,15 @@ function Editor.drawUI()
     local screenW, screenH = love.graphics.getDimensions()
     Editor.uiRects = {}
     
-    if not Editor.uiFont then
-        Editor.uiFont = love.graphics.newFont(16)
-    end
-    love.graphics.setFont(Editor.uiFont)
-    
     if Editor.loadMenuOpen then
-        love.graphics.setColor(0, 0, 0, 0.85)
-        love.graphics.rectangle("fill", 0, 0, screenW, screenH)
+        foreRef.graphics.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
         
         local modalW, modalH = 600, 500
         local mx, my = (screenW - modalW)/2, (screenH - modalH)/2
-        love.graphics.setColor(P_BG_SIDE)
-        love.graphics.rectangle("fill", mx, my, modalW, modalH)
-        love.graphics.setColor(P_BORDER)
-        love.graphics.rectangle("line", mx, my, modalW, modalH)
+        foreRef.graphics.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
+        foreRef.graphics.rect(mx, my, modalW, modalH, P_BORDER, false)
         
-        love.graphics.setColor(1,1,1,1)
-        love.graphics.print("Select a Level to Load", mx + 20, my + 20)
+        foreRef.graphics.text("Select a Level to Load", mx + 20, my + 20, Editor.uiScale, {1,1,1,1})
         drawButton("btn_close_menu", "Cancel", mx + modalW - 100, my + 15, 80, 30, false, function() Editor.loadMenuOpen = false end)
         
         love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 80)
@@ -841,7 +816,7 @@ function Editor.drawUI()
     local toolX = 140
     local rows = 1
     for id, def in pairs(Editor.types) do
-        local w = Editor.uiFont:getWidth(" + " .. id) + 30
+        local w = foreRef.graphics.getTextWidth(" + " .. id, Editor.uiScale) + 30
         if toolX + w > screenW - 170 then
             toolX = 140
             rows = rows + 1
@@ -850,19 +825,15 @@ function Editor.drawUI()
     end
     botH = 20 + rows * 40
     
-    love.graphics.setColor(P_BG_TOP)
-    love.graphics.rectangle("fill", 0, 0, screenW, topH)
-    love.graphics.setColor(P_BG_SIDE)
-    love.graphics.rectangle("fill", 0, topH, leftW, screenH - topH - botH)
-    love.graphics.rectangle("fill", screenW - rightW, topH, rightW, screenH - topH - botH)
-    love.graphics.setColor(P_BG_BOT)
-    love.graphics.rectangle("fill", 0, screenH - botH, screenW, botH)
+    foreRef.graphics.rect(0, 0, screenW, topH, P_BG_TOP, true)
+    foreRef.graphics.rect(0, topH, leftW, screenH - topH - botH, P_BG_SIDE, true)
+    foreRef.graphics.rect(screenW - rightW, topH, rightW, screenH - topH - botH, P_BG_SIDE, true)
+    foreRef.graphics.rect(0, screenH - botH, screenW, botH, P_BG_BOT, true)
     
-    love.graphics.setColor(P_BORDER)
-    love.graphics.line(0, topH, screenW, topH)
-    love.graphics.line(leftW, topH, leftW, screenH - botH)
-    love.graphics.line(screenW - rightW, topH, screenW - rightW, screenH - botH)
-    love.graphics.line(0, screenH - botH, screenW, screenH - botH)
+    foreRef.graphics.line({0, topH, screenW, topH}, P_BORDER)
+    foreRef.graphics.line({leftW, topH, leftW, screenH - botH}, P_BORDER)
+    foreRef.graphics.line({screenW - rightW, topH, screenW - rightW, screenH - botH}, P_BORDER)
+    foreRef.graphics.line({0, screenH - botH, screenW, screenH - botH}, P_BORDER)
     
     -- TOP PANEL
     local curX = 10
@@ -910,8 +881,7 @@ function Editor.drawUI()
     
     -- LEFT PANEL (Hierarchy)
     love.graphics.setScissor(0, topH, leftW, screenH - topH - botH)
-    love.graphics.setColor(0.8, 0.8, 0.8, 1)
-    love.graphics.print("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll)
+    foreRef.graphics.text("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     local listY = topH + 40 - Editor.leftScroll
     for i, obj in ipairs(Editor.objects) do
@@ -929,8 +899,7 @@ function Editor.drawUI()
     love.graphics.setScissor()
     
     -- BOTTOM PANEL (Tools)
-    love.graphics.setColor(0.8, 0.8, 0.8, 1)
-    love.graphics.print("-- Tools --", 10, screenH - botH + 10)
+    foreRef.graphics.text("-- Tools --", 10, screenH - botH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     toolX = 10
     local toolY = screenH - botH + 10
@@ -941,7 +910,7 @@ function Editor.drawUI()
     toolX = toolX + 130
     
     for id, def in pairs(Editor.types) do
-        local w = Editor.uiFont:getWidth(" + " .. id) + 30
+        local w = foreRef.graphics.getTextWidth(" + " .. id, Editor.uiScale) + 30
         if toolX + w > screenW - 170 then
             toolX = 140
             toolY = toolY + 40
@@ -972,15 +941,14 @@ function Editor.drawUI()
 
     -- RIGHT PANEL (Inspector)
     local inspX = screenW - rightW + 10
-    love.graphics.setColor(0.8, 0.8, 0.8, 1)
     
     if #Editor.selectedObjects > 0 then
-        love.graphics.print("-- Properties --", inspX, topH + 10)
+        foreRef.graphics.text("-- Properties --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         local sy = topH + 40
         
         if #Editor.selectedObjects == 1 then
             local o = Editor.selectedObjects[1]
-            love.graphics.print("Type: " .. o.type, inspX, sy)
+            foreRef.graphics.text("Type: " .. o.type, inspX, sy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
             sy = sy + 30
             
             drawInput("obj_x", "X:", o.x, inspX, sy, 180, 25, true, function(v) o.x = v; Editor.pushHistory() end)
@@ -995,31 +963,28 @@ function Editor.drawUI()
                 sy = sy + 30
             end
         else
-            love.graphics.setColor(0.4, 0.7, 1.0, 1)
-            love.graphics.print("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy)
+            foreRef.graphics.text("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy, Editor.uiScale, {0.4, 0.7, 1.0, 1})
             sy = sy + 40
         end
         
-        love.graphics.setColor(0.5, 0.5, 0.5, 1)
-        love.graphics.print("(Use Delete action at bottom", inspX, sy + 15)
-        love.graphics.print(" or DEL key to remove)", inspX, sy + 30)
+        foreRef.graphics.text("(Use Delete action at bottom", inspX, sy + 15, Editor.uiScale, {0.5, 0.5, 0.5, 1})
+        foreRef.graphics.text(" or DEL key to remove)", inspX, sy + 30, Editor.uiScale, {0.5, 0.5, 0.5, 1})
     else
-        love.graphics.print("-- Level Meta --", inspX, topH + 10)
+        foreRef.graphics.text("-- Level Meta --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         local gy = topH + 40
         drawInput("map_n", "Name:", Editor.levelName, inspX, gy, 200, 25, false, function(v) Editor.levelName = v; Editor.pushHistory() end)
         gy = gy + 30
         drawInput("map_a", "Author:", Editor.levelAuthor, inspX, gy, 200, 25, false, function(v) Editor.levelAuthor = v; Editor.pushHistory() end)
         gy = gy + 40
         
-        love.graphics.print("-- Level Settings --", inspX, gy)
+        foreRef.graphics.text("-- Level Settings --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         gy = gy + 30
         drawInput("map_w", "Map W:", Editor.mapWidth, inspX, gy, 180, 25, true, function(v) Editor.mapWidth = v; Editor.pushHistory() end)
         gy = gy + 30
         drawInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, true, function(v) Editor.mapHeight = v; Editor.pushHistory() end)
         gy = gy + 40
         
-        love.graphics.setColor(0.8, 0.8, 0.8, 1)
-        love.graphics.print("-- Global Toggles --", inspX, gy)
+        foreRef.graphics.text("-- Global Toggles --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         gy = gy + 30
         
         local gl = Editor.globalToggles["gridLayer"] or "Behind"
