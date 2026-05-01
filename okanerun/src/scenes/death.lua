@@ -17,7 +17,8 @@ local damageText = {
     scanline = {"ERASED"},
     trail = {"NO WAY BACK", "TRAPPED IN TRACE"},
     explosive_contact = {"STEPPED TOO FAR"},
-    explosive_explosion = {"NO TRACE REMAINS", "OBLITERATED"}
+    explosive_explosion = {"NO TRACE REMAINS", "OBLITERATED"},
+    laser = {"DESINTEGRATED", "VAPORIZED"},
 }
 
 local reason = "THE FATE IS UNKNOWN"
