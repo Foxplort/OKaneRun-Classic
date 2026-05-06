@@ -165,14 +165,14 @@ function Scene.enter()
     local levelList = require("okanerun.src.data.levels")
     
     if fore.editor and fore.editor.playCustom then
-        local target = "custom.json"
+        local target = "custom.4lf"
         if love.filesystem.getInfo("play_queue.txt") then
             target = love.filesystem.read("play_queue.txt")
             love.filesystem.remove("play_queue.txt")
         end
         
-        if love.filesystem.getInfo(target) then
-            GameState.area = Fx.ll.load(target)
+        if love.filesystem.getInfo("levels/" .. target) then
+            GameState.area = Fx.ll.load("levels/" .. target)
         else
             GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)])
         end

@@ -3,6 +3,7 @@ local Editor = {}
 
 local foreRef = nil
 local json = require("fore.utils.json")
+local zipwriter = require("fore.utils.zipwriter")
 
 -- Editor State
 Editor.enabled = false
@@ -163,10 +164,11 @@ function Editor.save()
     
     local safeName = Editor.levelName:gsub("[^%w_%- ]", "_")
     if safeName == "" then safeName = "custom" end
-    local fileTarget = safeName .. ".json"
-    local previewTarget = safeName .. ".png"
+    local fileTarget = "levels/" .. safeName .. ".4lf"
     
-    love.filesystem.write(fileTarget, json.encode(data))
+    if not love.filesystem.getInfo("levels") then
+        love.filesystem.createDirectory("levels")
+    end
     
     -- Generate Preview
     local pW, pH, vW, vH = foreRef:computeInternalResolution()
@@ -197,27 +199,40 @@ function Editor.save()
     
     love.graphics.setCanvas()
     local imgData = cvs:newImageData()
-    imgData:encode("png", previewTarget)
+    local pngFileData = imgData:encode("png")
+    
+    local zipData = zipwriter.write({
+        {name = "meta.json", data = json.encode(data)},
+        {name = "preview.png", data = pngFileData:getString()}
+    })
+    
+    love.filesystem.write(fileTarget, zipData)
 end
 
 function Editor.loadLevelFile(filename)
-    if love.filesystem.getInfo(filename) then
-        local str = love.filesystem.read(filename)
-        if str then
-            local data = json.decode(str)
-            if data and data.objects then
-                Editor.objects = data.objects
-                Editor.mapWidth = data.mapWidth or 1000
-                Editor.mapHeight = data.mapHeight or 1000
-                Editor.levelName = data.levelName or filename:gsub("%.json$", "")
-                Editor.levelAuthor = data.levelAuthor or "Unknown"
-                
-                -- Wipe history tracking for new load
-                Editor.history = {}
-                Editor.historyIndex = 0
-                Editor.pushHistory()
+    if filename:match("%.4lf$") and love.filesystem.getInfo("levels/" .. filename) then
+        local mntPath = "temp_mount_editor"
+        love.filesystem.mount("levels/" .. filename, mntPath)
+        
+        if love.filesystem.getInfo(mntPath .. "/meta.json") then
+            local str = love.filesystem.read(mntPath .. "/meta.json")
+            if str then
+                local data = json.decode(str)
+                if data and data.objects then
+                    Editor.objects = data.objects
+                    Editor.mapWidth = data.mapWidth or 1000
+                    Editor.mapHeight = data.mapHeight or 1000
+                    Editor.levelName = data.levelName or filename:gsub("%.4lf$", "")
+                    Editor.levelAuthor = data.levelAuthor or "Unknown"
+                    
+                    -- Wipe history tracking for new load
+                    Editor.history = {}
+                    Editor.historyIndex = 0
+                    Editor.pushHistory()
+                end
             end
         end
+        love.filesystem.unmount("levels/" .. filename)
     end
 end
 
@@ -844,8 +859,8 @@ function Editor.drawUI()
     
     addTopBtn("load", "Load Level", 120, function()
         Editor.loadMenuFiles = {}
-        for _, file in ipairs(love.filesystem.getDirectoryItems("")) do
-            if file:match("%.json$") and file ~= "editor_settings.json" and file ~= "fore_save.json" then
+        for _, file in ipairs(love.filesystem.getDirectoryItems("levels/")) do
+            if file:match("%.4lf$") then
                 table.insert(Editor.loadMenuFiles, file)
             end
         end

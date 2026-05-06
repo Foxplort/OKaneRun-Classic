@@ -1,5 +1,5 @@
 ffi = require("ffi")
-local game_version = "1.2.0-beta.2"
+local game_version = "1.2.0-beta.3-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
@@ -139,7 +139,7 @@ fore.editor.onToggle = function(enabled)
 end
 
 fore.editor.onPlay = function(levelName)
-    love.filesystem.write("play_queue.txt", levelName .. ".json")
+    love.filesystem.write("play_queue.txt", levelName .. ".4lf")
     if fore.editor.enabled then fore.editor.toggle() end
     fore.scenes:goTo("game")
 end

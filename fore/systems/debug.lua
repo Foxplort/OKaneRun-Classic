@@ -108,7 +108,7 @@ end
 function Debug.draw()
     if not Debug.enabled then return end
     
-    local uiScale = math.max(1, fore.data.scale / 1.5)
+    local uiScale = math.max(1, fore.data.scale / 1.5 + 0.2)
     local x, y, lh, pad = 6 * uiScale, 6 * uiScale, 12 * uiScale, 4 * uiScale
     local lines = {}
     
@@ -182,9 +182,9 @@ function Debug.draw()
     
     -- Hint with background
     local hint = "K:close Tab:page +/-:detail"
-    local hw, hh = font:getWidth(hint) * uiScale * 0.7, font:getHeight() * uiScale * 0.7
+    local hw, hh = font:getWidth(hint) * uiScale, font:getHeight() * uiScale
     fore.graphics.rect(x, y+h + 2 * uiScale, hw + 6 * uiScale, hh + 4 * uiScale, {0,0,0,180})
-    fore.graphics.text(hint, x + 3 * uiScale, y+h + 4 * uiScale, 0.7 * uiScale, {200,200,200})
+    fore.graphics.text(hint, x + 3 * uiScale, y+h + 4 * uiScale, uiScale, {200,200,200})
 end
 
 return Debug

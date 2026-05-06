@@ -55,6 +55,11 @@ function LevelLoader.load(path)
     local data
     if path:match("%.json$") then
         data = fore.levelLoader.loadJSON(path, parseObjects)
+    elseif path:match("%.4lf$") then
+        local mntPath = "temp_mount_level"
+        love.filesystem.mount(path, mntPath)
+        data = fore.levelLoader.loadJSON(mntPath .. "/meta.json", parseObjects)
+        love.filesystem.unmount(path)
     else
         -- load file as Lua table
         local chunk = love.filesystem.load(path)
