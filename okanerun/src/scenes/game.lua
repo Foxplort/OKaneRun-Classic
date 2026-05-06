@@ -174,11 +174,11 @@ function Scene.enter()
         if love.filesystem.getInfo("levels/" .. target) then
             GameState.area = Fx.ll.load("levels/" .. target)
         else
-            GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)])
+            GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".4lf")
         end
         fore.editor.playCustom = false
     else
-        GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)])
+        GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".4lf")
     end
 
     --GameState.area = Fx.ll.load("okanerun/src/data/levels/dotedPath.json")

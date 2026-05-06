@@ -1,8 +1,8 @@
 return {
-    "coolLevel77.lua",
-    "cheezeLand.lua",
-    "sliced.lua",
-    "dotedPath.json",
-    "Rects.json",
-    "Shifted Geometry.json",
+    "coolLevel77",
+    "cheezeLand",
+    "sliced",
+    "dotedPath",
+    "Rects",
+    "Shifted Geometry",
 }

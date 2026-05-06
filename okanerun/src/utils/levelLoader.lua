@@ -33,6 +33,17 @@ local function fixGround(ground)
 end
 
 local function parseObjects(raw)
+    -- If data already has the flat format (ground/coins/cores directly), pass it through
+    if raw.ground or raw.coins or raw.cores then
+        local data = {}
+        data.ground = raw.ground or {}
+        data.coins = raw.coins or {}
+        data.cores = raw.cores or {}
+        data.spawn = raw.spawn or {x=150, y=150}
+        return data
+    end
+    
+    -- Otherwise parse from editor's objects-array format
     local data = { ground = {}, coins = {}, cores = {}, spawn = {x=150, y=150} }
     if raw.objects then
         for _, obj in ipairs(raw.objects) do
@@ -52,26 +63,8 @@ end
 
 -- Main loader
 function LevelLoader.load(path)
-    local data
-    if path:match("%.json$") then
-        data = fore.levelLoader.loadJSON(path, parseObjects)
-    elseif path:match("%.4lf$") then
-        local mntPath = "temp_mount_level"
-        love.filesystem.mount(path, mntPath)
-        data = fore.levelLoader.loadJSON(mntPath .. "/meta.json", parseObjects)
-        love.filesystem.unmount(path)
-    else
-        -- load file as Lua table
-        local chunk = love.filesystem.load(path)
-        if chunk then
-            data = chunk()
-        else
-            error("Could not load lua map: " .. path)
-        end
-        data.levelName = string.match(path, "([^/\\]*)$")
-        if data.levelName then data.levelName = string.sub(data.levelName, 1, -5) end
-        data.levelAuthor = "foxplort"
-    end
+    -- Delegate loading to the engine's generalized loader
+    local data = fore.levelLoader.load(path, parseObjects)
 
     -- Merge defaults
     applyDefaults(data, defaults)

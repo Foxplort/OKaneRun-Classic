@@ -86,7 +86,6 @@ fore.input:registerAll({
 
 GameState = require("okanerun.src.game.state").new()
 GameState.player = require("okanerun.src.data.player").new()
-GameState.area = Fx.ll.load("okanerun/src/data/levels/testLevel.lua")
 
 local bgfx = require("okanerun.src.systems.borderFX")
 
@@ -104,6 +103,8 @@ local vignetteShader
 fore:introduce("load", function()
     vignetteShader = love.graphics.newShader("okanerun/assets/shaders/main.glsl")
 
+    GameState.area = Fx.ll.load("okanerun/src/data/levels/Shifted Geometry.4lf")
+    
     love.mouse.setCursor(love.mouse.newCursor(
         love.image.newImageData("okanerun/assets/images/system/cursor.png"),
         0, 0
@@ -141,6 +142,7 @@ end
 fore.editor.onPlay = function(levelName)
     love.filesystem.write("play_queue.txt", levelName .. ".4lf")
     if fore.editor.enabled then fore.editor.toggle() end
+    fore.editor.playCustom = true
     fore.scenes:goTo("game")
 end
 

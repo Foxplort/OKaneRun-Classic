@@ -212,27 +212,32 @@ end
 function Editor.loadLevelFile(filename)
     if filename:match("%.4lf$") and love.filesystem.getInfo("levels/" .. filename) then
         local mntPath = "temp_mount_editor"
-        love.filesystem.mount("levels/" .. filename, mntPath)
+        local path = "levels/" .. filename
         
-        if love.filesystem.getInfo(mntPath .. "/meta.json") then
-            local str = love.filesystem.read(mntPath .. "/meta.json")
-            if str then
-                local data = json.decode(str)
-                if data and data.objects then
-                    Editor.objects = data.objects
-                    Editor.mapWidth = data.mapWidth or 1000
-                    Editor.mapHeight = data.mapHeight or 1000
-                    Editor.levelName = data.levelName or filename:gsub("%.4lf$", "")
-                    Editor.levelAuthor = data.levelAuthor or "Unknown"
-                    
-                    -- Wipe history tracking for new load
-                    Editor.history = {}
-                    Editor.historyIndex = 0
-                    Editor.pushHistory()
+        local fd = love.filesystem.newFileData(path)
+        if fd then
+            love.filesystem.mount(fd, mntPath)
+            
+            if love.filesystem.getInfo(mntPath .. "/meta.json") then
+                local str = love.filesystem.read(mntPath .. "/meta.json")
+                if str then
+                    local data = json.decode(str)
+                    if data and data.objects then
+                        Editor.objects = data.objects
+                        Editor.mapWidth = data.mapWidth or 1000
+                        Editor.mapHeight = data.mapHeight or 1000
+                        Editor.levelName = data.levelName or filename:gsub("%.4lf$", "")
+                        Editor.levelAuthor = data.levelAuthor or "Unknown"
+                        
+                        -- Wipe history tracking for new load
+                        Editor.history = {}
+                        Editor.historyIndex = 0
+                        Editor.pushHistory()
+                    end
                 end
             end
+            love.filesystem.unmount(fd)
         end
-        love.filesystem.unmount("levels/" .. filename)
     end
 end
 
