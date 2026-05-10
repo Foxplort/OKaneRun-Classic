@@ -895,7 +895,7 @@ function Scene.draw()
     fore.queuer.draw() -- draw items in order
 
 
-    if fore.debug.enabled then
+    if fore.debug.enabled and fore.data.devmode then
         for _, g in ipairs(GameState.area.ground) do
             local gh = Fx.cl.getGroundHitbox(g)
             fore.graphics.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)

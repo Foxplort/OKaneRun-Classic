@@ -24,7 +24,7 @@ local function drawPlayerSprite(p, x, y, z, sx, sy, color)
     -- Align bottom-center (or feet-center) of the image
     fore.graphics.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, p.sprite.feetY or 256, color)
 
-    if fore.debug.enabled then
+    if fore.debug.enabled and fore.data.devmode then
         fore.graphics.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0})
         fore.graphics.rect(tx - 1, ty - 1, 2, 2, {255, 255, 255})
     end

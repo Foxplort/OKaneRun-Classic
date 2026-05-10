@@ -65,7 +65,6 @@ function save.set_engine(key, value)
 
     if key == "dev_mode" then
         fore.data.devmode = value
-        if fore.debug.enabled then fore.debug.enabled = false end
     end
 end
 

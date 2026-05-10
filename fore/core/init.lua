@@ -155,7 +155,7 @@ function Fore:update(dt)
     self.input:update()
     if self.mobileControls then self.mobileControls:update(dt) end
     
-    if self.input:pressed("debug") and self.data.devmode then self.debug.enabled = not self.debug.enabled end
+    if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
     if self.input:pressed("editor") and self.data.devmode then self.editor.toggle() end
     if self.input:pressed("fullscreen") then
         self.data.fullscreen = not self.data.fullscreen
