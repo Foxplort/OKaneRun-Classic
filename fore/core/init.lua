@@ -38,7 +38,6 @@ function Fore.init(config)
     Fore.data.OS = love.system.getOS()
     Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
     Fore.data.devmode = false
-    Fore.editor = require("fore.systems.editor").init(Fore)
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything

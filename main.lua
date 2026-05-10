@@ -1,4 +1,3 @@
-ffi = require("ffi")
 local game_version = "1.2.0-beta.3-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
@@ -19,7 +18,6 @@ fore = require("fore.core.init").init({
 Fx = {}
 Fx.cl = require("okanerun.src.utils.collision") -- Cl - Collision
 Fx.ll = require("okanerun.src.utils.levelLoader") -- LL - Level Loader
-Fx.bfx = require("okanerun.src.systems.borderFX")
 
 fore.audio.load("select", "okanerun/assets/sounds/ui/select.wav", false, "sfx")
 fore.audio.load("accept", "okanerun/assets/sounds/ui/accept.wav", false, "sfx")
@@ -27,9 +25,7 @@ fore.audio.load("accept_alt", "okanerun/assets/sounds/ui/accept_alt.wav", false,
 fore.scenes:reg("intro", "okanerun.src.scenes.intro")
 fore.scenes:reg("menu", "okanerun.src.scenes.menu")
 fore.scenes:reg("game", "okanerun.src.scenes.game")
-fore.scenes:reg("shop", "okanerun.src.scenes.shop")
 fore.scenes:reg("selection", "okanerun.src.scenes.selection")
-fore.scenes:reg("records", "okanerun.src.scenes.records")
 fore.scenes:reg("death", "okanerun.src.scenes.death")
 
 
