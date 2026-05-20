@@ -9,7 +9,8 @@ return {
 
   editor = {
     gizmo = "point",
-    color = {0.9, 0.9, 0.9, 1.0}
+    color = {0.9, 0.9, 0.9, 1.0},
+    layer = "Actor"
   },
 
   render = function(self, isEditor)

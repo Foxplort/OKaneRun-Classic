@@ -6,7 +6,8 @@ return {
 
   editor = {
     gizmo = "point",
-    color = {1.0, 0.8, 0.1, 1.0}
+    color = {1.0, 0.8, 0.1, 1.0},
+    layer = "Actor"
   },
 
   hitbox = function(self)

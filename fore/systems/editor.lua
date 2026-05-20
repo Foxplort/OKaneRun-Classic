@@ -15,6 +15,11 @@ Editor.clipboard = {}
 Editor.history = {}
 Editor.historyIndex = 0
 
+Editor.layers = {"Default"}
+Editor.defaultLayers = {"Default"}
+Editor.activeLayer = "Default"
+Editor.modal = nil
+
 Editor.levelName = "Custom Level"
 Editor.levelAuthor = "Unknown"
 Editor.mapWidth = 1000
@@ -83,6 +88,7 @@ function Editor.pushHistory()
     while #Editor.history > Editor.historyIndex do table.remove(Editor.history) end
     local state = {
         objects = deepcopy(Editor.objects),
+        layers = deepcopy(Editor.layers),
         mapWidth = Editor.mapWidth, mapHeight = Editor.mapHeight,
         levelName = Editor.levelName, levelAuthor = Editor.levelAuthor
     }
@@ -95,6 +101,7 @@ function Editor.undo()
         Editor.historyIndex = Editor.historyIndex - 1
         local s = Editor.history[Editor.historyIndex]
         Editor.objects = deepcopy(s.objects)
+        Editor.layers = deepcopy(s.layers or {"Default"})
         Editor.mapWidth = s.mapWidth; Editor.mapHeight = s.mapHeight
         Editor.levelName = s.levelName; Editor.levelAuthor = s.levelAuthor
         Editor.selectedObjects = {}
@@ -106,6 +113,7 @@ function Editor.redo()
         Editor.historyIndex = Editor.historyIndex + 1
         local s = Editor.history[Editor.historyIndex]
         Editor.objects = deepcopy(s.objects)
+        Editor.layers = deepcopy(s.layers or {"Default"})
         Editor.mapWidth = s.mapWidth; Editor.mapHeight = s.mapHeight
         Editor.levelName = s.levelName; Editor.levelAuthor = s.levelAuthor
         Editor.selectedObjects = {}
@@ -134,6 +142,21 @@ function Editor.registerType(id, def)
     end
 end
 
+function Editor.registerDefaultLayer(name)
+    -- Insert layer above default if not present
+    local found = false
+    for _, l in ipairs(Editor.defaultLayers) do
+        if l == name then found = true break end
+    end
+    if not found then
+        table.insert(Editor.defaultLayers, name)
+    end
+end
+
+function Editor.showModal(title, text, onYes, onNo)
+    Editor.modal = {title=title, text=text, onYes=onYes, onNo=onNo}
+end
+
 function Editor.registerGlobalToggle(id, defaultVal)
     if Editor.globalToggles[id] == nil then
         Editor.globalToggles[id] = defaultVal
@@ -149,10 +172,11 @@ function Editor.save()
     Editor.saveSettings()
     
     -- Write Level Data
-    local data = { objects = {} }
+    local data = { objects = {}, layers = Editor.layers }
     for _, obj in ipairs(Editor.objects) do
         table.insert(data.objects, {
             type = obj.type,
+            layer = obj.layer or "Default",
             x = obj.x, y = obj.y, w = obj.w, h = obj.h,
             params = obj.params
         })
@@ -224,10 +248,18 @@ function Editor.loadLevelFile(filename)
                     local data = json.decode(str)
                     if data and data.objects then
                         Editor.objects = data.objects
+                        Editor.layers = data.layers or deepcopy(Editor.defaultLayers)
                         Editor.mapWidth = data.mapWidth or 1000
                         Editor.mapHeight = data.mapHeight or 1000
                         Editor.levelName = data.levelName or filename:gsub("%.4lf$", "")
                         Editor.levelAuthor = data.levelAuthor or "Unknown"
+                        
+                        -- Ensure active layer is valid
+                        local validActive = false
+                        for _, l in ipairs(Editor.layers) do
+                            if l == Editor.activeLayer then validActive = true break end
+                        end
+                        if not validActive then Editor.activeLayer = Editor.layers[1] or "Default" end
                         
                         -- Wipe history tracking for new load
                         Editor.history = {}
@@ -243,6 +275,8 @@ end
 
 function Editor.clear()
     Editor.objects = {}
+    Editor.layers = deepcopy(Editor.defaultLayers)
+    Editor.activeLayer = Editor.layers[1] or "Default"
     Editor.selectedObjects = {}
     Editor.pushHistory()
 end
@@ -261,6 +295,16 @@ local function snap(val)
 end
 
 function Editor.mousepressed(px, py, button, istouch)
+    if Editor.modal then
+        for _, rect in ipairs(Editor.uiRects) do
+            if rect.modalAction and px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
+                rect.action()
+                return
+            end
+        end
+        return
+    end
+
     if Editor.loadMenuOpen then
         for _, rect in ipairs(Editor.uiRects) do
             if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
@@ -380,6 +424,7 @@ function Editor.mousepressed(px, py, button, istouch)
             if def.shape == "point" then
                 local obj = {
                     type = Editor.activeBuildType,
+                    layer = Editor.activeLayer,
                     x = snap(Editor.mouse.wx), y = snap(Editor.mouse.wy),
                     params = {}
                 }
@@ -447,6 +492,7 @@ function Editor.mousereleased(px, py, button, istouch)
             if rw > 0 and rh > 0 then
                 local obj = {
                     type = Editor.activeBuildType,
+                    layer = Editor.activeLayer,
                     x = rx, y = ry, w = rw, h = rh, params = {}
                 }
                 local def = Editor.types[Editor.activeBuildType]
@@ -740,17 +786,21 @@ function Editor.drawWorld()
     
     if Editor.globalToggles["gridLayer"] == "Behind" then drawGrid() end
     
-    for _, obj in ipairs(Editor.objects) do
-        local typ = Editor.types[obj.type]
-        if typ then
-            if not Editor.globalToggles["simpleView"] and typ.gameDraw then
-                typ.gameDraw(obj, true)
-            else
-                local c = typ.color or {0.8, 0.8, 0.8}
-                if typ.shape == "point" then
-                    foreRef.graphics.mCirc(obj.x, obj.y, 5, c, true)
-                elseif typ.shape == "rectangle" then
-                    foreRef.graphics.rect(obj.x, obj.y, obj.w or 20, obj.h or 20, c, true)
+    for _, layerName in ipairs(Editor.layers) do
+        for _, obj in ipairs(Editor.objects) do
+            if (obj.layer or "Default") == layerName then
+                local typ = Editor.types[obj.type]
+                if typ then
+                    if not Editor.globalToggles["simpleView"] and typ.gameDraw then
+                        typ.gameDraw(obj, true)
+                    else
+                        local c = typ.color or {0.8, 0.8, 0.8}
+                        if typ.shape == "point" then
+                            foreRef.graphics.mCirc(obj.x, obj.y, 5, c, true)
+                        elseif typ.shape == "rectangle" then
+                            foreRef.graphics.rect(obj.x, obj.y, obj.w or 20, obj.h or 20, c, true)
+                        end
+                    end
                 end
             end
         end
@@ -806,6 +856,44 @@ function Editor.drawUI()
     local screenW, screenH = love.graphics.getDimensions()
     Editor.uiRects = {}
     
+    if Editor.modal then
+        foreRef.graphics.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
+        
+        local modalW, modalH = 400, 200
+        local mx, my = (screenW - modalW)/2, (screenH - modalH)/2
+        foreRef.graphics.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
+        foreRef.graphics.rect(mx, my, modalW, modalH, P_BORDER, false)
+        
+        foreRef.graphics.text(Editor.modal.title, mx + 20, my + 20, Editor.uiScale * 1.2, {1,1,1,1})
+        
+        -- Word wrap text manually (naive)
+        love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 120)
+        foreRef.graphics.text(Editor.modal.text, mx + 20, my + 60, Editor.uiScale, {0.8,0.8,0.8,1})
+        love.graphics.setScissor()
+        
+        table.insert(Editor.uiRects, {x=mx + modalW - 190, y=my + modalH - 50, w=80, h=30, modalAction=true, action=function()
+            if Editor.modal.onYes then Editor.modal.onYes() end
+            Editor.modal = nil
+        end})
+        local btnYesColor = P_BTN_IDLE
+        local mpx, mpy = Editor.mouse.px, Editor.mouse.py
+        if mpx >= mx + modalW - 190 and mpx <= mx + modalW - 110 and mpy >= my + modalH - 50 and mpy <= my + modalH - 20 then btnYesColor = P_BTN_HOVER end
+        foreRef.graphics.rect(mx + modalW - 190, my + modalH - 50, 80, 30, btnYesColor, true)
+        foreRef.graphics.rect(mx + modalW - 190, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
+        foreRef.graphics.text("Yes", mx + modalW - 190 + 25, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
+        
+        table.insert(Editor.uiRects, {x=mx + modalW - 100, y=my + modalH - 50, w=80, h=30, modalAction=true, action=function()
+            if Editor.modal.onNo then Editor.modal.onNo() end
+            Editor.modal = nil
+        end})
+        local btnNoColor = P_BTN_IDLE
+        if mpx >= mx + modalW - 100 and mpx <= mx + modalW - 20 and mpy >= my + modalH - 50 and mpy <= my + modalH - 20 then btnNoColor = P_BTN_HOVER end
+        foreRef.graphics.rect(mx + modalW - 100, my + modalH - 50, 80, 30, btnNoColor, true)
+        foreRef.graphics.rect(mx + modalW - 100, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
+        foreRef.graphics.text("No", mx + modalW - 100 + 30, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
+        return
+    end
+
     if Editor.loadMenuOpen then
         foreRef.graphics.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
         
@@ -938,6 +1026,14 @@ function Editor.drawUI()
             Editor.activeTool = "Place"
             Editor.activeBuildType = id
             Editor.selectedObjects = {}
+            if def.layer then
+                for _, l in ipairs(Editor.layers) do
+                    if l == def.layer then
+                        Editor.activeLayer = l
+                        break
+                    end
+                end
+            end
         end)
         toolX = toolX + w + 10
     end
@@ -980,9 +1076,27 @@ function Editor.drawUI()
                 drawInput("obj_h", "Height:", o.h, inspX, sy, 180, 25, true, function(v) o.h = v; Editor.pushHistory() end)
                 sy = sy + 30
             end
+            
+            drawButton("btn_obj_layer", "Layer: " .. (o.layer or "Default"), inspX, sy, 180, 25, false, function()
+                local currentIdx = 1
+                for i, l in ipairs(Editor.layers) do
+                    if l == (o.layer or "Default") then currentIdx = i break end
+                end
+                o.layer = Editor.layers[(currentIdx % #Editor.layers) + 1]
+                Editor.pushHistory()
+            end)
+            sy = sy + 30
         else
             foreRef.graphics.text("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy, Editor.uiScale, {0.4, 0.7, 1.0, 1})
             sy = sy + 40
+            
+            drawButton("btn_obj_layer_multi", "Set Layer to: " .. Editor.activeLayer, inspX, sy, 200, 25, false, function()
+                for _, obj in ipairs(Editor.selectedObjects) do
+                    obj.layer = Editor.activeLayer
+                end
+                Editor.pushHistory()
+            end)
+            sy = sy + 30
         end
         
         foreRef.graphics.text("(Use Delete action at bottom", inspX, sy + 15, Editor.uiScale, {0.5, 0.5, 0.5, 1})
@@ -1027,6 +1141,65 @@ function Editor.drawUI()
             Editor.saveSettings()
         end)
         gy = gy + 40
+        
+        foreRef.graphics.text("-- Layer Manager --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        gy = gy + 30
+        
+        for i, l in ipairs(Editor.layers) do
+            local isActive = (Editor.activeLayer == l)
+            drawButton("btn_layer_"..i, (isActive and "> " or "") .. l, inspX, gy, rightW - 90, 25, isActive, function()
+                Editor.activeLayer = l
+            end)
+            drawButton("btn_layer_up_"..i, "^", inspX + rightW - 85, gy, 25, 25, false, function()
+                if i > 1 then
+                    Editor.layers[i], Editor.layers[i-1] = Editor.layers[i-1], Editor.layers[i]
+                    Editor.pushHistory()
+                end
+            end)
+            drawButton("btn_layer_down_"..i, "v", inspX + rightW - 55, gy, 25, 25, false, function()
+                if i < #Editor.layers then
+                    Editor.layers[i], Editor.layers[i+1] = Editor.layers[i+1], Editor.layers[i]
+                    Editor.pushHistory()
+                end
+            end)
+            gy = gy + 30
+        end
+        
+        drawInput("new_layer_name", "New:", "LayerName", inspX, gy, rightW - 50, 25, false, function(v)
+            table.insert(Editor.layers, v)
+            Editor.pushHistory()
+        end)
+        gy = gy + 30
+        
+        drawButton("btn_del_layer", "Delete Active Layer", inspX, gy, rightW - 20, 25, false, function()
+            if #Editor.layers <= 1 then return end
+            
+            local hasObjects = false
+            for _, obj in ipairs(Editor.objects) do
+                if (obj.layer or "Default") == Editor.activeLayer then
+                    hasObjects = true
+                    break
+                end
+            end
+            
+            local doDelete = function()
+                local newLayers = {}
+                for _, l in ipairs(Editor.layers) do
+                    if l ~= Editor.activeLayer then table.insert(newLayers, l) end
+                end
+                Editor.layers = newLayers
+                Editor.activeLayer = Editor.layers[1]
+                Editor.pushHistory()
+            end
+            
+            if hasObjects then
+                Editor.showModal("Delete Layer?", "Layer '" .. Editor.activeLayer .. "' has objects on it.\nAre you sure you want to delete it?\nObjects will fall back to 'Default'.", 
+                function() doDelete() end, nil)
+            else
+                doDelete()
+            end
+        end)
+        gy = gy + 30
     end
 end
 

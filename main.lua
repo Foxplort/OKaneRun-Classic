@@ -93,6 +93,10 @@ L = {
     ACTOR      = 3,
 }
 
+fore.editor.registerDefaultLayer("Floor")
+fore.editor.registerDefaultLayer("Subactor")
+fore.editor.registerDefaultLayer("Actor")
+
 bgfx.init(70)
 
 local vignetteShader

@@ -9,7 +9,8 @@ return {
 
   editor = {
     gizmo = "rectangle",
-    color = {0.5, 0.5, 0.5, 1.0}
+    color = {0.5, 0.5, 0.5, 1.0},
+    layer = "Floor"
   },
 
   hitbox = function(self)

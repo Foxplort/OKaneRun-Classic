@@ -9,6 +9,7 @@ function GameEditor.init(fore)
         local config = {
             shape = def.editor and def.editor.gizmo or "rectangle",
             color = def.editor and def.editor.color or {0.5, 0.5, 0.5, 1.0},
+            layer = def.editor and def.editor.layer or "Default",
             defaultParams = {},
             -- Pass the render directly allowing editor rendering
             gameDraw = def.render
