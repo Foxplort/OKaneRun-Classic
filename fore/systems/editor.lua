@@ -298,7 +298,7 @@ function Editor.mousepressed(px, py, button, istouch)
     if Editor.modal then
         for _, rect in ipairs(Editor.uiRects) do
             if rect.modalAction and px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
-                rect.action()
+                rect.action(button)
                 return
             end
         end
@@ -308,7 +308,7 @@ function Editor.mousepressed(px, py, button, istouch)
     if Editor.loadMenuOpen then
         for _, rect in ipairs(Editor.uiRects) do
             if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
-                rect.action()
+                rect.action(button)
                 return
             end
         end
@@ -321,7 +321,7 @@ function Editor.mousepressed(px, py, button, istouch)
 
     for _, rect in ipairs(Editor.uiRects) do
         if px >= rect.x and px <= rect.x + rect.w and py >= rect.y and py <= rect.y + rect.h then
-            rect.action()
+            rect.action(button)
             if rect.inputId then clickedInputId = rect.inputId end
             hitUI = true
         end
@@ -961,11 +961,15 @@ function Editor.drawUI()
         Editor.loadMenuOpen = true
     end)
     addTopBtn("save", "Save", 80, function() Editor.save() end)
-    addTopBtn("snap", "Snap: " .. Editor.snap, 100, function()
+    addTopBtn("snap", "Snap: " .. Editor.snap, 100, function(btn)
         local snaps = {1, 10, 20, 50}
+        local dir = (btn == 2) and -1 or 1
         for i, s in ipairs(snaps) do
             if Editor.snap == s then
-                Editor.snap = snaps[(i % #snaps) + 1]
+                local nextIdx = i + dir
+                if nextIdx > #snaps then nextIdx = 1 end
+                if nextIdx < 1 then nextIdx = #snaps end
+                Editor.snap = snaps[nextIdx]
                 return
             end
         end
@@ -990,17 +994,26 @@ function Editor.drawUI()
     foreRef.graphics.text("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     local listY = topH + 40 - Editor.leftScroll
-    for i, obj in ipairs(Editor.objects) do
-        local label = string.format("%03d | %s", i, obj.type)
+    for _, layerName in ipairs(Editor.layers) do
         if listY + 25 > topH and listY < screenH - botH then
-            local isSelected = false
-            for _, s in ipairs(Editor.selectedObjects) do if s == obj then isSelected = true break end end
-            drawButton("btn_obj_"..i, label, 10, listY, leftW - 20, 25, isSelected, function()
-                Editor.selectedObjects = {obj}
-                Editor.activeTool = "Select"
-            end)
+            foreRef.graphics.text("[" .. layerName .. "]", 10, listY, Editor.uiScale, {1, 0.8, 0.2, 1})
         end
         listY = listY + 30
+        
+        for i, obj in ipairs(Editor.objects) do
+            if (obj.layer or "Default") == layerName then
+                local label = string.format("%03d | %s", i, obj.type)
+                if listY + 25 > topH and listY < screenH - botH then
+                    local isSelected = false
+                    for _, s in ipairs(Editor.selectedObjects) do if s == obj then isSelected = true break end end
+                    drawButton("btn_obj_"..i, label, 10, listY, leftW - 20, 25, isSelected, function()
+                        Editor.selectedObjects = {obj}
+                        Editor.activeTool = "Select"
+                    end)
+                end
+                listY = listY + 30
+            end
+        end
     end
     love.graphics.setScissor()
     
@@ -1077,12 +1090,16 @@ function Editor.drawUI()
                 sy = sy + 30
             end
             
-            drawButton("btn_obj_layer", "Layer: " .. (o.layer or "Default"), inspX, sy, 180, 25, false, function()
+            drawButton("btn_obj_layer", "Layer: " .. (o.layer or "Default"), inspX, sy, 180, 25, false, function(btn)
                 local currentIdx = 1
                 for i, l in ipairs(Editor.layers) do
                     if l == (o.layer or "Default") then currentIdx = i break end
                 end
-                o.layer = Editor.layers[(currentIdx % #Editor.layers) + 1]
+                local dir = (btn == 2) and -1 or 1
+                local nextIdx = currentIdx + dir
+                if nextIdx > #Editor.layers then nextIdx = 1 end
+                if nextIdx < 1 then nextIdx = #Editor.layers end
+                o.layer = Editor.layers[nextIdx]
                 Editor.pushHistory()
             end)
             sy = sy + 30
@@ -1120,10 +1137,15 @@ function Editor.drawUI()
         gy = gy + 30
         
         local gl = Editor.globalToggles["gridLayer"] or "Behind"
-        drawButton("tog_g_gridLayer", "Grid: " .. gl, inspX, gy, rightW - 20, 30, false, function() 
-            if gl == "Behind" then Editor.globalToggles["gridLayer"] = "Front"
-            elseif gl == "Front" then Editor.globalToggles["gridLayer"] = "Hidden"
-            else Editor.globalToggles["gridLayer"] = "Behind" end
+        drawButton("tog_g_gridLayer", "Grid: " .. gl, inspX, gy, rightW - 20, 30, false, function(btn) 
+            local states = {"Behind", "Front", "Hidden"}
+            local dir = (btn == 2) and -1 or 1
+            local currentIdx = 1
+            for i, s in ipairs(states) do if gl == s then currentIdx = i break end end
+            local nextIdx = currentIdx + dir
+            if nextIdx > #states then nextIdx = 1 end
+            if nextIdx < 1 then nextIdx = #states end
+            Editor.globalToggles["gridLayer"] = states[nextIdx]
             Editor.saveSettings()
         end)
         gy = gy + 40
