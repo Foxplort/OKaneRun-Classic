@@ -483,16 +483,18 @@ function Scene.draw()
         fore.graphics.text(message, 0, fore.data.height - 40, 1, {1, 0.3, 0.3, alpha}, fore.data.width, "center")
     end
 
-    local input_hint = "DPad - select\nA - confirm"
-    if fore.input:getMethod() == "keyboard" then
-        input_hint = "WASD / Arrow Keys - select\nSpace - confirm"
-    end
+    if fore.save.get("hints") then
+        local input_hint = "DPad - select\nA - confirm"
+        if fore.input:getMethod() == "keyboard" then
+            input_hint = "WASD / Arrow Keys - select\nSpace - confirm"
+        end
 
-    if not fore.data.phone then
-        fore.graphics.textEx(
-            input_hint,
-            fore.data.width - 170, fore.data.height - 30, 0.75, {255, 255, 255, 70}, 150, "right"
-        )
+        if not fore.data.phone then
+            fore.graphics.textEx(
+                input_hint,
+                fore.data.width - 170, fore.data.height - 30, 0.75, {255, 255, 255, 70}, 150, "right"
+            )
+        end
     end
 end
 

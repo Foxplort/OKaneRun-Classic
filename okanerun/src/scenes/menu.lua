@@ -24,6 +24,7 @@ mobileUiStatus = fore.save.get("mobileUi") -- Same as the one above
 local skipIntroStatus = fore.save.get("skipIntro")
 local noiseStatus = fore.save.get("noise")
 local vignetteStatus = fore.save.get("vignette")
+local hintsStatus = fore.save.get("hints")
 
 local function createMenus()
     local main, credits, exit, settings
@@ -138,10 +139,25 @@ local function createMenus()
     Used to make game look less flat.
     ]]
 
+    local hints = {}
+    hints.txt = "Hints: " .. tostring(hintsStatus)
+    hints.action = function()
+        hintsStatus = not hintsStatus
+        hints.txt = "Hints: " .. tostring(hintsStatus)
+        fore.save.set("hints", hintsStatus)
+        fore.save.write()
+    end
+
+    hints.desc = [[
+    [c=255,255,0,255]Default: true[/c][br]
+    Enables hints in the game.[br]
+    ]]
+
     settings = Menu:new{
         title = "SETTINGS",
         options = {
             vsyncOpt,
+            hints,
             noise,
             vignette,
             skipIntro,

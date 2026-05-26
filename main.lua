@@ -19,6 +19,7 @@ fore = require("fore.core.init").init({
         skipIntro = false,
         noise = true,
         vignette = true,
+        hints = true,
     },
 })
 

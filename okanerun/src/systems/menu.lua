@@ -304,25 +304,6 @@ function Menu:drawContent(focused)
             end
         end
     end
-
-    local input_hint = "DPad - select\nA - confirm\nB - back"
-    if fore.input:getMethod() == "keyboard" then
-        input_hint = "WASD / Arrow Keys - select\nSpace - confirm\nEscape - back"
-    elseif fore.input:getMethod() == "touch" then
-        input_hint = "Swipe - select\nTap - confirm"
-    end
-
-    if fore.data.phone then
-        fore.graphics.textEx(
-            input_hint,
-            20, fore.data.height - 40, 1, {255, 255, 255, 120}
-        )
-    else
-        fore.graphics.textEx(
-            input_hint,
-            20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
-        )
-    end
 end
 
 -- ################### --
@@ -395,6 +376,27 @@ function MenuStack:draw()
 
         m:drawContent(focused)
         if focused then m:drawDescription() end
+    end
+
+    if fore.save.get("hints") then
+        local input_hint = "DPad - select\nA - confirm\nB - back"
+        if fore.input:getMethod() == "keyboard" then
+            input_hint = "WASD / Arrow Keys - select\nSpace - confirm\nEscape - back"
+        elseif fore.input:getMethod() == "touch" then
+            input_hint = "Swipe - select\nTap - confirm"
+        end
+
+        if fore.data.phone then
+            fore.graphics.textEx(
+                input_hint,
+                20, fore.data.height - 40, 1, {255, 255, 255, 120}
+            )
+        else
+            fore.graphics.textEx(
+                input_hint,
+                20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
+            )
+        end
     end
 end
 
