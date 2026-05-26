@@ -5,4 +5,6 @@ return {
     "dotedPath",
     "Rects",
     "Shifted Geometry",
+    "Timeye",
+    "Fading Half",
 }
