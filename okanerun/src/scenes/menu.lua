@@ -208,6 +208,11 @@ local function createMenus()
                     fore.scenes:goTo("selection")
                 end, nil, 0, 0.7)
             end,
+            desc = string.format([[
+            [c=255,255,255,255]Total Runs: %d
+            Personal Best: %d
+            Overall Progress: %d[/c]
+            ]], fore.save.get("total_runs"), fore.save.get("personal_best"), logScore)
         },
         { txt = "Credits", push = function() return credits end },
     }
@@ -242,12 +247,12 @@ function Scene.enter()
     breathShader:send("s_speed", 0.5)
     breathShader:send("s_intensity", 0.004)
 
+    logScore = fore.save.get("deaths")*3 + fore.save.get("coins_deposited") + fore.save.get("effects_obtained")
+
     local root = createMenus()
     stack = Stack.new(root)
 
     GameState.player = require("okanerun.src.data.player").new()
-
-    logScore = fore.save.get("deaths")*3 + fore.save.get("coins_deposited") + fore.save.get("effects_obtained")
 end
 
 function Scene.onComplete()
@@ -334,26 +339,6 @@ function Scene.draw()
         {255,255,255},
         fore.data.width - PANEL_WIDTH,
         "center"
-    )
-
-    fore.graphics.text(
-        "High Score: " .. fore.save.get("personal_best"),
-        PANEL_WIDTH + 10,
-        fore.data.height - 35,
-        1,
-        {255,255,255},
-        fore.data.width - PANEL_WIDTH,
-        "left"
-    )
-
-    fore.graphics.text(
-        "Overall Progress: " .. logScore,
-        PANEL_WIDTH + 10,
-        fore.data.height - 20,
-        1,
-        {255,255,255},
-        fore.data.width - PANEL_WIDTH,
-        "left"
     )
 
     fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {5, 35, 35})
