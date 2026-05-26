@@ -13,7 +13,7 @@ local PANEL_TOP = 60
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
 
-local function drawZigZagPanel(x, y, w, h, scroll, c)
+local function drawZigZagPanel(x, y, w, h, scroll, c, o)
     local spike = 12
     local step  = 24
     y = y - step*1.5
@@ -37,6 +37,7 @@ local function drawZigZagPanel(x, y, w, h, scroll, c)
     pts[#pts+1] = y + h
 
     fore.graphics.polygon(pts, c)
+    if o then fore.graphics.polygon(pts, {255,255,255,40}, false) end
 end
 
 function Menu:findFirstSelectable()
@@ -71,6 +72,7 @@ function Menu:new(def)
     m.dialogue  = def.dialogue
     m.style     = def.style or "plain"
     m.align     = def.align or "left"
+    m.outline   = def.outline or false
 
     m.underline = {}
 
@@ -250,7 +252,8 @@ function Menu:drawContent(focused)
             PANEL_W,
             fore.data.height,
             self.spikeScroll,
-            {0,0,0,a}
+            {0,0,0,a},
+            self.outline
         )
     end
 

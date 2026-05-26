@@ -257,6 +257,7 @@ function Scene.enter()
     menu = MenuSys.Menu:new{
         title = "PAUSED",
         style = "spikes",  -- optional: "plain" or "spikes"
+        outline = true,
         options = {
             {txt="Resume", action=function() pause = false; fore.mobileControls:show() end},
             {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end, nil, 0, 0.6) end},
@@ -932,6 +933,14 @@ function Scene.draw()
         love.graphics.setShader()
         --fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
         menuStack:draw()
+
+        local center = (fore.data.width - 220)/2 + 220 -- have to be recalculated every frame since window size can be changed
+        local polygonShape = {center - 100, 25, center + 100, 25, center + 120, 50, center + 100, 75, center - 100, 75, center - 120, 50}
+        fore.graphics.polygon(polygonShape, {0,0,0,200}, true)
+        fore.graphics.polygon(polygonShape, {255,255,255,40}, false)
+        fore.graphics.textEx("playing", 220, 30, 1, {255,255,255}, (fore.data.width - 220), "center")
+        fore.graphics.textEx(GameState.area.levelName, 220, 40, 2, {255,255,255}, (fore.data.width - 220), "center")
+        fore.graphics.textEx("by " .. GameState.area.levelAuthor, 220, 60, 1, {255,255,255}, (fore.data.width - 220), "center")
     elseif deathPause then
         fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
     end
