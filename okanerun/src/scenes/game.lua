@@ -202,7 +202,7 @@ function Scene.enter()
         render = {
             player = require("okanerun.src.render.player"),
             world = require("okanerun.src.render.world"),
-            ui = require("okanerun.src.render.ui" .. (fore.data.phone and "Phone" or "")),
+            ui = require("okanerun.src.render.ui" .. ((fore.data.phone or mobileUiStatus) and "Phone" or "")),
         },
         systems = {
             tail = require("okanerun.src.systems.playerTail"),

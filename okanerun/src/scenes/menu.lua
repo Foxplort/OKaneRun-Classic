@@ -18,6 +18,10 @@ local breathShader = love.graphics.newShader("okanerun/assets/shaders/menu_breat
 
 local logScore = 0
 
+local vsyncStatus = true and (love.window.getVSync() == 1 or love.window.getVSync() == -1) or false
+mobileContrastStatus = fore.save.get("mobileContrast") -- I am too lazy to make it NOT a global variable
+mobileUiStatus = fore.save.get("mobileUi") -- Same as the one above
+
 local function createMenus()
     local main, credits, exit, settings
 
@@ -30,10 +34,63 @@ local function createMenus()
         devOpt.txt = "Dev Mode: " .. tostring(not current)
     end
 
+    devOpt.desc = [[
+    Allows to see object HitBoxes (F3),
+    turn on Level Editor (F8),
+    and effect debug menu (F4).[br]
+    Does not affect score.[br]
+    ]]
+
+    local vsyncOpt = {}
+    vsyncOpt.txt = "VSync: " .. tostring(vsyncStatus)
+    vsyncOpt.action = function()
+        vsyncStatus = not vsyncStatus
+        love.window.setVSync(vsyncStatus)
+        vsyncOpt.txt = "VSync: " .. tostring(vsyncStatus)
+        fore.save.set("vsync", vsyncStatus)
+        fore.save.write()
+    end
+
+    vsyncOpt.desc = [[
+    Limits game's FPS to your monitor's refresh rate.[br]
+    Turn it off to unlock higher FPS.
+    Not recommended as it uses more power and GPU.[br]
+    ]]
+
+    local mobileContrast = {}
+    mobileContrast.txt = "Mobile Contrast: " .. tostring(mobileContrastStatus)
+    mobileContrast.action = function()
+        mobileContrastStatus = not mobileContrastStatus
+        mobileContrast.txt = "Mobile Contrast: " .. tostring(mobileContrastStatus)
+        fore.save.set("mobileContrast", mobileContrastStatus)
+        fore.save.write()
+    end
+
+    mobileContrast.desc = [[
+    Increases the contrast of the game levels in a way, similar to how it looks on the Mobile version.[br]
+    ]]
+
+    local mobileUi = {}
+    mobileUi.txt = "Mobile UI: " .. tostring(mobileUiStatus)
+    mobileUi.action = function()
+        mobileUiStatus = not mobileUiStatus
+        mobileUi.txt = "Mobile UI: " .. tostring(mobileUiStatus)
+        fore.save.set("mobileUi", mobileUiStatus)
+        fore.save.write()
+    end
+
+    mobileUi.desc = [[
+    Changes the in-game UI in a way, similar to how it looks on the Mobile version.[br]
+    ]]
+
     settings = Menu:new{
         title = "SETTINGS",
         options = {
+            vsyncOpt,
+            mobileContrast,
+            mobileUi,
             devOpt,
+            { txt = "---", isLabel = true },
             { txt = "Back", pop = true }
         }
     }

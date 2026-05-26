@@ -18,8 +18,11 @@ return {
   end,
 
   render = function(self, isEditor)
+      local c = (mobileContrastStatus or fore.data.phone) and {25, 30, 45} or {15, 20, 28}
+      local ca = {c[1], c[2], c[3], 30}
+      
       local drawMain = function()
-          fore.graphics.rect(self.x, self.y, self.w, self.h, {15, 20, 28})
+          fore.graphics.rect(self.x, self.y, self.w, self.h, c)
           for gx = self.x, self.x + self.w-1, 40 do
               for gy = self.y, self.y + self.h-1, 40 do
                   fore.graphics.rect(gx, gy, 1, 1, {150, 200, 255, 20})
@@ -28,10 +31,10 @@ return {
       end
 
       local drawDec = function()
-          fore.graphics.rect(self.x, self.y+20, self.w, self.h+20, {15, 20, 28, 30})
-          fore.graphics.rect(self.x, self.y+15, self.w, self.h+15, {15, 20, 28, 30})
-          fore.graphics.rect(self.x, self.y+10, self.w, self.h+10, {15, 20, 28, 30})
-          fore.graphics.rect(self.x, self.y+5,  self.w, self.h+5,  {15, 20, 28, 30})
+          fore.graphics.rect(self.x, self.y+20, self.w, self.h+20, ca)
+          fore.graphics.rect(self.x, self.y+15, self.w, self.h+15, ca)
+          fore.graphics.rect(self.x, self.y+10, self.w, self.h+10, ca)
+          fore.graphics.rect(self.x, self.y+5,  self.w, self.h+5,  ca)
       end
 
       if isEditor then

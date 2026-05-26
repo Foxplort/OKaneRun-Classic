@@ -12,6 +12,9 @@ fore = require("fore.core.init").init({
         effects_obtained = 0,
         coins_deposited = 0,
         personal_best = 0,
+        vsync = true,
+        mobileContrast = false,
+        mobileUi = false,
     },
 })
 
@@ -149,3 +152,9 @@ end
 require("okanerun.src.systems.gameEditor").init(fore)
 
 fore:start()
+
+if fore.save.get("vsync") then
+    love.window.setVSync(true)
+else
+    love.window.setVSync(false)
+end
