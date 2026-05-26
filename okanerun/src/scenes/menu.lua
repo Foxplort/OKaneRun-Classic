@@ -21,6 +21,9 @@ local logScore = 0
 local vsyncStatus = true and (love.window.getVSync() == 1 or love.window.getVSync() == -1) or false
 mobileContrastStatus = fore.save.get("mobileContrast") -- I am too lazy to make it NOT a global variable
 mobileUiStatus = fore.save.get("mobileUi") -- Same as the one above
+local skipIntroStatus = fore.save.get("skipIntro")
+local noiseStatus = fore.save.get("noise")
+local vignetteStatus = fore.save.get("vignette")
 
 local function createMenus()
     local main, credits, exit, settings
@@ -35,6 +38,7 @@ local function createMenus()
     end
 
     devOpt.desc = [[
+    [c=255,255,0,255]Default: false[/c][br]
     Allows to see object HitBoxes (F3),
     turn on Level Editor (F8),
     and effect debug menu (F4).[br]
@@ -52,6 +56,7 @@ local function createMenus()
     end
 
     vsyncOpt.desc = [[
+    [c=255,255,0,255]Default: true[/c][br]
     Limits game's FPS to your monitor's refresh rate.[br]
     Turn it off to unlock higher FPS.
     Not recommended as it uses more power and GPU.[br]
@@ -67,7 +72,8 @@ local function createMenus()
     end
 
     mobileContrast.desc = [[
-    Increases the contrast of the game levels in a way, similar to how it looks on the Mobile version.[br]
+    [c=255,255,0,255]Default: false[/c][br]
+    Increases the contrast of the game levels in a way, similar to how it looks on the Mobile version.
     ]]
 
     local mobileUi = {}
@@ -80,13 +86,65 @@ local function createMenus()
     end
 
     mobileUi.desc = [[
-    Changes the in-game UI in a way, similar to how it looks on the Mobile version.[br]
+    [c=255,255,0,255]Default: false[/c][br]
+    Changes the in-game UI in a way, similar to how it looks on the Mobile version.
+    ]]
+
+    local skipIntro = {}
+    skipIntro.txt = "Skip Intro: " .. tostring(skipIntroStatus)
+    skipIntro.action = function()
+        skipIntroStatus = not skipIntroStatus
+        skipIntro.txt = "Skip Intro: " .. tostring(skipIntroStatus)
+        fore.save.set("skipIntro", skipIntroStatus)
+        fore.save.write()
+    end
+
+    skipIntro.desc = [[
+    [c=255,255,0,255]Default: false[/c][br]
+    Skips the intro screen on startup.[br]
+    [c=255,255,255,7]Do you hate me that much? :(
+    Or just the warning?
+    ~foxplort[/c] 
+    ]]
+
+    local noise = {}
+    noise.txt = "Noise: " .. tostring(noiseStatus)
+    noise.action = function()
+        noiseStatus = not noiseStatus
+        noise.txt = "Noise: " .. tostring(noiseStatus)
+        fore.save.set("noise", noiseStatus)
+        fore.save.write()
+    end
+
+    noise.desc = [[
+    [c=255,255,0,255]Default: true[/c][br]
+    Enables noise effect.[br]
+    Used to make game less flat.
+    Disabling it may improve FPS and game recording quality.
+    ]]
+
+    local vignette = {}
+    vignette.txt = "Vignette: " .. tostring(vignetteStatus)
+    vignette.action = function()
+        vignetteStatus = not vignetteStatus
+        vignette.txt = "Vignette: " .. tostring(vignetteStatus)
+        fore.save.set("vignette", vignetteStatus)
+        fore.save.write()
+    end
+
+    vignette.desc = [[
+    [c=255,255,0,255]Default: true[/c][br]
+    Enables vignette effect.[br]
+    Used to make game look less flat.
     ]]
 
     settings = Menu:new{
         title = "SETTINGS",
         options = {
             vsyncOpt,
+            noise,
+            vignette,
+            skipIntro,
             mobileContrast,
             mobileUi,
             devOpt,

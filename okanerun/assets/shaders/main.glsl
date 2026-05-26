@@ -3,6 +3,8 @@ precision mediump float;
 #endif
 
 extern number time;
+extern bool noise = true;
+extern bool vignette = true;
 
 float hash(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -27,15 +29,19 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) 
     vec4 texcolor = vec4(r, g, b, 1.0);
 
     // NOISE
-    float noise = get_noise(screen_coords / love_ScreenSize.xy);
-    float luminance = dot(texcolor.rgb, vec3(0.299, 0.587, 0.114));
-    float noiseStrength = 0.02 * (1.0 - luminance * 0.5);
-    texcolor.rgb += (noise - 0.5) * noiseStrength;
+    if (noise) {
+        float noise = get_noise(screen_coords / love_ScreenSize.xy);
+        float luminance = dot(texcolor.rgb, vec3(0.299, 0.587, 0.114));
+        float noiseStrength = 0.02 * (1.0 - luminance * 0.5);
+        texcolor.rgb += (noise - 0.5) * noiseStrength;
+    }
 
     // VIGNETTE
-    float pulse = sin(time * 0.5) * 0.03;
-    float vignette = smoothstep(0.9 + pulse, 0.4 + pulse, dist);
-    texcolor.rgb *= vignette;
+    if (vignette) {
+        float pulse = sin(time * 0.5) * 0.03;
+        float vignette = smoothstep(0.9 + pulse, 0.4 + pulse, dist);
+        texcolor.rgb *= vignette;
+    }
     
     // CONTRAST
     texcolor.rgb *= 1.1;

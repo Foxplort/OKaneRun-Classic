@@ -12,9 +12,13 @@ fore = require("fore.core.init").init({
         effects_obtained = 0,
         coins_deposited = 0,
         personal_best = 0,
+        -- Settings
         vsync = true,
         mobileContrast = false,
         mobileUi = false,
+        skipIntro = false,
+        noise = true,
+        vignette = true,
     },
 })
 
@@ -125,6 +129,8 @@ end)
 fore:introduce("preCanvasDraw", function()
     love.graphics.setShader(vignetteShader)
     vignetteShader:send("time", love.timer.getTime())
+    vignetteShader:send("noise", fore.save.get("noise") and not fore.data.phone)
+    vignetteShader:send("vignette", fore.save.get("vignette"))
 end)
 
 fore:introduce("rawPostDraw", function() love.graphics.setShader() end)

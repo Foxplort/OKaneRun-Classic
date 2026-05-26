@@ -34,6 +34,11 @@ end
 -- ###################### --
 
 function Scene.enter()
+    if fore.save.get("skipIntro") then
+        fore.scenes:goTo("menu")
+        return
+    end
+
     fore.audio.load("warning", "okanerun/assets/sounds/ui/warning.wav", false, "sfx")
     fore.audio.load("intro", "okanerun/assets/sounds/ui/intro.wav", false, "sfx")
 
