@@ -910,7 +910,7 @@ function Scene.draw()
         end
 
         for _, c in ipairs(GameState.area.coins) do
-            local ch = {x=c.x-8, y=c.y-6, w=16, h=12}
+            local ch = {x=c.x-13, y=c.y-14, w=26, h=24}
             fore.graphics.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 

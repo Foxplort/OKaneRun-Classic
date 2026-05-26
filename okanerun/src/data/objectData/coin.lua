@@ -11,7 +11,7 @@ return {
   },
 
   hitbox = function(self)
-      return {x = self.x - 8, y = self.y - 6, w = 16, h = 12}
+      return {x = self.x - 13, y = self.y - 14, w = 26, h = 24}
   end,
 
   render = function(self, isEditor)
