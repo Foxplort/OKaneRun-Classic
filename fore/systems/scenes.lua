@@ -112,12 +112,14 @@ function SceneManager:update(dt)
     if self.current and self.current.update and (not self.fore.transition.is_frozen or self.frameOne) then
         -- if framerate is too low - switch to fixed timestep system
         if self.minDT and dt > self.minDT then
+            self.fore.data.isCatchingUp = true
             for i=1, math.floor(dt/self.minDT) do
                 self.current.update(self.minDT)
                 dt = dt - self.minDT
             end
         end
         self.current.update(dt)
+        if self.fore.data.isCatchingUp then self.fore.data.isCatchingUp = false end
         if self.frameOne then self.frameOne = false end
     end
 end

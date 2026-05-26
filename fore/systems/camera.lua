@@ -178,6 +178,8 @@ function Camera.setCategoryParallax(name, factor)
 end
 
 function Camera.update(targetX_, targetY_, dt, velX, velY)
+    if foreRef.data.isCatchingUp then return end -- Prevent camera jumps on lag spikes.
+
     -- Recalculate half dimensions with world zoom
     halfW = foreRef.data.width / 2
     halfH = foreRef.data.height / 2
