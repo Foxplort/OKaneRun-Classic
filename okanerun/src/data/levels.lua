@@ -1,8 +1,8 @@
 return {
-    "coolLevel77",
-    "cheezeLand",
-    "sliced",
-    "dotedPath",
+    "Level 77",
+    "Cheeze Land",
+    "Sliced",
+    "Dotted Path",
     "Rects",
     "Shifted Geometry",
     "Timeye",
