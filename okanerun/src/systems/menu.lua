@@ -159,6 +159,36 @@ function Menu:update(dt, focused)
     local targetComment = hasDesc and 1 or 0
     self.commentT = fore.math.lerp(self.commentT, targetComment, math.min(dt * 8, 1))
     if hasDesc then self.comment = opt.desc end
+
+    if focused then
+        if fore.input:down("left") then
+            self.holdLeft = (self.holdLeft or 0) + dt
+            if self.holdLeft > 0.4 then
+                self.repeatLeft = (self.repeatLeft or 0) + dt
+                if self.repeatLeft > 0.05 then
+                    self.repeatLeft = 0
+                    self:interact(-1, nil)
+                end
+            end
+        else
+            self.holdLeft = 0
+            self.repeatLeft = 0
+        end
+
+        if fore.input:down("right") then
+            self.holdRight = (self.holdRight or 0) + dt
+            if self.holdRight > 0.4 then
+                self.repeatRight = (self.repeatRight or 0) + dt
+                if self.repeatRight > 0.05 then
+                    self.repeatRight = 0
+                    self:interact(1, nil)
+                end
+            end
+        else
+            self.holdRight = 0
+            self.repeatRight = 0
+        end
+    end
 end
 
 

@@ -126,7 +126,7 @@ local function createMenus()
     noise.desc = [[
     [c=255,255,0,255]Default: true[/c][br]
     Enables noise effect.[br]
-    Used to make game less flat.
+    Used to make game look less flat.
     Disabling it may improve FPS and game recording quality.
     ]]
 
@@ -179,6 +179,68 @@ local function createMenus()
     Adjusts the overall game volume.
     ]]
 
+    local fullscreenOpt = {}
+    fullscreenOpt.txt = "Fullscreen"
+    fullscreenOpt.type = "checkbox"
+    fullscreenOpt.state = function() return fore.data.fullscreen end
+    fullscreenOpt.action = function()
+        fore.data.fullscreen = not fore.data.fullscreen
+        love.window.setFullscreen(fore.data.fullscreen, "desktop")
+        fore.graphics.updateFonts()
+        fore.save.set("fullscreen", fore.data.fullscreen)
+        fore.save.write()
+    end
+
+    fullscreenOpt.desc = [[
+    [c=255,255,0,255]Default: false[/c][br]
+    Enables fullscreen mode.
+    Does the same thing as pressing F11.
+    ]]
+
+    local resolutions = {
+        {960, 540},
+        {1280, 720},
+        {1366, 768},
+        {1600, 900},
+        {1920, 1080},
+        {2560, 1440},
+        {3840, 2160}
+    }
+    
+    local function getResIndex()
+        local w, h = love.graphics.getDimensions()
+        for i, res in ipairs(resolutions) do
+            if res[1] == w and res[2] == h then
+                return i
+            end
+        end
+        return 2 -- Default to 1280x720
+    end
+    
+    local resolutionOpt = {}
+    resolutionOpt.txt = "Resolution"
+    resolutionOpt.type = "scroll"
+    resolutionOpt.getValue = function()
+        if fore.data.fullscreen then return "Desktop" end
+        local idx = getResIndex()
+        return resolutions[idx][1] .. "x" .. resolutions[idx][2]
+    end
+    resolutionOpt.action = function(dir)
+        if fore.data.fullscreen then return end
+        local idx = getResIndex()
+        idx = idx + dir
+        if idx < 1 then idx = #resolutions end
+        if idx > #resolutions then idx = 1 end
+        local w, h = resolutions[idx][1], resolutions[idx][2]
+        love.window.updateMode(w, h)
+        fore.graphics.updateFonts()
+    end
+    resolutionOpt.desc = [[
+    [c=255,255,0,255]Default: 1280x720[/c][br]
+    Changes the resolution of the game.[br]
+    [c=255,0,0,255]Warning: [/c]Can misbehave, preferably just stretch the game window.
+    ]]
+
     local settingsOptions = {
         { txt = "- GAME -", isLabel = true },
         masterVol,
@@ -190,6 +252,8 @@ local function createMenus()
         table.insert(settingsOptions, vsyncOpt)
     else
         table.insert(settingsOptions, { txt = "- VIDEO -", isLabel = true })
+        table.insert(settingsOptions, fullscreenOpt)
+        table.insert(settingsOptions, resolutionOpt)
         table.insert(settingsOptions, vsyncOpt)
         table.insert(settingsOptions, noise)
         table.insert(settingsOptions, vignette)
