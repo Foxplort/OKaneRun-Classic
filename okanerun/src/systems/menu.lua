@@ -188,7 +188,25 @@ function Menu:activate(stack)
     if o.link then love.system.openURL(o.link) end
     if o.push then stack:push(o.push()) return end
     if o.pop then stack:pop() return end
-    if o.action then o.action() end
+    if o.type == "checkbox" and o.action then
+        o.action()
+    elseif o.type == "scroll" then
+        -- scroll is operated with left/right
+    elseif o.action then 
+        o.action() 
+    end
+end
+
+function Menu:interact(dir, stack)
+    local o = self.options[self.selection]
+    if not o or o.disabled then return end
+    if o.type == "scroll" and o.action then
+        fore.audio.play("select", {
+            volume = 0.08,
+            pitch = 1.0 + math.random(-10, 10)/100
+        })
+        o.action(dir)
+    end
 end
 
 function Menu:click(tx, ty, stack)
@@ -200,14 +218,40 @@ function Menu:click(tx, ty, stack)
     for i, opt in ipairs(self.options) do
         if not opt.isLabel and not opt.disabled then
             local yy = y + 60 + (i-1)*30
-            local textWidth = fore.graphics.getTextWidth(opt.txt, 1)
-            local textX = getTextX(self.align, panelX, panelW, textWidth)
+            local fullText = opt.txt
+            if opt.type == "scroll" and opt.getValue then
+                fullText = opt.txt .. " < " .. opt.getValue() .. " >"
+            end
+            
+            local textWidth = fore.graphics.getTextWidth(fullText, 1)
+            local textHeight = fore.graphics.getTextHeight(1)
+            local iconSize = textHeight * 1.2
+            
+            local logicalWidth = textWidth
+            if opt.type == "checkbox" then
+                logicalWidth = logicalWidth + iconSize + 8
+            end
+            if opt.icon then
+                logicalWidth = logicalWidth + iconSize + 8
+            end
+            
+            local textX = getTextX(self.align, panelX, panelW, logicalWidth)
             
             -- Hitbox: expand a bit for easier tapping
-            if tx >= textX - 20 and tx <= textX + textWidth + 20 and
+            if tx >= textX - 20 and tx <= textX + logicalWidth + 20 and
                ty >= yy and ty <= yy + 25 then
                 if self.selection == i then
-                    self:activate(stack)
+                    if opt.type == "scroll" then
+                        local relativeX = tx - textX
+                        if opt.icon then relativeX = relativeX - (iconSize + 8) end
+                        if relativeX < textWidth / 2 then
+                            self:interact(-1, stack)
+                        else
+                            self:interact(1, stack)
+                        end
+                    else
+                        self:activate(stack)
+                    end
                 else
                     self.selection = i
                     fore.audio.play("select", { volume = 0.1 })
@@ -284,23 +328,49 @@ function Menu:drawContent(focused)
             elseif opt.disabled then c = {0.2,0.2,0.2,optionAlpha} end
 
             -- Calculate text width
-            local textWidth = fore.graphics.getTextWidth(opt.txt, 1) * fontSize
-            local textX = getTextX(self.align, panelX, panelW, textWidth)
+            local fullText = opt.txt
+            if opt.type == "scroll" and opt.getValue then
+                fullText = opt.txt .. " < " .. opt.getValue() .. " >"
+            end
+            local textWidth = fore.graphics.getTextWidth(fullText, 1) * fontSize
+            local textHeight = fore.graphics.getTextHeight(fontSize)
+            local iconSize = textHeight * 1.2
+            
+            local logicalWidth = textWidth
+            if opt.type == "checkbox" then
+                logicalWidth = logicalWidth + iconSize + 8
+            end
+            if opt.icon then
+                logicalWidth = logicalWidth + iconSize + 8
+            end
+            
+            local startX = getTextX(self.align, panelX, panelW, logicalWidth)
+            local currentX = startX
 
-            fore.graphics.text(opt.txt, textX, yy, fontSize, c)
+            if opt.icon then
+                fore.graphics.imageSafe(opt.icon, opt.icon, currentX, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
+                currentX = currentX + iconSize + 8
+            end
+
+            fore.graphics.text(fullText, currentX, yy, fontSize, c)
+            
+            if opt.type == "checkbox" and opt.state then
+                local cbIcon = opt.state() and "checkbox_true" or "checkbox_false"
+                fore.graphics.imageSafe(cbIcon, cbIcon, currentX + textWidth + 8, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
+            end
 
             -- Underline positioned based on alignment
             local u = self.underline[i] or 0
             if u > 0.01 then
                 local underlineX
                 if self.align == "center" then
-                    underlineX = panelX + (panelW - textWidth * u) / 2
+                    underlineX = panelX + (panelW - logicalWidth * u) / 2
                 elseif self.align == "right" then
-                    underlineX = panelX + panelW - textWidth * u
+                    underlineX = panelX + panelW - logicalWidth * u
                 else -- left
-                    underlineX = panelX + 20
+                    underlineX = startX
                 end
-                fore.graphics.rect(underlineX, yy+14, textWidth * u, 2, {1,1,1,optionAlpha*u})
+                fore.graphics.rect(underlineX, yy+14, logicalWidth * u, 2, {1,1,1,optionAlpha*u})
             end
         end
     end
@@ -404,6 +474,8 @@ function MenuStack:input()
     local m = self.stack[#self.stack]
     if fore.input:pressed("up") then m:move(-1) end
     if fore.input:pressed("down") then m:move(1) end
+    if fore.input:pressed("left") then m:interact(-1, self) end
+    if fore.input:pressed("right") then m:interact(1, self) end
     if fore.input:pressed("cancel") then self:pop() end
     if fore.input:pressed("accept") then m:activate(self) end
 

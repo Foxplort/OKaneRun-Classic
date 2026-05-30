@@ -2,7 +2,7 @@
 return {
     name = 'OkaneRun-Classic',
     developer = 'foxplort',
-    version = '1.2.0-beta.3',
+    version = '1.2.0',
     love = '11.5',
     ignore = {'.gitignore', '.git'},
     icon = 'okanerun/assets/images/system/fm.png',

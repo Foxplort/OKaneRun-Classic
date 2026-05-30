@@ -30,12 +30,13 @@ local function createMenus()
     local main, credits, exit, settings
 
     local devOpt = {}
-    devOpt.txt = "Dev Mode: " .. tostring(fore.save.get_engine("dev_mode") == true)
+    devOpt.txt = "Dev Mode"
+    devOpt.type = "checkbox"
+    devOpt.state = function() return fore.save.get_engine("dev_mode") == true end
     devOpt.action = function()
         local current = fore.save.get_engine("dev_mode") == true
         fore.save.set_engine("dev_mode", not current)
         fore.save.write()
-        devOpt.txt = "Dev Mode: " .. tostring(not current)
     end
 
     devOpt.desc = [[
@@ -47,11 +48,12 @@ local function createMenus()
     ]]
 
     local vsyncOpt = {}
-    vsyncOpt.txt = "VSync: " .. tostring(vsyncStatus)
+    vsyncOpt.txt = "VSync"
+    vsyncOpt.type = "checkbox"
+    vsyncOpt.state = function() return vsyncStatus end
     vsyncOpt.action = function()
         vsyncStatus = not vsyncStatus
         love.window.setVSync(vsyncStatus)
-        vsyncOpt.txt = "VSync: " .. tostring(vsyncStatus)
         fore.save.set("vsync", vsyncStatus)
         fore.save.write()
     end
@@ -64,10 +66,11 @@ local function createMenus()
     ]]
 
     local mobileContrast = {}
-    mobileContrast.txt = "Mobile Contrast: " .. tostring(mobileContrastStatus)
+    mobileContrast.txt = "Mobile Contrast"
+    mobileContrast.type = "checkbox"
+    mobileContrast.state = function() return mobileContrastStatus end
     mobileContrast.action = function()
         mobileContrastStatus = not mobileContrastStatus
-        mobileContrast.txt = "Mobile Contrast: " .. tostring(mobileContrastStatus)
         fore.save.set("mobileContrast", mobileContrastStatus)
         fore.save.write()
     end
@@ -78,10 +81,11 @@ local function createMenus()
     ]]
 
     local mobileUi = {}
-    mobileUi.txt = "Mobile UI: " .. tostring(mobileUiStatus)
+    mobileUi.txt = "Mobile UI"
+    mobileUi.type = "checkbox"
+    mobileUi.state = function() return mobileUiStatus end
     mobileUi.action = function()
         mobileUiStatus = not mobileUiStatus
-        mobileUi.txt = "Mobile UI: " .. tostring(mobileUiStatus)
         fore.save.set("mobileUi", mobileUiStatus)
         fore.save.write()
     end
@@ -92,10 +96,11 @@ local function createMenus()
     ]]
 
     local skipIntro = {}
-    skipIntro.txt = "Skip Intro: " .. tostring(skipIntroStatus)
+    skipIntro.txt = "Skip Intro"
+    skipIntro.type = "checkbox"
+    skipIntro.state = function() return skipIntroStatus end
     skipIntro.action = function()
         skipIntroStatus = not skipIntroStatus
-        skipIntro.txt = "Skip Intro: " .. tostring(skipIntroStatus)
         fore.save.set("skipIntro", skipIntroStatus)
         fore.save.write()
     end
@@ -109,10 +114,11 @@ local function createMenus()
     ]]
 
     local noise = {}
-    noise.txt = "Noise: " .. tostring(noiseStatus)
+    noise.txt = "Noise"
+    noise.type = "checkbox"
+    noise.state = function() return noiseStatus end
     noise.action = function()
         noiseStatus = not noiseStatus
-        noise.txt = "Noise: " .. tostring(noiseStatus)
         fore.save.set("noise", noiseStatus)
         fore.save.write()
     end
@@ -125,10 +131,11 @@ local function createMenus()
     ]]
 
     local vignette = {}
-    vignette.txt = "Vignette: " .. tostring(vignetteStatus)
+    vignette.txt = "Vignette"
+    vignette.type = "checkbox"
+    vignette.state = function() return vignetteStatus end
     vignette.action = function()
         vignetteStatus = not vignetteStatus
-        vignette.txt = "Vignette: " .. tostring(vignetteStatus)
         fore.save.set("vignette", vignetteStatus)
         fore.save.write()
     end
@@ -140,10 +147,11 @@ local function createMenus()
     ]]
 
     local hints = {}
-    hints.txt = "Hints: " .. tostring(hintsStatus)
+    hints.txt = "Hints"
+    hints.type = "checkbox"
+    hints.state = function() return hintsStatus end
     hints.action = function()
         hintsStatus = not hintsStatus
-        hints.txt = "Hints: " .. tostring(hintsStatus)
         fore.save.set("hints", hintsStatus)
         fore.save.write()
     end
@@ -153,20 +161,51 @@ local function createMenus()
     Enables hints in the game.[br]
     ]]
 
+    local masterVol = {}
+    masterVol.txt = "Master Vol"
+    masterVol.type = "scroll"
+    masterVol.getValue = function()
+        return tostring(fore.save.get_engine("volume") or 100) .. "%"
+    end
+    masterVol.action = function(dir)
+        local current = fore.save.get_engine("volume") or 100
+        local newVol = math.max(0, math.min(300, current + (dir * 10)))
+        fore.audio.setMasterVolume(newVol)
+        fore.save.set_engine("volume", newVol)
+        fore.save.write()
+    end
+    masterVol.desc = [[
+    [c=255,255,0,255]Default: 100%[/c][br]
+    Adjusts the overall game volume.
+    ]]
+
+    local settingsOptions = {
+        { txt = "- GAME -", isLabel = true },
+        masterVol,
+        hints,
+        skipIntro,
+    }
+
+    if fore.data.phone then
+        table.insert(settingsOptions, vsyncOpt)
+    else
+        table.insert(settingsOptions, { txt = "- VIDEO -", isLabel = true })
+        table.insert(settingsOptions, vsyncOpt)
+        table.insert(settingsOptions, noise)
+        table.insert(settingsOptions, vignette)
+        table.insert(settingsOptions, { txt = "- MISC -", isLabel = true })
+        table.insert(settingsOptions, mobileContrast)
+        table.insert(settingsOptions, mobileUi)
+        table.insert(settingsOptions, { txt = "- ADVANCED -", isLabel = true })
+        table.insert(settingsOptions, devOpt)
+    end
+    
+    table.insert(settingsOptions, { txt = "---", isLabel = true })
+    table.insert(settingsOptions, { txt = "Back", pop = true })
+
     settings = Menu:new{
         title = "SETTINGS",
-        options = {
-            vsyncOpt,
-            hints,
-            noise,
-            vignette,
-            skipIntro,
-            mobileContrast,
-            mobileUi,
-            devOpt,
-            { txt = "---", isLabel = true },
-            { txt = "Back", pop = true }
-        }
+        options = settingsOptions
     }
 
     credits = Menu:new{
@@ -175,6 +214,7 @@ local function createMenus()
             { txt = "--- CREW ---", isLabel = true },
             {
                 txt = "Foxplort",
+                icon = "icon_foxplort",
                 link = "https://www.foxplort.com",
                 desc = [[
                 Code, Art, Music, Sounds.[br]
@@ -185,6 +225,7 @@ local function createMenus()
             { txt = "--- TECH ---", isLabel = true },
             {
                 txt = "FÖRE Engine",
+                icon = "icon_fore",
                 link = "https://github.com/Foxplort/OkaneRun-Classic",
                 desc = [[
                 Custom game engine for OkaneRun Classic.
@@ -193,6 +234,7 @@ local function createMenus()
             },
             {
                 txt = "LÖVE Framework",
+                icon = "icon_love",
                 link = "https://love2d.org/",
                 desc = [[
                 Thanks to all LÖVE developers & contributors
@@ -216,6 +258,7 @@ local function createMenus()
     local mainOptions = {
         {
             txt = "Play",
+            icon = "icon_play",
             action = function()
                 fore.save.set("total_runs", fore.save.get("total_runs") + 1)
                 fore.save.write()
@@ -230,14 +273,10 @@ local function createMenus()
             Overall Progress: %d[/c]
             ]], fore.save.get("total_runs"), fore.save.get("personal_best"), logScore)
         },
-        { txt = "Credits", push = function() return credits end },
+        { txt = "Settings", icon = "icon_settings", push = function() return settings end },
+        { txt = "Credits", icon = "icon_credits", push = function() return credits end },
+        { txt = "Exit", icon = "icon_exit", push = function() return exit end }
     }
-
-    if not fore.data.phone then
-        table.insert(mainOptions, { txt = "Settings", push = function() return settings end })
-    end
-
-    table.insert(mainOptions, { txt = "Exit", push = function() return exit end })
 
     main = Menu:new{
         title = "MAIN MENU",
@@ -251,6 +290,16 @@ function Scene.enter()
     fore.graphics.scheduleLoad("logo", "okanerun/assets/images/ui/OkaneRun_classic.png", "linear")
     fore.graphics.scheduleLoad("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
     fore.graphics.scheduleLoad("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
+    fore.graphics.scheduleLoad("checkbox_true", "okanerun/assets/images/ui/checkbox_true.png", "linear")
+    fore.graphics.scheduleLoad("checkbox_false", "okanerun/assets/images/ui/checkbox_false.png", "linear")
+    fore.graphics.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
+    fore.graphics.scheduleLoad("icon_settings", "okanerun/assets/images/ui/menu/settings.png", "linear")
+    fore.graphics.scheduleLoad("icon_credits", "okanerun/assets/images/ui/menu/credits.png", "linear")
+    fore.graphics.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
+    fore.graphics.scheduleLoad("icon_foxplort", "okanerun/assets/images/ui/menu/foxplort.png", "linear")
+    fore.graphics.scheduleLoad("icon_love", "okanerun/assets/images/ui/menu/love.png", "linear")
+    fore.graphics.scheduleLoad("icon_fore", "okanerun/assets/images/ui/menu/fore.png", "linear")
+
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
 
@@ -281,6 +330,15 @@ function Scene.exit()
     fore.graphics.scheduleUnload("logo")
     fore.graphics.scheduleUnload("menu_portrait")
     fore.graphics.scheduleUnload("menu_fog")
+    fore.graphics.scheduleUnload("checkbox_true")
+    fore.graphics.scheduleUnload("checkbox_false")
+    fore.graphics.scheduleUnload("icon_play")
+    fore.graphics.scheduleUnload("icon_settings")
+    fore.graphics.scheduleUnload("icon_credits")
+    fore.graphics.scheduleUnload("icon_exit")
+    fore.graphics.scheduleUnload("icon_foxplort")
+    fore.graphics.scheduleUnload("icon_love")
+    fore.graphics.scheduleUnload("icon_fore")
     if fore.scenes.next ~= "records" then
         fore.audio.fadeOutAndUnload("menu_music", 2.0)
     end

@@ -1,4 +1,4 @@
-local game_version = "1.2.0-beta.3-dev"
+local game_version = "1.2.0"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,
@@ -26,6 +26,8 @@ fore = require("fore.core.init").init({
 Fx = {}
 Fx.cl = require("okanerun.src.utils.collision") -- Cl - Collision
 Fx.ll = require("okanerun.src.utils.levelLoader") -- LL - Level Loader
+
+fore.mobileControls = require("okanerun.src.systems.mobileControls").init(fore)
 
 fore.audio.load("select", "okanerun/assets/sounds/ui/select.wav", false, "sfx")
 fore.audio.load("accept", "okanerun/assets/sounds/ui/accept.wav", false, "sfx")

@@ -68,7 +68,6 @@ function Fore.init(config)
     Fore.transition = require("fore.systems.transition")
     Fore.camera = require("fore.systems.camera")
 
-    Fore.mobileControls = require("fore.systems.mobileControls").init(Fore)
 
     return Fore
 end
