@@ -118,22 +118,8 @@ function Fore:start()
 
     self.audio.setMasterVolume(self.save.get_engine("volume"))
 
-    love.load = function() self:load() end
-    love.update = function(dt) self:update(dt) end
-    love.draw = function() self:draw() end
-    love.keypressed = function(key) self:keypressed(key) end
-    love.mousepressed = function(x, y, button, istouch) self:mousepressed(x, y, button, istouch) end
-    love.mousemoved = function(x, y, dx, dy, istouch) self:mousemoved(x, y, dx, dy, istouch) end
-    love.mousereleased = function(x, y, button, istouch) self:mousereleased(x, y, button, istouch) end
-    love.gamepadpressed = function(j, b) self:gamepadpressed(j, b) end
-    love.gamepadaxis = function(j, a, v) self:gamepadaxis(j, a, v) end
-    love.joystickadded = function(j) self:joystickadded(j) end
-    love.joystickremoved = function (j) self:joystickremoved(j) end
-    love.touchpressed = function(id, x, y) self:touchpressed(id, x, y) end
-    love.touchreleased = function(id, x, y) self:touchreleased(id, x, y) end
-    love.wheelmoved = function(x, y) self:wheelmoved(x, y) end
-    love.resize = function(w,h) self:resize(w,h) end
-    love.textinput = function(t) self:textinput(t) end
+    local init_setup = require("fore.backend." .. backend .. ".hooks")
+    init_setup.register(self)
 end
 
 ---Introduces new functions into the main loop
@@ -214,11 +200,6 @@ function Fore:update(dt)
     for _, cb in ipairs(self.hooks.postUpdate) do
         cb(dt)
     end
-end
-
-function Fore:resize(w,h)
-    self.graphics.updateFonts()
-    self.last_font_scale = self.data.scale
 end
 
 function Fore:draw()
@@ -305,86 +286,6 @@ function Fore:draw()
     if self.debug.enabled then
         self.debug.dc = love.graphics.getStats().drawcalls
     end
-end
-
-function Fore:keypressed(key)
-    self.input:setMethod("keyboard")
-    self.debug.keypressed(key)
-    if self.editor.enabled then self.editor.keypressed(key) end
-    self.scenes:keypressed(key)
-end
-
-function Fore:mousepressed(x, y, button, istouch)
-    if istouch then return end
-    self.input:setMethod("keyboard")
-    if self.editor.enabled then self.editor.mousepressed(x, y, button, istouch) end
-end
-
-function Fore:mousemoved(x, y, dx, dy, istouch)
-    if istouch then return end
-    if math.abs(dx) > 0.1 or math.abs(dy) > 0.1 then
-        self.input:setMethod("keyboard")
-    end
-    if self.editor.enabled then self.editor.mousemoved(x, y, dx, dy, istouch) end
-end
-
-function Fore:mousereleased(x, y, button, istouch)
-    if self.editor.enabled then self.editor.mousereleased(x, y, button, istouch) end
-end
-
-function Fore:wheelmoved(x, y)
-    if self.editor.enabled then self.editor.wheelmoved(x, y) end
-end
-
-function Fore:textinput(t)
-    if self.editor.enabled and self.editor.textinput then self.editor.textinput(t) end
-end
-
-function Fore:gamepadpressed(joystick, button)
-    self.input:setMethod("gamepad")
-end
-
-function Fore:gamepadaxis(joystick, axis, value)
-    if math.abs(value) > self.input.deadzone then
-        self.input:setMethod("gamepad")
-    end
-end
-
-function Fore:joystickadded(j)
-    self.input:addJoystick(j)
-end
-
-function Fore:joystickremoved(j)
-    self.input:removeJoystick(j)
-end
-
-function Fore:touchpressed(id, x, y)
-    -- Convert screen coordinates to canvas coordinates if necessary
-    local pW, pH, vW, vH = self:computeInternalResolution()
-    local screenW, screenH = love.graphics.getDimensions()
-    local offsetX = (screenW - pW) / 2
-    local offsetY = (screenH - pH) / 2
-    
-    local tx = (x * screenW - offsetX) / self.data.scale
-    local ty = (y * screenH - offsetY) / self.data.scale
-    
-    if self.mobileControls and self.mobileControls:isHit(tx, ty) then
-        return
-    end
-
-    self.input:touchpressed(id, tx, ty)
-end
-
-function Fore:touchreleased(id, x, y)
-    local pW, pH, vW, vH = self:computeInternalResolution()
-    local screenW, screenH = love.graphics.getDimensions()
-    local offsetX = (screenW - pW) / 2
-    local offsetY = (screenH - pH) / 2
-    
-    local tx = (x * screenW - offsetX) / self.data.scale
-    local ty = (y * screenH - offsetY) / self.data.scale
-    
-    self.input:touchreleased(id, tx, ty)
 end
 
 ---Creates a new canvas based on current size of the window
