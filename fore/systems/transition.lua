@@ -125,14 +125,14 @@ function T.update(dt)
             on_covered = nil
         end
         -- Stay at 0.5 if assets are still loading
-        if progress == 0.5 and fore.graphics.pending_assets > 0 then return end
+        if progress == 0.5 and fore.assets.pending_assets > 0 then return end
     else
         progress = progress + dt / duration
     end
 
     -- DYNAMIC FREEZE LOGIC
     local in_freeze_window = progress >= freeze_thresholds.start and progress < freeze_thresholds.stop
-    local is_loading = (progress == 0.5 and fore.graphics.pending_assets > 0)
+    local is_loading = (progress == 0.5 and fore.assets.pending_assets > 0)
     
     T.is_frozen = in_freeze_window or is_loading
 

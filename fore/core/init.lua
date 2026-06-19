@@ -27,7 +27,9 @@ function Fore.init(config)
     Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
     Fore.loaderThread:start()
 
-    Fore.graphics = require("fore.backend." .. backend .. ".graphics.graphics")
+    Fore.assets = require("fore.systems.assets")
+    Fore.assets.init(Fore)
+    
     Fore.text = require("fore.backend." .. backend .. ".graphics.text")
     Fore.draw2d = require("fore.backend." .. backend .. ".graphics.draw2d")
     Fore.shader = require("fore.backend." .. backend .. ".shader")
@@ -83,12 +85,11 @@ function Fore:start()
     self.window.init(self)
 
     self.camera.systemInit(self)
-    self.graphics.init(self)
     self.text.init(self)
     self.draw2d.init(self)
-    Fore.transition.init()
+    self.transition.init()
 
-    self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
+    self.scenes.canvas = love.graphics.newCanvas(self.conf.width, self.conf.height)
 
     if self.conf.pixelated then
         self.scenes.canvas:setFilter("nearest", "nearest")
@@ -131,7 +132,7 @@ function Fore:update(dt)
         cb(dt)
     end
 
-    self.graphics.update_loading()
+    self.assets.update_loading()
     self.input:update()
     if self.mobileControls then self.mobileControls:update(dt) end
     
@@ -139,7 +140,7 @@ function Fore:update(dt)
     if self.input:pressed("editor") and self.data.devmode then self.editor.toggle() end
     if self.input:pressed("fullscreen") then
         self.window.setFullscreen(not self.data.fullscreen)
-        self.graphics.updateFonts()
+        self.text.updateFonts()
     end
 
     if self.editor.enabled then

@@ -219,4 +219,50 @@ function Draw2DUtil.polygon(vertices, c, f)
     end
 end
 
+-- IMAGES
+
+function Draw2DUtil.imageScaled(name, x, y, sx, sy, r, ox, oy, c)
+    local img = fore.assets.getImage(name)
+    if not img then return end
+
+    r = r or 0
+    ox = ox or 0
+    oy = oy or 0
+    sx = sx or 1
+    sy = sy or 1
+
+    setColor(c)
+    love.graphics.draw(img, x, y, r, sx, sy, ox, oy)
+end
+
+function Draw2DUtil.imageSafe(name, fallback, x, y, w, h, r, ox, oy, c)
+    local img = fore.assets.getImage(name) or fore.assets.getImage(fallback)
+    if not img then return end
+
+    r = r or 0
+    ox = ox or 0
+    oy = oy or 0
+    local iw, ih = img:getDimensions()
+    w = w or iw
+    h = h or ih
+
+    setColor(c)
+    love.graphics.draw(img, x, y, r, w/iw, h/ih, ox, oy)
+end
+
+function Draw2DUtil.image(name, x, y, w, h, c)
+    local img = fore.assets.getImage(name)
+    if not img then return end
+
+    setColor(c)
+    local iw, ih = img:getDimensions()
+    love.graphics.draw(img, x, y, 0, w/iw, h/ih)
+end
+
+function Draw2DUtil.newTextureInstance(imgData, imgtype)
+    local img = love.graphics.newImage(imgData)
+    img:setFilter(imgtype, imgtype)
+    return img
+end
+
 return Draw2DUtil

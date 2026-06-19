@@ -351,19 +351,19 @@ local function createMenus()
 end
 
 function Scene.enter()
-    fore.graphics.scheduleLoad("logo", "okanerun/assets/images/ui/OkaneRun_classic.png", "linear")
-    fore.graphics.scheduleLoad("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
-    fore.graphics.scheduleLoad("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
-    fore.graphics.scheduleLoad("checkbox_true", "okanerun/assets/images/ui/checkbox_true.png", "linear")
-    fore.graphics.scheduleLoad("checkbox_false", "okanerun/assets/images/ui/checkbox_false.png", "linear")
-    fore.graphics.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
-    fore.graphics.scheduleLoad("icon_settings", "okanerun/assets/images/ui/menu/settings.png", "linear")
-    fore.graphics.scheduleLoad("icon_credits", "okanerun/assets/images/ui/menu/credits.png", "linear")
-    fore.graphics.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
-    fore.graphics.scheduleLoad("icon_foxplort", "okanerun/assets/images/ui/menu/foxplort.png", "linear")
-    fore.graphics.scheduleLoad("icon_love", "okanerun/assets/images/ui/menu/love.png", "linear")
-    fore.graphics.scheduleLoad("icon_fore", "okanerun/assets/images/ui/menu/fore.png", "linear")
-    fore.graphics.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
+    fore.assets.scheduleLoad("logo", "okanerun/assets/images/ui/OkaneRun_classic.png", "linear")
+    fore.assets.scheduleLoad("menu_portrait", "okanerun/assets/images/ui/menu_portrait.png", "linear")
+    fore.assets.scheduleLoad("menu_fog", "okanerun/assets/images/ui/menu_fog.png", "linear")
+    fore.assets.scheduleLoad("checkbox_true", "okanerun/assets/images/ui/checkbox_true.png", "linear")
+    fore.assets.scheduleLoad("checkbox_false", "okanerun/assets/images/ui/checkbox_false.png", "linear")
+    fore.assets.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
+    fore.assets.scheduleLoad("icon_settings", "okanerun/assets/images/ui/menu/settings.png", "linear")
+    fore.assets.scheduleLoad("icon_credits", "okanerun/assets/images/ui/menu/credits.png", "linear")
+    fore.assets.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
+    fore.assets.scheduleLoad("icon_foxplort", "okanerun/assets/images/ui/menu/foxplort.png", "linear")
+    fore.assets.scheduleLoad("icon_love", "okanerun/assets/images/ui/menu/love.png", "linear")
+    fore.assets.scheduleLoad("icon_fore", "okanerun/assets/images/ui/menu/fore.png", "linear")
+    fore.assets.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
 
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
@@ -392,19 +392,19 @@ function Scene.onComplete()
 end
 
 function Scene.exit()
-    fore.graphics.scheduleUnload("logo")
-    fore.graphics.scheduleUnload("menu_portrait")
-    fore.graphics.scheduleUnload("menu_fog")
-    fore.graphics.scheduleUnload("checkbox_true")
-    fore.graphics.scheduleUnload("checkbox_false")
-    fore.graphics.scheduleUnload("icon_play")
-    fore.graphics.scheduleUnload("icon_settings")
-    fore.graphics.scheduleUnload("icon_credits")
-    fore.graphics.scheduleUnload("icon_exit")
-    fore.graphics.scheduleUnload("icon_foxplort")
-    fore.graphics.scheduleUnload("icon_love")
-    fore.graphics.scheduleUnload("icon_fore")
-    fore.graphics.scheduleUnload("icon_back")
+    fore.assets.scheduleUnload("logo")
+    fore.assets.scheduleUnload("menu_portrait")
+    fore.assets.scheduleUnload("menu_fog")
+    fore.assets.scheduleUnload("checkbox_true")
+    fore.assets.scheduleUnload("checkbox_false")
+    fore.assets.scheduleUnload("icon_play")
+    fore.assets.scheduleUnload("icon_settings")
+    fore.assets.scheduleUnload("icon_credits")
+    fore.assets.scheduleUnload("icon_exit")
+    fore.assets.scheduleUnload("icon_foxplort")
+    fore.assets.scheduleUnload("icon_love")
+    fore.assets.scheduleUnload("icon_fore")
+    fore.assets.scheduleUnload("icon_back")
     if fore.scenes.next ~= "records" then
         fore.audio.fadeOutAndUnload("menu_music", 2.0)
     end
@@ -428,7 +428,7 @@ function Scene.draw()
     fore.draw2d.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {8,15,20})
     MP.drawBack()
 
-    local iw, ih = fore.graphics.getImage("menu_portrait"):getDimensions()
+    local iw, ih = fore.assets.getImage("menu_portrait"):getDimensions()
 
     local areaX = PANEL_WIDTH
     local areaW = fore.data.width - PANEL_WIDTH
@@ -437,7 +437,7 @@ function Scene.draw()
     local y = fore.data.height
 
     breathShader:push()
-    fore.graphics.imageScaled(
+    fore.draw2d.imageScaled(
         "menu_portrait",
         x,
         y,
@@ -449,8 +449,8 @@ function Scene.draw()
     )
     fore.shader.pop()
 
-    iw, ih = fore.graphics.getImage("menu_fog"):getDimensions()
-    fore.graphics.imageScaled(
+    iw, ih = fore.assets.getImage("menu_fog"):getDimensions()
+    fore.draw2d.imageScaled(
         "menu_fog",
         PANEL_WIDTH + (fore.data.width - PANEL_WIDTH)/2 + fogXShift,
         fore.data.height + fogYShift,
@@ -463,8 +463,8 @@ function Scene.draw()
     )
 
     -- logo
-    local logow, logoh = fore.graphics.getImage("logo"):getDimensions()
-    fore.graphics.imageScaled(
+    local logow, logoh = fore.assets.getImage("logo"):getDimensions()
+    fore.draw2d.imageScaled(
         "logo",
         PANEL_WIDTH + (fore.data.width - PANEL_WIDTH - logow*0.35) / 2,
         20 + logoY,

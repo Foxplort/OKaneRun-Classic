@@ -6,7 +6,7 @@ end
 
 local function drawPlayerSprite(p, x, y, z, sx, sy, color)
     local sprite = getPlayerSprite(p)
-    local img = fore.graphics.getImage(sprite)
+    local img = fore.assets.getImage(sprite)
     
     if not img then return end
 
@@ -22,7 +22,7 @@ local function drawPlayerSprite(p, x, y, z, sx, sy, color)
     local ty = y - z + p.sprite.offset.y
 
     -- Align bottom-center (or feet-center) of the image
-    fore.graphics.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, p.sprite.feetY or 256, color)
+    fore.draw2d.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, p.sprite.feetY or 256, color)
 
     if fore.debug.enabled and fore.data.devmode then
         fore.draw2d.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0})

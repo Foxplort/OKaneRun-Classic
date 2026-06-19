@@ -227,23 +227,23 @@ function Scene.enter()
     gameData.systems.particles.reset()
     gameData.render.ui.resetIntro()
 
-    fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
+    fore.assets.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
         if love.filesystem.getInfo(path) then
-            fore.graphics.scheduleLoad(eff.id, path)
+            fore.assets.scheduleLoad(eff.id, path)
             table.insert(loadedImages, eff.id)
         end
     end
-    fore.graphics.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
-    fore.graphics.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
-    fore.graphics.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
+    fore.assets.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
+    fore.assets.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
+    fore.assets.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
 
     -- LOAD PLAYER ASSETS
     local playerAssets = {"1", "2", "3", "4", "5", "6"}
     for _, name in ipairs(playerAssets) do
         local path = "okanerun/assets/images/player/" .. name .. ".png"
-        fore.graphics.scheduleLoad(name, path)
+        fore.assets.scheduleLoad(name, path)
         table.insert(loadedImages, name)
     end
 
@@ -332,12 +332,12 @@ function Scene.exit()
     fore.debug.remove("Player")
 
     for _, eff in pairs(loadedImages) do
-        fore.graphics.scheduleUnload(eff)
+        fore.assets.scheduleUnload(eff)
     end
-    fore.graphics.scheduleUnload("missing")
-    fore.graphics.scheduleUnload("icon_exit")
-    fore.graphics.scheduleUnload("icon_back")
-    fore.graphics.scheduleUnload("icon_play")
+    fore.assets.scheduleUnload("missing")
+    fore.assets.scheduleUnload("icon_exit")
+    fore.assets.scheduleUnload("icon_back")
+    fore.assets.scheduleUnload("icon_play")
 
     fore.audio.unload("footsteps")
     fore.audio.unload("coin_pickup")

@@ -79,9 +79,7 @@ function Audio.load(name, path, stream, category)
         }
     else
         -- Static sounds go to the background thread
-        local loader = love.thread.getChannel("fore_loader")
-        Audio.fore.graphics.pending_assets = Audio.fore.graphics.pending_assets + 1
-        loader:push({cmd = "load_audio", name = name, path = path, category = category})
+        Audio.fore.assets.loadAudioStatic(name, path, category)
     end
 end
 
@@ -483,6 +481,21 @@ function Audio.unload(name)
     Audio.stop(name)
     -- Remove from sounds table
     Audio.sounds[name] = nil
+end
+
+--- Generates a static source handle from background thread data maps
+-- Called automatically by assets.update_loading()
+function Audio.newStaticClipInstance(name, soundData, category)
+    local source = love.audio.newSource(soundData, "static")
+    local clip = {
+        name = name,
+        source = source,
+        category = category,
+        stream = false
+    }
+    -- Mirror reference to indexing table
+    Audio.sounds[name] = clip
+    return clip
 end
 
 return Audio

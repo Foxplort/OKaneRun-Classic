@@ -378,7 +378,7 @@ function Menu:drawContent(focused)
             local currentX = startX
 
             if opt.icon then
-                fore.graphics.imageSafe(opt.icon, opt.icon, currentX, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
+                fore.draw2d.imageSafe(opt.icon, opt.icon, currentX, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
                 currentX = currentX + iconSize + 8
             end
 
@@ -386,7 +386,7 @@ function Menu:drawContent(focused)
             
             if opt.type == "checkbox" and opt.state then
                 local cbIcon = opt.state() and "checkbox_true" or "checkbox_false"
-                fore.graphics.imageSafe(cbIcon, cbIcon, currentX + textWidth + 8, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
+                fore.draw2d.imageSafe(cbIcon, cbIcon, currentX + textWidth + 8, yy + (textHeight - iconSize)/2, iconSize, iconSize, 0, 0, 0, c)
             end
 
             -- Underline positioned based on alignment

@@ -12,7 +12,7 @@ end
 function Window.apply()
     if not fore then return end
     
-    -- Gather current parameters from your engine's central data storage
+    -- Gather current parameters from engine's central data storage
     local w = fore.data.width * fore.data.scale
     local h = fore.data.height * fore.data.scale
     

@@ -142,11 +142,11 @@ function Scene.enter()
     if #rows[1].items > 0 then currentRow = 1
     elseif #rows[2].items > 0 then currentRow = 2 end
 
-    fore.graphics.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
+    fore.assets.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(require("okanerun.src.game.effects")) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
         if love.filesystem.getInfo(path) then
-            fore.graphics.scheduleLoad(eff.id, path)
+            fore.assets.scheduleLoad(eff.id, path)
             table.insert(loadedImages, eff.id)
         end
     end
@@ -184,9 +184,9 @@ function Scene.exit()
 
     -- Unload assets
     for _, eff in pairs(loadedImages) do
-        fore.graphics.scheduleUnload(eff)
+        fore.assets.scheduleUnload(eff)
     end
-    fore.graphics.scheduleUnload("missing")
+    fore.assets.scheduleUnload("missing")
 end
 
 function Scene.update(dt)
@@ -438,7 +438,7 @@ function Scene.draw()
 
                         -- Icon
                         local iconTint = isSelected and {20, 25, 40, txtAlpha} or {themeCol[1], themeCol[2], themeCol[3], txtAlpha}
-                        fore.graphics.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, iconTint)
+                        fore.draw2d.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, iconTint)
                         
                         -- ID/Name
                         fore.text.text(item.def.id:upper(), rx + 5, ry + 50, 1 * FONT_S, txtCol, CARD_W - 10, "center")

@@ -99,11 +99,11 @@ function SceneManager:update(dt)
             self.current.enter()
         end
         self.frameOne = true
-        self.fore.graphics.flushAssetSchedule()
+        self.fore.assets.flushAssetSchedule()
     end
 
     -- Waiting for the assets to load
-    if self.fore.graphics.pending_assets > 0 then
+    if self.fore.assets.pending_assets > 0 then
         return
     end
 
@@ -128,7 +128,7 @@ end
 ---@return nil
 function SceneManager:draw()
     -- Waiting for the assets to load
-    if self.fore.graphics.pending_assets > 0 then
+    if self.fore.assets.pending_assets > 0 then
         return
     end
     --Current scene

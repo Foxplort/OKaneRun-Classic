@@ -78,7 +78,7 @@ function EffectUI.draw(player)
 
         -- icon (safe)
         love.graphics.setColor(1, 1, 1, 1)
-        fore.graphics.imageSafe(
+        fore.draw2d.imageSafe(
             id, "missing",
             x, y,
             EffectUI.Data.size,

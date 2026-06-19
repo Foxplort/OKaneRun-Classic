@@ -53,10 +53,10 @@ function Scene.enter()
     
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
 
-    fore.graphics.scheduleLoad("missing", "okanerun/assets/images/docs/missing.png", false)
+    fore.assets.scheduleLoad("missing", "okanerun/assets/images/docs/missing.png", false)
     for _, doc in ipairs(Documents) do
         if doc.icon and not loaded_assets[doc.icon] then
-            fore.graphics.scheduleLoad(doc.icon, "okanerun/assets/images/docs/" .. doc.icon .. ".png", false)
+            fore.assets.scheduleLoad(doc.icon, "okanerun/assets/images/docs/" .. doc.icon .. ".png", false)
             table.insert(loaded_assets, doc.icon)
         end
     end
@@ -72,9 +72,9 @@ function Scene.exit()
     if fore.scenes.next ~= "menu" then
         fore.audio.fadeOutAndUnload("menu_music", 2.0)
     end
-    fore.graphics.scheduleUnload("missing")
+    fore.assets.scheduleUnload("missing")
     for _, asset in ipairs(loaded_assets) do
-        fore.graphics.scheduleUnload(asset)
+        fore.assets.scheduleUnload(asset)
     end
 end
 
@@ -162,7 +162,7 @@ local function drawDocument(doc)
     -- Icon Frame
     fore.draw2d.rect(sx, sy, 64, 64, {30, 35, 45})
     fore.draw2d.rect(sx, sy, 64, 64, {doc.tint[1], doc.tint[2], doc.tint[3], 100}, false)
-    fore.graphics.imageSafe(doc.icon or "missing", "missing", sx + 16, sy + 16, 32, 32, 0, 0, 0, doc.tint)
+    fore.draw2d.imageSafe(doc.icon or "missing", "missing", sx + 16, sy + 16, 32, 32, 0, 0, 0, doc.tint)
     
     -- Metadata
     fore.text.text(doc.name:upper(), sx, sy + 80, 1.2, {255, 255, 255}, sidebarW - 40, "left")
@@ -269,7 +269,7 @@ function Scene.draw()
                 fore.text.text(doc.name:upper(), rx + 5, ry + 20, 1, txtCol, CARD_W - 10, "center")
                 
                 -- Icon
-                fore.graphics.imageSafe(doc.icon or "missing", "missing", rx + CARD_W/2 - 12, ry + 50, 24, 24, 0, 0, 0, isSelected and {20,25,40} or themeCol)
+                fore.draw2d.imageSafe(doc.icon or "missing", "missing", rx + CARD_W/2 - 12, ry + 50, 24, 24, 0, 0, 0, isSelected and {20,25,40} or themeCol)
                 
                 -- Summary box
                 if isSelected then
