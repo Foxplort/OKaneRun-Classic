@@ -10,6 +10,8 @@ local pause = false
 local pauseLockout = 0
 local deathPause = false
 local menu = nil
+local exit_submenu = nil
+local back_to_menu_submenu = nil
 local menuStack = nil
 local monoShader = nil
 
@@ -233,6 +235,9 @@ function Scene.enter()
             table.insert(loadedImages, eff.id)
         end
     end
+    fore.graphics.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
+    fore.graphics.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
+    fore.graphics.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
 
     -- LOAD PLAYER ASSETS
     local playerAssets = {"1", "2", "3", "4", "5", "6"}
@@ -254,14 +259,46 @@ function Scene.enter()
 
     local MenuSys = require("okanerun.src.systems.menu")
 
+    exit_submenu = MenuSys.Menu:new{
+        title = "QUIT?",
+        style = "spikes",
+        outline = true,
+        options = {
+            {
+                txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit",
+                desc = [[
+                Are you sure you want to quit?
+                The progress won't be saved.[br]
+                ]]
+            },
+            { txt = "Cancel", pop = true, icon = "icon_back" }
+        }
+    }
+
+    back_to_menu_submenu = MenuSys.Menu:new{
+        title = "RETURN?",
+        style = "spikes",
+        outline = true,
+        options = {
+            {
+                txt = "Confirm", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end, nil, 0, 0.6) end, icon = "icon_exit",
+                desc = [[
+                Are you sure you want to return to the main menu?
+                The progress won't be saved.[br]
+                ]]
+            },
+            { txt = "Cancel", pop = true, icon = "icon_back" }
+        }
+    }
+
     menu = MenuSys.Menu:new{
         title = "PAUSED",
         style = "spikes",  -- optional: "plain" or "spikes"
         outline = true,
         options = {
-            {txt="Resume", action=function() pause = false; fore.mobileControls:show() end},
-            {txt="Main Menu", action=function() fore.transition.start("spike", function() fore.scenes:goTo("menu") end, nil, 0, 0.6) end},
-            {txt="Quit", action=function() love.event.quit() end},
+            {txt="Resume", icon="icon_play", action=function() pause = false; fore.mobileControls:show() end},
+            {txt="Main Menu", icon="icon_back", push = function() return back_to_menu_submenu end},
+            {txt="Quit", icon="icon_exit", push = function() return exit_submenu end},
         }
     }
 
@@ -298,6 +335,9 @@ function Scene.exit()
         fore.graphics.scheduleUnload(eff)
     end
     fore.graphics.scheduleUnload("missing")
+    fore.graphics.scheduleUnload("icon_exit")
+    fore.graphics.scheduleUnload("icon_back")
+    fore.graphics.scheduleUnload("icon_play")
 
     fore.audio.unload("footsteps")
     fore.audio.unload("coin_pickup")

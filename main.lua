@@ -1,4 +1,4 @@
-local game_version = "1.2.0"
+local game_version = "1.3.0-beta.1-dev"
 fore = require("fore.core.init").init({
     name = "OkaneRun Classic",
     title = "OkaneRun Classic v" .. game_version,

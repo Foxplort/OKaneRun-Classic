@@ -314,8 +314,8 @@ local function createMenus()
     exit = Menu:new{
         title = "QUIT?",
         options = {
-            { txt = "Confirm", action = function() love.event.quit() end },
-            { txt = "Cancel", pop = true }
+            { txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit" },
+            { txt = "Cancel", pop = true, icon = "icon_back" }
         }
     }
 
@@ -363,6 +363,7 @@ function Scene.enter()
     fore.graphics.scheduleLoad("icon_foxplort", "okanerun/assets/images/ui/menu/foxplort.png", "linear")
     fore.graphics.scheduleLoad("icon_love", "okanerun/assets/images/ui/menu/love.png", "linear")
     fore.graphics.scheduleLoad("icon_fore", "okanerun/assets/images/ui/menu/fore.png", "linear")
+    fore.graphics.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
 
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
@@ -403,6 +404,7 @@ function Scene.exit()
     fore.graphics.scheduleUnload("icon_foxplort")
     fore.graphics.scheduleUnload("icon_love")
     fore.graphics.scheduleUnload("icon_fore")
+    fore.graphics.scheduleUnload("icon_back")
     if fore.scenes.next ~= "records" then
         fore.audio.fadeOutAndUnload("menu_music", 2.0)
     end
