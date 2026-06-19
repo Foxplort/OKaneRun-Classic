@@ -1,6 +1,6 @@
 -- Use löve-build to build the game (https://github.com/ellraiser/love-build)
 return {
-    name = 'OkaneRun-Classic',
+    name = 'OKaneRun-Classic',
     developer = 'foxplort',
     version = '1.3.0-beta.1',
     love = '11.5',

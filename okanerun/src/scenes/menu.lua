@@ -290,9 +290,9 @@ local function createMenus()
             {
                 txt = "FÖRE Engine",
                 icon = "icon_fore",
-                link = "https://github.com/Foxplort/OkaneRun-Classic",
+                link = "https://github.com/Foxplort/OKaneRun-Classic",
                 desc = [[
-                Custom game engine for OkaneRun Classic.
+                Custom game engine for OKaneRun Classic.
                 Available under MPL 2.0 license.[br]
                 ]]
             },

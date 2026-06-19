@@ -1,10 +1,10 @@
-# OkaneRun Classic Asset License
+# OKaneRun Classic Asset License
 
 Copyright (c) 2026 foxplort
 
 All assets in this directory (including art, music, sound effects, UI, and other media) are **All Rights Reserved**, unless stated otherwise.
 
-These assets are provided only for use within the OkaneRun project.
+These assets are provided only for use within the OKaneRun project.
 
 You may NOT:
 

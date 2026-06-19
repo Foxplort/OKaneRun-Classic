@@ -1,7 +1,7 @@
 local game_version = "1.3.0-beta.1-dev"
 fore = require("fore.core.init").init({
-    name = "OkaneRun Classic",
-    title = "OkaneRun Classic v" .. game_version,
+    name = "OKaneRun Classic",
+    title = "OKaneRun Classic v" .. game_version,
     version = game_version,
     startScene = "intro",
     pixelBank = 128,
