@@ -939,23 +939,23 @@ function Scene.draw()
     if fore.debug.enabled and fore.data.devmode then
         for _, g in ipairs(GameState.area.ground) do
             local gh = Fx.cl.getGroundHitbox(g)
-            fore.graphics.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
+            fore.draw2d.rect(gh.x, gh.y, gh.w, gh.h, {0,255,255}, false)
         end
 
         local hb = Fx.cl.getPlayerHitbox()
-        fore.graphics.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
+        fore.draw2d.rect(hb.x, hb.y, hb.w, hb.h, {255,0,0}, false)
 
         for _, c in ipairs(GameState.area.cores) do
-            fore.graphics.rect(c.x, c.y, c.w, c.h, {0,255,0}, false)
+            fore.draw2d.rect(c.x, c.y, c.w, c.h, {0,255,0}, false)
         end
 
         for _, c in ipairs(GameState.area.coins) do
             local ch = {x=c.x-13, y=c.y-14, w=26, h=24}
-            fore.graphics.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
+            fore.draw2d.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 
         for i, s in ipairs(GameState.player.tail) do
-            fore.graphics.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
+            fore.draw2d.rect(s.x - 1, s.y - 1, 2, 2, {255, 0, 0})
         end
     end
 
@@ -971,18 +971,18 @@ function Scene.draw()
 
     if pause then
         fore.shader.pop()
-        --fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
+        --fore.draw2d.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
         menuStack:draw()
 
         local center = (fore.data.width - 220)/2 + 220 -- have to be recalculated every frame since window size can be changed
         local polygonShape = {center - 100, 25, center + 100, 25, center + 120, 50, center + 100, 75, center - 100, 75, center - 120, 50}
-        fore.graphics.polygon(polygonShape, {0,0,0,200}, true)
-        fore.graphics.polygon(polygonShape, {255,255,255,40}, false)
+        fore.draw2d.polygon(polygonShape, {0,0,0,200}, true)
+        fore.draw2d.polygon(polygonShape, {255,255,255,40}, false)
         fore.text.textEx("playing", 220, 30, 1, {255,255,255}, (fore.data.width - 220), "center")
         fore.text.textEx(GameState.area.levelName, 220, 40, 2, {255,255,255}, (fore.data.width - 220), "center")
         fore.text.textEx("by " .. GameState.area.levelAuthor, 220, 60, 1, {255,255,255}, (fore.data.width - 220), "center")
     elseif deathPause then
-        fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
+        fore.draw2d.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
     end
 
     fore.camera.pop()

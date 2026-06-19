@@ -66,7 +66,7 @@ function Particles.draw(depthFn)
                 local speed = math.sqrt(p.vx*p.vx + p.vy*p.vy)
                 local stretch = math.min(speed * 0.02, 2)
 
-                fore.graphics.circ(
+                fore.draw2d.circ(
                     p.x - s/2,
                     p.y - p.z - s,
                     s + stretch,

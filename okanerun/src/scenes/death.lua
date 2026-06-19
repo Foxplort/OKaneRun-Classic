@@ -94,16 +94,16 @@ end
 
 function Scene.draw()
     -- background
-    fore.graphics.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {20, 5, 5})
+    fore.draw2d.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {20, 5, 5})
     MP.drawBack()
 
-    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {35, 5, 5})
+    fore.draw2d.rect(0, 0, PANEL_WIDTH, fore.data.height, {35, 5, 5})
 
     MP.drawFront()
 
     -- side panel
-    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {0,0,0,0.7})
-    fore.graphics.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.data.height, {1,0,0,1})
+    fore.draw2d.rect(0, 0, PANEL_WIDTH, fore.data.height, {0,0,0,0.7})
+    fore.draw2d.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.data.height, {1,0,0,1})
 
     -- menus
     stack:draw()

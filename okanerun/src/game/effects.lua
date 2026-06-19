@@ -142,7 +142,7 @@ effects.scanline = {
         local col = {255,0,0,120}
         if inst.safeTimer then col = {255,0,127,90} end
         fore.queuer.submit(L.ACTOR, inst.y+inst.h, function()
-            fore.graphics.rect(
+            fore.draw2d.rect(
                 -600,
                 inst.y,
                 GameState.area.mapWidth+1200,
@@ -231,7 +231,7 @@ effects.laser = {
             
             if drawWidth > 0 then
                 fore.queuer.submit(L.ACTOR, -1000, function()
-                    fore.graphics.rect(
+                    fore.draw2d.rect(
                         laser.x - drawWidth/2,
                         -600,
                         drawWidth,
@@ -316,7 +316,7 @@ effects.trail = {
             end, "replace", 1)
             love.graphics.setStencilTest("equal", 1)
 
-            fore.graphics.line(vertices, {255,0,0,120}, 6)
+            fore.draw2d.line(vertices, {255,0,0,120}, 6)
 
             love.graphics.setStencilTest()
         end)
@@ -470,7 +470,7 @@ effects.explosive = {
                 local alpha = math.floor(255 * (1 - progress))
                 
                 fore.queuer.submit(L.ACTOR, mine.y + size, function()
-                    fore.graphics.circ(
+                    fore.draw2d.circ(
                         mine.x-size,
                         mine.y-size,
                         size*2,
@@ -485,7 +485,7 @@ effects.explosive = {
             
             fore.queuer.submit(L.ACTOR, mine.y + inst.size, function()
                 -- Body
-                fore.graphics.rect(
+                fore.draw2d.rect(
                     mine.x,
                     mine.y,
                     inst.size,
@@ -494,7 +494,7 @@ effects.explosive = {
                 )
                 
                 -- Highlight
-                fore.graphics.rect(
+                fore.draw2d.rect(
                     mine.x + 1,
                     mine.y + 1,
                     inst.size - 2,
@@ -504,12 +504,12 @@ effects.explosive = {
                 
                 -- Lines
                 if mine.state == "blinking" then
-                    fore.graphics.line(
+                    fore.draw2d.line(
                         {mine.x + 1, mine.y + 1,
                         mine.x + inst.size - 1, mine.y + inst.size - 1},
                         {255, 255, 255, 100}
                     )
-                    fore.graphics.line(
+                    fore.draw2d.line(
                         {mine.x + inst.size - 1, mine.y + 1,
                         mine.x + 1, mine.y + inst.size - 1},
                         {255, 255, 255, 100}
@@ -641,7 +641,7 @@ effects.charged = {
                 local x, y = px - w/2, py + 5
                 
                 -- BG
-                fore.graphics.rect(x - 1, y - 1, w + 2, h + 2, {0, 0, 0, 150})
+                fore.draw2d.rect(x - 1, y - 1, w + 2, h + 2, {0, 0, 0, 150})
                 
                 -- Progress
                 local r, g, b = 100, 200, 255
@@ -651,7 +651,7 @@ effects.charged = {
                     r = r + (255-r) * pulse
                 end
                 
-                fore.graphics.rect(x, y, w * progress, h, {r, g, b, 200})
+                fore.draw2d.rect(x, y, w * progress, h, {r, g, b, 200})
             end)
         end
     end,

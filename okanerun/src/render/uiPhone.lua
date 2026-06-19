@@ -98,7 +98,7 @@ local function drawCoinIndicator()
     local radius, baseThick = 22, 4
     local time = fore.time.getTicks()
     
-    fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
+    fore.draw2d.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
 
     if full then
         for coin, t in pairs(coinTrackers) do
@@ -128,13 +128,13 @@ local function drawCoinIndicator()
                 local alpha = 255 * t.fade
                 
                 if arcSize > 0.01 then
-                    fore.graphics.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
+                    fore.draw2d.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
                         {r, g, b, alpha}, "open", false, math.max(4, math.floor(arcSize*4)), thickness)
                 end
                 
                 if t.fill > 0.5 then
                     local pulse = (math.sin(time * 5) + 1) / 2 * t.fill
-                    fore.graphics.arc(centerX, centerY, radius + 2, angle - arcSize/2 - 0.05, angle + arcSize/2 + 0.05,
+                    fore.draw2d.arc(centerX, centerY, radius + 2, angle - arcSize/2 - 0.05, angle + arcSize/2 + 0.05,
                         {255, 200, 0, 100 * pulse * t.fade}, "open", false, 8, thickness + 2)
                 end
             end
@@ -153,16 +153,16 @@ local function drawCoinIndicator()
             local r, g, b = 0 + (255 * coreFill), 255, 200 + (55 * coreFill)
             
             if coreFill < 0.98 then
-                fore.graphics.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
+                fore.draw2d.arc(centerX, centerY, radius, angle - arcSize/2, angle + arcSize/2,
                     {r, g, b, 150 + 105 * pulse}, "open", false, 32, baseThick + 2)
             else
-                fore.graphics.arc(centerX, centerY, radius, 0, math.pi * 2,
+                fore.draw2d.arc(centerX, centerY, radius, 0, math.pi * 2,
                     {255, 255, 255, 200 + 55 * pulse}, "open", false, 32, baseThick + 4)
             end
 
             if coreFill < 0.8 then
                 local tx, ty = centerX + math.cos(angle) * (radius + 8), centerY + math.sin(angle) * (radius + 8)
-                fore.graphics.mCirc(tx, ty, 2 + pulse * 2, {0, 255, 200, 255}, true, 16)
+                fore.draw2d.mCirc(tx, ty, 2 + pulse * 2, {0, 255, 200, 255}, true, 16)
             end
         end
     end
@@ -190,8 +190,8 @@ local function drawHealthIndicator()
         startX + totalWidth + 16, bgBottom,
         startX - 16, bgBottom + 2,
     }
-    fore.graphics.polygon(bgPoints, {0,0,0,180}, true)
-    fore.graphics.polygon(bgPoints, {255,255,255,40}, false)
+    fore.draw2d.polygon(bgPoints, {0,0,0,180}, true)
+    fore.draw2d.polygon(bgPoints, {255,255,255,40}, false)
 
     startX = startX + 15
     y = y - 5
@@ -210,7 +210,7 @@ local function drawHealthIndicator()
             
             local isActive = i <= hp or (i+1) <= hp
             local lineColor = isActive and {255,200,255,60} or {80,80,100,30}
-            fore.graphics.line({cx1 + size/3, cy1, cx2 - size/3, cy2}, lineColor, 1.5)
+            fore.draw2d.line({cx1 + size/3, cy1, cx2 - size/3, cy2}, lineColor, 1.5)
         end
     end
     
@@ -237,18 +237,18 @@ local function drawHealthIndicator()
             if isActive then
                 if isLast then
                     local glow = 0.7 + 0.3 * (math.sin(healthWave * 3 + i) + 1) / 2
-                    fore.graphics.polygon(points, {255, 100 * glow, 200 * glow}, true)
-                    fore.graphics.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
+                    fore.draw2d.polygon(points, {255, 100 * glow, 200 * glow}, true)
+                    fore.draw2d.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
                         {255,255,255,150}, true)
                 else
-                    fore.graphics.polygon(points, {255, 80, 180}, true)
-                    fore.graphics.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
+                    fore.draw2d.polygon(points, {255, 80, 180}, true)
+                    fore.draw2d.polygon({cx, cy - size/4, cx + size/4, cy, cx, cy + size/4, cx - size/4, cy},
                         {200,220,255,100}, true)
                 end
-                fore.graphics.polygon(points, {255,255,255,80}, false)
+                fore.draw2d.polygon(points, {255,255,255,80}, false)
             else
-                fore.graphics.polygon(points, {30,30,50}, true)
-                fore.graphics.polygon(points, {60,60,80,80}, false)
+                fore.draw2d.polygon(points, {30,30,50}, true)
+                fore.draw2d.polygon(points, {60,60,80,80}, false)
             end
         end
     end
@@ -270,8 +270,8 @@ local function drawDashIndicator()
         x + w - tilt, y + h,
         x - tilt, y + h + 2
     }
-    fore.graphics.polygon(bgPoints, {0, 0, 0, 150}, true)
-    fore.graphics.polygon(bgPoints, {255, 255, 255, 30}, false)
+    fore.draw2d.polygon(bgPoints, {0, 0, 0, 150}, true)
+    fore.draw2d.polygon(bgPoints, {255, 255, 255, 30}, false)
 
     -- The Fill Bar
     if progress > 0 then
@@ -289,7 +289,7 @@ local function drawDashIndicator()
             x + fillW - tilt, y + h + 2 - (2 * progress),
             x - tilt, y + h + 2
         }
-        fore.graphics.polygon(fillPoints, color, true)
+        fore.draw2d.polygon(fillPoints, color, true)
     end
     
     -- Label

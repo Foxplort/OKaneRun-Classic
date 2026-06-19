@@ -49,7 +49,7 @@ function TextUtil.setFontScale(s)
     return font
 end
 
----Renders basic text
+---Draws a text to the screen with smart scaling
 ---@param text string The text to render
 ---@param x number The x-coordinate
 ---@param y number The y-coordinate
@@ -132,6 +132,15 @@ local function layoutStyledText(segments, maxWidth, scale)
     return lines
 end
 
+---Draws a text to the screen with smart scaling and tag system
+---@param text string The text to render
+---@param x number The x-coordinate
+---@param y number The y-coordinate
+---@param s number|table|nil The scale factor
+---@param c number|table|nil The color
+---@param wrap number|nil The wrap width
+---@param align string|nil The alignment
+---@return number Height of the text
 function TextUtil.textAdvanced(text, x, y, s, c, wrap, align)
     s = type(s) == "table" and s[1] or s or 1
     local _, _, _, baseAlpha = coloring(c)
@@ -159,6 +168,7 @@ function TextUtil.textAdvanced(text, x, y, s, c, wrap, align)
     return #lines * lineHeight
 end
 
+---Draws a text to the screen and automatically chooses either text() or textAdvanced()
 function TextUtil.textEx(text, x, y, s, c, wrap, align)
     if type(text) == "string" and (text:find("[c=", 1, true) or text:find("[br", 1, true)) then
         return TextUtil.textAdvanced(text, x, y, s, c, wrap, align)

@@ -112,12 +112,12 @@ function Scene.draw()
         
         local a = (hold / HOLD_TIME) * 255
         if state == "warning" then
-            fore.graphics.rect(x, barY, fillW, BAR_HEIGHT)
+            fore.draw2d.rect(x, barY, fillW, BAR_HEIGHT)
         else
-            fore.graphics.rect(x, barY, BAR_WIDTH, BAR_HEIGHT, {255, 255, 255, a})
+            fore.draw2d.rect(x, barY, BAR_WIDTH, BAR_HEIGHT, {255, 255, 255, a})
         end
-        fore.graphics.rect(x - 10, capY, 2, capH, {255,255,255,a})
-        fore.graphics.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
+        fore.draw2d.rect(x - 10, capY, 2, capH, {255,255,255,a})
+        fore.draw2d.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
     elseif state == "presents" or state == "done" then
         fore.text.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.data.width, "center")
     end

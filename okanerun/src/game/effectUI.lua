@@ -51,7 +51,7 @@ function EffectUI.draw(player)
             end
         end
 
-        fore.graphics.rect(
+        fore.draw2d.rect(
             x - 2, y - 2,
             EffectUI.Data.size + 4,
             EffectUI.Data.size + 4,
@@ -64,7 +64,7 @@ function EffectUI.draw(player)
         fore.text.text(tostring(amountApplied), x+2, y+22, 1)
 
         if selected then
-            fore.graphics.rect(
+            fore.draw2d.rect(
                 x - 2, y - 2,
                 EffectUI.Data.size + 4,
                 EffectUI.Data.size + 4,

@@ -16,11 +16,11 @@ return {
 
   render = function(self, isEditor)
       local drawLogic = function()
-          fore.graphics.circ(self.x-6, self.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
-          fore.graphics.circ(self.x-5, self.y-15, 10, 15, {255, 200, 0}, true, 7) -- body
-          fore.graphics.circ(self.x-1, self.y-13, 2, 10, {230, 140, 0}, true, 4) -- middle
-          fore.graphics.circ(self.x+1, self.y-13, 4, 5, {255, 255, 160}, true, 5) -- highlight
-          fore.graphics.circ(self.x+2.5, self.y-12, 2, 3, {255, 255, 255}, true, 5) -- highlight
+          fore.draw2d.circ(self.x-6, self.y-15+1, 10, 15, {230, 140, 0}, true, 7) -- outline
+          fore.draw2d.circ(self.x-5, self.y-15, 10, 15, {255, 200, 0}, true, 7) -- body
+          fore.draw2d.circ(self.x-1, self.y-13, 2, 10, {230, 140, 0}, true, 4) -- middle
+          fore.draw2d.circ(self.x+1, self.y-13, 4, 5, {255, 255, 160}, true, 5) -- highlight
+          fore.draw2d.circ(self.x+2.5, self.y-12, 2, 3, {255, 255, 255}, true, 5) -- highlight
       end
 
       local shadowLogic = function()
@@ -35,7 +35,7 @@ return {
           local alpha = math.max(60, 160 - z * 1.5)
           local cx = self.x + cw * 0.5 - 5
           local cy = self.y - 2
-          fore.graphics.circ(cx - w * 0.5, cy - h * 0.5 + 2, w, h, {0, 0, 0, alpha})
+          fore.draw2d.circ(cx - w * 0.5, cy - h * 0.5 + 2, w, h, {0, 0, 0, alpha})
       end
 
       if isEditor then

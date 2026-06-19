@@ -152,16 +152,16 @@ local function drawDocument(doc)
     local sidebarW = 220
     
     -- Document background
-    fore.graphics.rect(boxX, boxY, boxW, boxH, {15, 20, 25, 240})
-    fore.graphics.rect(boxX, boxY, boxW, 4, {doc.tint[1], doc.tint[2], doc.tint[3], 255})
+    fore.draw2d.rect(boxX, boxY, boxW, boxH, {15, 20, 25, 240})
+    fore.draw2d.rect(boxX, boxY, boxW, 4, {doc.tint[1], doc.tint[2], doc.tint[3], 255})
 
     -- Sidebar
     local sx = boxX + 20
     local sy = boxY + 40
     
     -- Icon Frame
-    fore.graphics.rect(sx, sy, 64, 64, {30, 35, 45})
-    fore.graphics.rect(sx, sy, 64, 64, {doc.tint[1], doc.tint[2], doc.tint[3], 100}, false)
+    fore.draw2d.rect(sx, sy, 64, 64, {30, 35, 45})
+    fore.draw2d.rect(sx, sy, 64, 64, {doc.tint[1], doc.tint[2], doc.tint[3], 100}, false)
     fore.graphics.imageSafe(doc.icon or "missing", "missing", sx + 16, sy + 16, 32, 32, 0, 0, 0, doc.tint)
     
     -- Metadata
@@ -216,17 +216,17 @@ local function drawDocument(doc)
         local barH = 50
         local trackH = th - barH
         local barY = ty + (readerVScroll / readerMaxScroll) * trackH
-        fore.graphics.rect(boxX + boxW - 10, barY, 3, barH, {doc.tint[1], doc.tint[2], doc.tint[3], 150})
+        fore.draw2d.rect(boxX + boxW - 10, barY, 3, barH, {doc.tint[1], doc.tint[2], doc.tint[3], 150})
     end
 end
 
 function Scene.draw()
     -- Background
-    fore.graphics.rect(0, 0, fore.data.width, fore.data.height, {8, 12, 16})
+    fore.draw2d.rect(0, 0, fore.data.width, fore.data.height, {8, 12, 16})
     
     -- Dust
     for _, p in ipairs(particles) do
-        fore.graphics.circ(p.x, p.y, p.s, p.s, {200, 200, 220, p.a * 255})
+        fore.draw2d.circ(p.x, p.y, p.s, p.s, {200, 200, 220, p.a * 255})
     end
 
     if currentMode == "list" then
@@ -257,12 +257,12 @@ function Scene.draw()
 
             -- Selection
             if isSelected then
-                fore.graphics.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {themeCol[1], themeCol[2], themeCol[3], 150}, true)
+                fore.draw2d.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {themeCol[1], themeCol[2], themeCol[3], 150}, true)
             end
 
             -- Card Body
-            fore.graphics.rect(rx, ry, CARD_W, CARD_H, bgCol)
-            fore.graphics.rect(rx, ry, CARD_W, 4, {themeCol[1], themeCol[2], themeCol[3], 255})
+            fore.draw2d.rect(rx, ry, CARD_W, CARD_H, bgCol)
+            fore.draw2d.rect(rx, ry, CARD_W, 4, {themeCol[1], themeCol[2], themeCol[3], 255})
 
             if unlocked then
                 local txtCol = isSelected and {20, 25, 40} or {200, 210, 230}
@@ -278,8 +278,8 @@ function Scene.draw()
                         local sx, sy = rx + CARD_W + 10, ry - 10
                         if col == cols - 1 then sx = rx - sw - 10 end
                         
-                        fore.graphics.rect(sx, sy, sw, sh, {0, 0, 0, 220})
-                        fore.graphics.rect(sx, sy, sw, sh, {255, 255, 255, 100}, false)
+                        fore.draw2d.rect(sx, sy, sw, sh, {0, 0, 0, 220})
+                        fore.draw2d.rect(sx, sy, sw, sh, {255, 255, 255, 100}, false)
                         fore.text.textEx(doc.desc, sx + 10, sy + 10, 0.8, {255, 255, 255}, sw - 20, "left")
                     end
                 end

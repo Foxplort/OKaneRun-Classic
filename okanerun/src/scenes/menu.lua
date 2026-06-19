@@ -425,7 +425,7 @@ end
 
 function Scene.draw()
     -- background
-    fore.graphics.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {8,15,20})
+    fore.draw2d.rect(PANEL_WIDTH, 0, fore.data.width - PANEL_WIDTH, fore.data.height, {8,15,20})
     MP.drawBack()
 
     local iw, ih = fore.graphics.getImage("menu_portrait"):getDimensions()
@@ -481,13 +481,13 @@ function Scene.draw()
         "center"
     )
 
-    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {5, 35, 35})
+    fore.draw2d.rect(0, 0, PANEL_WIDTH, fore.data.height, {5, 35, 35})
 
     MP.drawFront()
 
     -- side panel
-    fore.graphics.rect(0, 0, PANEL_WIDTH, fore.data.height, {0,0,0,0.7})
-    fore.graphics.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.data.height, {1,1,1,1})
+    fore.draw2d.rect(0, 0, PANEL_WIDTH, fore.data.height, {0,0,0,0.7})
+    fore.draw2d.rect(PANEL_WIDTH - LINE_WIDTH, 0, LINE_WIDTH, fore.data.height, {1,1,1,1})
 
     -- menus
     stack:draw()

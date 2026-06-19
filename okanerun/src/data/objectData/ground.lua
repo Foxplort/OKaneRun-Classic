@@ -22,32 +22,32 @@ return {
       local ca = {c[1], c[2], c[3], 30}
 
       local drawOutline = function()
-        fore.graphics.rect(self.x, self.y, self.w, self.h, {0,0,0,63}, false)
-        fore.graphics.rect(self.x-1, self.y-1, self.w+2, self.h+2, {0,0,0,63}, false)
+        fore.draw2d.rect(self.x, self.y, self.w, self.h, {0,0,0,63}, false)
+        fore.draw2d.rect(self.x-1, self.y-1, self.w+2, self.h+2, {0,0,0,63}, false)
       end
       
       local drawMain = function()
-          fore.graphics.rect(self.x, self.y, self.w, self.h, c)
+          fore.draw2d.rect(self.x, self.y, self.w, self.h, c)
           if not (mobileContrastStatus or fore.data.phone) then
             for gx = self.x, self.x + self.w-1, 40 do
                 for gy = self.y, self.y + self.h-1, 40 do
-                    fore.graphics.rect(gx, gy, 1, 1, {150, 200, 255, 20})
+                    fore.draw2d.rect(gx, gy, 1, 1, {150, 200, 255, 20})
                 end
             end
           else
             for gx = self.x, self.x + self.w-2, 40 do
                 for gy = self.y, self.y + self.h-2, 40 do
-                    fore.graphics.rect(gx, gy, 2, 2, {150, 200, 255, 15})
+                    fore.draw2d.rect(gx, gy, 2, 2, {150, 200, 255, 15})
                 end
             end
           end
       end
 
       local drawDec = function()
-          fore.graphics.rect(self.x, self.y+20, self.w, self.h+20, ca)
-          fore.graphics.rect(self.x, self.y+15, self.w, self.h+15, ca)
-          fore.graphics.rect(self.x, self.y+10, self.w, self.h+10, ca)
-          fore.graphics.rect(self.x, self.y+5,  self.w, self.h+5,  ca)
+          fore.draw2d.rect(self.x, self.y+20, self.w, self.h+20, ca)
+          fore.draw2d.rect(self.x, self.y+15, self.w, self.h+15, ca)
+          fore.draw2d.rect(self.x, self.y+10, self.w, self.h+10, ca)
+          fore.draw2d.rect(self.x, self.y+5,  self.w, self.h+5,  ca)
       end
 
       if isEditor then

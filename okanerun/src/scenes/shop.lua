@@ -227,7 +227,7 @@ function Scene.update(dt)
 end
 
 function Scene.draw()
-    fore.graphics.rect(PANEL_W, 0, fore.data.width-PANEL_W, fore.data.height, {8,15,20})
+    fore.draw2d.rect(PANEL_W, 0, fore.data.width-PANEL_W, fore.data.height, {8,15,20})
     menuStack:draw()
 
     fore.text.text( "Cursed: " .. appliedDebuff.id, fore.data.width - 220, 20, 1, {255, 80, 80}, 200, "right" )

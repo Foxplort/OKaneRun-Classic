@@ -36,8 +36,8 @@ local function drawZigZagPanel(x, y, w, h, scroll, c, o)
     pts[#pts+1] = x
     pts[#pts+1] = y + h
 
-    fore.graphics.polygon(pts, c)
-    if o then fore.graphics.polygon(pts, {255,255,255,40}, false) end
+    fore.draw2d.polygon(pts, c)
+    if o then fore.draw2d.polygon(pts, {255,255,255,40}, false) end
 end
 
 function Menu:findFirstSelectable()
@@ -400,7 +400,7 @@ function Menu:drawContent(focused)
                 else -- left
                     underlineX = startX
                 end
-                fore.graphics.rect(underlineX, yy+14, logicalWidth * u, 2, {1,1,1,optionAlpha*u})
+                fore.draw2d.rect(underlineX, yy+14, logicalWidth * u, 2, {1,1,1,optionAlpha*u})
             end
         end
     end
@@ -423,9 +423,9 @@ function Menu:drawDescription()
     local a = self.commentT * 0.627
 
     -- shadow
-    fore.graphics.rect(x, y, self.commentW, self.commentH, {0,0,0,a})
+    fore.draw2d.rect(x, y, self.commentW, self.commentH, {0,0,0,a})
     -- background
-    fore.graphics.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
+    fore.draw2d.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
 
     fore.text.textEx(
         self.comment,

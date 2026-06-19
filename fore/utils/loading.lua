@@ -31,10 +31,10 @@ function Loading.draw()
     love.graphics.setLineWidth(THICKNESS)
     
     -- Background "Donut"
-    fore.graphics.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false)
+    fore.draw2d.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false)
 
     -- Moving "White Section"
-    fore.graphics.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false)
+    fore.draw2d.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false)
     
     love.graphics.setLineWidth(1)
 end

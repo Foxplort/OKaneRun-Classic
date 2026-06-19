@@ -348,11 +348,11 @@ end
 
 function Scene.draw()
     -- Background
-    fore.graphics.rect(0, 0, fore.data.width, fore.data.height, {10, 15, 20})
+    fore.draw2d.rect(0, 0, fore.data.width, fore.data.height, {10, 15, 20})
     
     -- Dust particles
     for _, p in ipairs(particles) do
-        fore.graphics.circ(p.x, p.y, p.s, p.s, {200, 200, 220, p.a * 255})
+        fore.draw2d.circ(p.x, p.y, p.s, p.s, {200, 200, 220, p.a * 255})
     end
 
     -- Header
@@ -406,9 +406,9 @@ function Scene.draw()
                         if isSelected then
                             bgCol = {220, 240, 255, rowAlpha * 255}
                             if currentRow == 1 then
-                                fore.graphics.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {0, 180, 180, rowAlpha * 150}, true)
+                                fore.draw2d.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {0, 180, 180, rowAlpha * 150}, true)
                             else
-                                fore.graphics.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {220, 20, 80, rowAlpha * 150}, true)
+                                fore.draw2d.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6, {220, 20, 80, rowAlpha * 150}, true)
                             end
                         end
                         if limit then bgCol = {20, 22, 28, rowAlpha * 200} end
@@ -416,19 +416,19 @@ function Scene.draw()
                         
                         -- Selected mark for debuff
                         if row.type == "selection" and selectedDebuff == item then
-                            fore.graphics.rect(rx - 5, ry - 5, CARD_W + 10, CARD_H + 10, {220, 20, 80, rowAlpha * 255}, false)
+                            fore.draw2d.rect(rx - 5, ry - 5, CARD_W + 10, CARD_H + 10, {220, 20, 80, rowAlpha * 255}, false)
                         end
 
                         -- Main Card Body
-                        fore.graphics.rect(rx, ry, CARD_W, CARD_H, bgCol)
+                        fore.draw2d.rect(rx, ry, CARD_W, CARD_H, bgCol)
                         
                         -- Colored Accent Border
-                        fore.graphics.rect(rx, ry, CARD_W, 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * 255})
+                        fore.draw2d.rect(rx, ry, CARD_W, 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * 255})
                         
                         -- Inner frame
                         local innerAlpha = isSelected and 40 or 15
                         if limit then innerAlpha = 5 end
-                        fore.graphics.rect(rx + 2, ry + 2, CARD_W - 4, CARD_H - 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * innerAlpha})
+                        fore.draw2d.rect(rx + 2, ry + 2, CARD_W - 4, CARD_H - 4, {themeCol[1], themeCol[2], themeCol[3], rowAlpha * innerAlpha})
 
                         -- Card Content Colors
                         local txtAlpha = rowAlpha * 255
@@ -464,9 +464,9 @@ function Scene.draw()
                         
                         -- shadow/border for selected
                         if isSelected then
-                            fore.graphics.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {0, 127, 127, rowAlpha * 180}, true)
+                            fore.draw2d.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {0, 127, 127, rowAlpha * 180}, true)
                         end
-                        fore.graphics.rect(bx, by, btnW, btnH, bCol)
+                        fore.draw2d.rect(bx, by, btnW, btnH, bCol)
                         fore.text.text(item.txt, bx, by + 15, 1, tCol, btnW, "center")
                     end
                 end

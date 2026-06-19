@@ -24,7 +24,7 @@ function World.renderCoins()
 
             local alpha = 255-math.abs(math.min(0, c.z*6))
 
-            fore.graphics.circ(
+            fore.draw2d.circ(
                 c.x + 2.5 - 1,
                 c.y - c.z - 15 + 1,
                 10, 15,
@@ -32,7 +32,7 @@ function World.renderCoins()
                 true, 7
             )
 
-            fore.graphics.circ(
+            fore.draw2d.circ(
                 c.x + 2.5,
                 c.y - c.z - 15,
                 10, 15,
@@ -40,9 +40,9 @@ function World.renderCoins()
                 true, 7
             )
 
-            fore.graphics.circ(c.x+4+2.5, c.y-c.z-13, 2, 10, {230, 140, 0, alpha}, true, 4)
-            fore.graphics.circ(c.x+6+2.5, c.y-c.z-13, 4, 5, {255, 255, 160, alpha}, true, 5)
-            fore.graphics.circ(c.x+7.5+2.5, c.y-c.z-12, 2, 3, {255, 255, 255, alpha}, true, 5)
+            fore.draw2d.circ(c.x+4+2.5, c.y-c.z-13, 2, 10, {230, 140, 0, alpha}, true, 4)
+            fore.draw2d.circ(c.x+6+2.5, c.y-c.z-13, 4, 5, {255, 255, 160, alpha}, true, 5)
+            fore.draw2d.circ(c.x+7.5+2.5, c.y-c.z-12, 2, 3, {255, 255, 255, alpha}, true, 5)
 
             love.graphics.setStencilTest() -- Reset stencil
         end)
@@ -71,7 +71,7 @@ function World.renderCoins()
                 local cx = c.x + cw * 0.5
                 local cy = c.y - 2
 
-                fore.graphics.circ(
+                fore.draw2d.circ(
                     cx - w * 0.5 + 2.5,
                     cy - h * 0.5 + 2,
                     w,

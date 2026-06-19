@@ -57,11 +57,11 @@ function MP.update(dt)
 end
 
 function MP.drawBack()
-    for _, d in ipairs(dots) do fore.graphics.rect(d.x, d.y + scroll, 1, 1, {255, 255, 255, 20}) end
+    for _, d in ipairs(dots) do fore.draw2d.rect(d.x, d.y + scroll, 1, 1, {255, 255, 255, 20}) end
 
     for _, p in ipairs(particles) do
         if p.z < 0.5 then
-            fore.graphics.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
+            fore.draw2d.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
         end
     end
 end
@@ -69,7 +69,7 @@ end
 function MP.drawFront()
     for _, p in ipairs(particles) do
         if p.z >= 0.5 then
-            fore.graphics.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
+            fore.draw2d.circ(p.x, p.y, p.size, p.size, {1,1,1,p.a})
         end
     end
 end

@@ -18,7 +18,7 @@ return {
 
   render = function(self, isEditor)
       local drawMain = function()
-          fore.graphics.rect(self.x, self.y, self.w, self.h, {0, 190, 80}, false)
+          fore.draw2d.rect(self.x, self.y, self.w, self.h, {0, 190, 80}, false)
       end
 
       if isEditor then

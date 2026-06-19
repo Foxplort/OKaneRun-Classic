@@ -53,8 +53,8 @@ function VolumeIndicator:draw()
     local y = self.y * uiScale
     local alpha255 = math.floor(self.alpha * 255)
     
-    self.fore.graphics.rect(x, y, width, height, {0, 0, 0, 204 * self.alpha})
-    self.fore.graphics.rect(x, y, width, height, {100, 100, 100, 128 * self.alpha}, false)
+    self.fore.draw2d.rect(x, y, width, height, {0, 0, 0, 204 * self.alpha})
+    self.fore.draw2d.rect(x, y, width, height, {100, 100, 100, 128 * self.alpha}, false)
     
     local volumePercent = math.floor(self.volume)
     local textColor
@@ -73,13 +73,13 @@ function VolumeIndicator:draw()
     
     local barX, barY, barH = x + 10 * uiScale, y + height - 15 * uiScale, 8 * uiScale
     local fullBarW = width - 20 * uiScale
-    self.fore.graphics.rect(barX, barY, fullBarW, barH, {50, 50, 50, 128 * self.alpha})
+    self.fore.draw2d.rect(barX, barY, fullBarW, barH, {50, 50, 50, 128 * self.alpha})
     
     local barWidth = fullBarW * (self.volume / 2.0 / 100 / 1.5)
-    self.fore.graphics.rect(barX, barY, barWidth, barH, {255, 255, 255, alpha255})
+    self.fore.draw2d.rect(barX, barY, barWidth, barH, {255, 255, 255, alpha255})
     
     local lineX = barX + fullBarW * 0.333
-    self.fore.graphics.line({lineX, barY - 4 * uiScale, lineX, barY + barH + 4 * uiScale}, {150, 150, 150, 77 * self.alpha}, 1 * uiScale)
+    self.fore.draw2d.line({lineX, barY - 4 * uiScale, lineX, barY + barH + 4 * uiScale}, {150, 150, 150, 77 * self.alpha}, 1 * uiScale)
 end
 
 return VolumeIndicator

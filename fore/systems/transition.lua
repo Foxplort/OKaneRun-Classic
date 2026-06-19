@@ -178,7 +178,7 @@ function T.draw()
             posX = math.floor(posX / 2) * 2
             if c.dir == -1 then posX = sw - posX - shapeW end
 
-            fore.graphics.polygon(
+            fore.draw2d.polygon(
                 getSpikePolygon(posX, shapeW, l.count, l.depth, progress * l.yShift),
                 l.color, true
             )

@@ -25,8 +25,8 @@ local function drawPlayerSprite(p, x, y, z, sx, sy, color)
     fore.graphics.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, p.sprite.feetY or 256, color)
 
     if fore.debug.enabled and fore.data.devmode then
-        fore.graphics.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0})
-        fore.graphics.rect(tx - 1, ty - 1, 2, 2, {255, 255, 255})
+        fore.draw2d.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0})
+        fore.draw2d.rect(tx - 1, ty - 1, 2, 2, {255, 255, 255})
     end
 end
 
@@ -62,7 +62,7 @@ function Player.render()
         local cx = GameState.player.pos.x + pm.w * 0.5
         local cy = GameState.player.pos.y - 2
 
-        fore.graphics.circ(
+        fore.draw2d.circ(
             cx - w * 0.5,
             cy - h * 0.5 + 2,
             w,
@@ -81,7 +81,7 @@ function Player.render()
         GameState.player.pos.y-0.01,
         function()
             local alpha = 255-math.abs(math.min(0, GameState.player.pos.z*6))
-            fore.graphics.tail(GameState.player.tail, {24, 24, 24, alpha}, 2, {187, 187, 187, alpha}, 1) 
+            fore.draw2d.tail(GameState.player.tail, {24, 24, 24, alpha}, 2, {187, 187, 187, alpha}, 1) 
         end
     )
 
