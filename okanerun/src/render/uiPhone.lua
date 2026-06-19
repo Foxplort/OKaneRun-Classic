@@ -96,7 +96,7 @@ local function drawCoinIndicator()
 
     local centerX, centerY = fore.data.width - 40, 40
     local radius, baseThick = 22, 4
-    local time = love.timer.getTime()
+    local time = fore.time.getTicks()
     
     fore.graphics.arc(centerX, centerY, radius, 0, math.pi*2, {255,255,255,30}, "open", false, 32, baseThick)
 
@@ -147,7 +147,7 @@ local function drawCoinIndicator()
             local dist = math.sqrt(dx*dx + dy*dy)
             local angle = math.atan2(dy, dx)
             local coreFill = 1 - math.max(0, math.min(1, (dist - 50) / 100))
-            local time = love.timer.getTime()
+            local time = fore.time.getTicks()
             local pulse = (math.sin(time * 10) + 1) / 2
             local arcSize = 0.8 + (math.pi * 2 - 0.8) * (coreFill * coreFill)
             local r, g, b = 0 + (255 * coreFill), 255, 200 + (55 * coreFill)
@@ -279,7 +279,7 @@ local function drawDashIndicator()
         local color = {160, 235, 255, 200}
         
         if isReady then
-            local pulse = (math.sin(love.timer.getTime() * 2) + 1) / 2
+            local pulse = (math.sin(fore.time.getTicks() * 2) + 1) / 2
             color = {160, 235, 255, 200 + 55 * pulse}
         end
 

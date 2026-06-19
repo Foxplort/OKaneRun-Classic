@@ -127,7 +127,7 @@ function Audio.play(name, opts)
         instance.source:setVolume(0)
         instance.fade = {
             type = "in",
-            start = love.timer.getTime(),
+            start = Audio.fore.time.getTicks(),
             duration = opts.fadeIn,
             from = 0,
             to = Audio:_calcVolume(instance, category)
@@ -135,7 +135,7 @@ function Audio.play(name, opts)
     end
     
     -- Generate ID and store
-    local id = name .. "_" .. love.timer.getTime() .. "_" .. math.random(1000)
+    local id = name .. "_" .. Audio.fore.time.getTicks() .. "_" .. math.random(1000)
     Audio.playing[id] = instance
     instance.source:play()
     
@@ -194,7 +194,7 @@ function Audio.fadeOutAndUnload(name, fadeOut, callback)
     -- Set up fade out with unload callback
     instance.fade = {
         type = "out",
-        start = love.timer.getTime(),
+        start = Audio.fore.time.getTicks(),
         duration = fadeOut,
         from = instance.source:getVolume(),
         to = 0,
@@ -234,7 +234,7 @@ function Audio.crossfade(newName, fadeOut, fadeIn, keepOld)
         -- Fade out current
         currentMusic.fade = {
             type = "out",
-            start = love.timer.getTime(),
+            start = Audio.fore.time.getTicks(),
             duration = fadeOut,
             from = currentMusic.source:getVolume(),
             to = 0,
@@ -324,7 +324,7 @@ end
 
 ---Update (handle fades, cleanup)
 function Audio.update(dt)
-    local now = love.timer.getTime()
+    local now = Audio.fore.time.getTicks()
     
     for id, instance in pairs(Audio.playing) do
         -- Handle fades
@@ -437,7 +437,7 @@ function Audio:_stopInstance(id, instance, fadeOut)
     if fadeOut then
         instance.fade = {
             type = "out",
-            start = love.timer.getTime(),
+            start = Audio.fore.time.getTicks(),
             duration = fadeOut,
             from = instance.source:getVolume(),
             to = 0,

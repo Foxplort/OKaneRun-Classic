@@ -98,9 +98,9 @@ function Debug.update()
         stats.ram.lua = collectgarbage("count") / 1024
         stats.gcCount = collectgarbage("count")
         stats.ram.total = stats.ram.lua + stats.ram.gpu + stats.ram.audio
-        local start = love.timer.getTime()
+        local start = fore.time.getTicks()
         collectgarbage("step", 1024 * 1024)
-        stats.gcTime = (love.timer.getTime() - start) * 1000
+        stats.gcTime = (fore.time.getTicks() - start) * 1000
         gcTimer = 0
     end
 end

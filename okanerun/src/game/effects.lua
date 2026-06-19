@@ -219,13 +219,13 @@ effects.laser = {
             if laser.state == "spawning" then
                 local progress = math.max(0, laser.timer / inst.spawnDuration)
                 -- Pulse while spawning to look like it's charging
-                local pulse = (math.sin(love.timer.getTime() * 6) + 1) / 2
+                local pulse = (math.sin(fore.time.getTicks() * 6) + 1) / 2
                 col[4] = 50 + 20 * pulse
                 drawWidth = inst.width * progress
             elseif laser.state == "active" then
                 col = {255, 0, 0, 120}
                 drawWidth = inst.width
-                local pulse = (math.sin(love.timer.getTime() * 10) + 1) / 2
+                local pulse = (math.sin(fore.time.getTicks() * 10) + 1) / 2
                 col[4] = 130 + 20 * pulse
             end
             
@@ -647,7 +647,7 @@ effects.charged = {
                 local r, g, b = 100, 200, 255
                 if charge >= 0.8 then
                     r, g, b = 255, 200, 50
-                    local pulse = (math.sin(love.timer.getTime() * 15) + 1) / 2
+                    local pulse = (math.sin(fore.time.getTicks() * 15) + 1) / 2
                     r = r + (255-r) * pulse
                 end
                 

@@ -27,7 +27,7 @@ function LevelLoader.load(path, customParser)
     if path:match("%.json$") then
         data = LevelLoader.loadJSON(path, customParser)
     elseif path:match("%.4lf$") then
-        local mntPath = "temp_mount_level_" .. tostring(love.timer.getTime()):gsub("%.", "")
+        local mntPath = "temp_mount_level_" .. tostring(fore.time.getTicks()):gsub("%.", "")
         
         -- use FileData to bypass OS path constraints and PhysFS extension restrictions
         local fd = love.filesystem.newFileData(path)

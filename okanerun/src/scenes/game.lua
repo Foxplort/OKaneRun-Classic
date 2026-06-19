@@ -858,7 +858,7 @@ function Scene.update(dt)
             dt
         )
 
-        gameData.systems.tail.applyTailWave(GameState.player.tail, speed, love.timer.getTime(), dt)
+        gameData.systems.tail.applyTailWave(GameState.player.tail, speed, fore.time.getTicks(), dt)
 
         -- Updaters / Handlers
         gameData.systems.particles.updateParticles(dt)

@@ -136,11 +136,11 @@ end)
 fore:introduce("preCanvasDraw", function()
     vignetteShader:push()
     if not fore.data.phone then
-        vignetteShader:send("time", love.timer.getTime())
+        vignetteShader:send("time", fore.time.getTicks())
         vignetteShader:send("noise", fore.save.get("noise"))
         vignetteShader:send("vignette", fore.save.get("vignette"))
     else
-        vignetteShader:send("time", love.timer.getTime())
+        vignetteShader:send("time", fore.time.getTicks())
     end
 end)
 

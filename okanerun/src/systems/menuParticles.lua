@@ -35,7 +35,7 @@ function MP.init(pw)
 end
 
 function MP.update(dt)
-    local wind = math.sin(love.timer.getTime() * 0.6) * 10
+    local wind = math.sin(fore.time.getTicks() * 0.6) * 10
 
     for _, p in ipairs(particles) do
         p.y = p.y + p.spd * dt

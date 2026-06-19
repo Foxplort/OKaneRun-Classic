@@ -231,7 +231,7 @@ function Input:touchpressed(id, x, y)
     self.touches[id] = {
         startX = x,
         startY = y,
-        time = love.timer.getTime()
+        time = self.fore.time.getTicks()
     }
     self:setMethod("touch")
 end
@@ -243,7 +243,7 @@ function Input:touchreleased(id, x, y)
     local dx = x - t.startX
     local dy = y - t.startY
     local dist = math.sqrt(dx*dx + dy*dy)
-    local duration = love.timer.getTime() - t.time
+    local duration = self.fore.time.getTicks() - t.time
 
     if dist > 40 then
         -- Swipe
@@ -262,7 +262,7 @@ function Input:touchreleased(id, x, y)
         self.gestures.taps.x = x
         self.gestures.taps.y = y
         
-        local now = love.timer.getTime()
+        local now = self.fore.time.getTicks()
         if self.lastTapTime and now - self.lastTapTime < 0.3 then
             self.gestures.taps.double = true
             self.lastTapTime = nil

@@ -10,7 +10,7 @@
 ---@field camera fore.camera
 ---@field hooks table<string, function[]>
 local Fore = {
-    version = "1.0.0",
+    version = "2.0.0-dev",
 }
 
 ---Initialize the engine
@@ -40,6 +40,7 @@ function Fore.init(config)
     Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
     Fore.data.devmode = false
     Fore.data.isCatchingUp = false
+    Fore.time = require("fore.utils.time")
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
