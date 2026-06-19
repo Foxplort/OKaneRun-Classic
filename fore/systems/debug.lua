@@ -115,9 +115,11 @@ function Debug.draw()
     -- Header
     local hdr = string.format(fore.conf.name .. " [%s] | %d/%d", fore.conf.version, Debug.page, Debug.maxPages)
     local ehdr = string.format("Fore Engine [%s] | Lv%d", fore.version, Debug.detailLevel)
+    local backendHdr = string.format("Backend: %s", fore.backend)
     table.insert(lines, hdr)
     table.insert(lines, ehdr)
-    table.insert(lines, string.rep("-", math.max(#hdr, #ehdr)))
+    table.insert(lines, backendHdr)
+    table.insert(lines, string.rep("-", math.max(#hdr, #ehdr, #backendHdr)))
     
     -- Page 1: Performance
     if Debug.page == 1 then

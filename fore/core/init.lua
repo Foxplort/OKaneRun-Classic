@@ -13,10 +13,22 @@ local Fore = {
     version = "2.0.0-dev",
 }
 
+local backend = nil
+
 ---Initialize the engine
 ---@param config table
 ---@return fore
 function Fore.init(config)
+    Fore.backend = nil
+    if love then
+        Fore.backend = "love"
+    elseif rl then
+        Fore.backend = "raylib"
+    end
+
+    if Fore.backend == nil then error("Fore Error: Not running on a supported backend.") end
+    backend = Fore.backend
+
     Fore.channels = {
         loader = love.thread.getChannel("fore_loader"),
         response = love.thread.getChannel("fore_response")
@@ -25,11 +37,11 @@ function Fore.init(config)
     Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
     Fore.loaderThread:start()
 
-    Fore.graphics = require("fore.utils.graphics")
+    Fore.graphics = require("fore.backend." .. backend .. ".graphics")
     Fore.graphics.fore = Fore
-    Fore.shader = require("fore.utils.shader")
+    Fore.shader = require("fore.backend." .. backend .. ".shader")
     Fore.math = require("fore.utils.math")
-    Fore.audio = require("fore.utils.audio")
+    Fore.audio = require("fore.backend." .. backend .. ".audio")
     Fore.audio.init(Fore)
     Fore.queuer = require("fore.systems.queuer")
     Fore.levelLoader = require("fore.utils.levelLoader")
@@ -40,7 +52,7 @@ function Fore.init(config)
     Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
     Fore.data.devmode = false
     Fore.data.isCatchingUp = false
-    Fore.time = require("fore.utils.time")
+    Fore.time = require("fore.backend." .. backend .. ".time")
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
