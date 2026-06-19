@@ -79,7 +79,7 @@ local function createDitherData()
 end
 
 function T.init()
-    dither_shader = love.graphics.newShader("fore/assets/shaders/dither.glsl")
+    dither_shader = fore.shader.new("fore/assets/shaders/dither.glsl")
     dither_shader:send("ditherTex", createDitherData())
 end
 
@@ -155,12 +155,12 @@ function T.draw()
         local steps = T.config.dither_steps
         local lagged_p = math.floor(progress * steps) / steps
         
-        love.graphics.setShader(dither_shader)
+        dither_shader:push()
         local dither_val = lagged_p < 0.5 and (lagged_p * 2) or (1 - (lagged_p - 0.5) * 2)
         dither_shader:send("progress", dither_val)
         
         love.graphics.rectangle("fill", 0, 0, fore.data.width, fore.data.height)
-        love.graphics.setShader()
+        fore.shader.pop()
     elseif current_style == "spike" then
         local sw, c = fore.data.width, T.config
         local shapeW = sw * c.widthMult

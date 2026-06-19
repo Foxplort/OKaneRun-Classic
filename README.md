@@ -1,6 +1,6 @@
 ![Logo](okanerun/assets/images/ui/OkaneRun_classic.png)
 
-OKaneRun Classic is a small action game built with **LÖVE (Love2D)**.
+OKaneRun Classic is a small top-down action-platformer game built with **LÖVE (Love2D)**.
 
 This repository contains the full source code.  
 The project is open for learning, experimentation, and collaboration.
@@ -21,11 +21,7 @@ love .
 
 This project contains an experimental version of the FÖRE engine.
 
-FÖRE focuses on:
-- developer-defined tools
-- minimal engine constraints
-
-Current code is partially fused/tangled with OKaneRun Classic's code.
+To learn more, please read project's [WiKi](https://github.com/Foxplort/OKaneRun-Classic/wiki).
 
 ---
 

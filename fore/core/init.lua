@@ -27,6 +27,7 @@ function Fore.init(config)
 
     Fore.graphics = require("fore.utils.graphics")
     Fore.graphics.fore = Fore
+    Fore.shader = require("fore.utils.shader")
     Fore.math = require("fore.utils.math")
     Fore.audio = require("fore.utils.audio")
     Fore.audio.init(Fore)

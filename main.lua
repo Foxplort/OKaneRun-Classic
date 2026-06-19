@@ -112,9 +112,9 @@ bgfx.init(70)
 local vignetteShader
 fore:introduce("load", function()
     if not fore.data.phone then
-        vignetteShader = love.graphics.newShader("okanerun/assets/shaders/main.glsl")
+        vignetteShader = fore.shader.new("okanerun/assets/shaders/main.glsl")
     else
-        vignetteShader = love.graphics.newShader("okanerun/assets/shaders/main_mobile.glsl")
+        vignetteShader = fore.shader.new("okanerun/assets/shaders/main_mobile.glsl")
     end
 
     GameState.area = Fx.ll.load("okanerun/src/data/levels/Shifted Geometry.4lf")
@@ -134,7 +134,7 @@ fore:introduce("rawPreDraw", function()
 end)
 
 fore:introduce("preCanvasDraw", function()
-    love.graphics.setShader(vignetteShader)
+    vignetteShader:push()
     if not fore.data.phone then
         vignetteShader:send("time", love.timer.getTime())
         vignetteShader:send("noise", fore.save.get("noise"))
@@ -144,7 +144,7 @@ fore:introduce("preCanvasDraw", function()
     end
 end)
 
-fore:introduce("rawPostDraw", function() love.graphics.setShader() end)
+fore:introduce("rawPostDraw", function() fore.shader.pop() end)
 
 fore.editor.onToggle = function(enabled)
     local Objects = require("okanerun.src.data.objects")

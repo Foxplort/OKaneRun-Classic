@@ -305,7 +305,7 @@ function Scene.enter()
     menuStack = MenuSys.Stack.new(menu)  -- wrap in a stack
 
 
-    monoShader = love.graphics.newShader("okanerun/assets/shaders/pause.glsl")
+    monoShader = fore.shader.new("okanerun/assets/shaders/pause.glsl")
     monoShader:send("levels", 128)
     monoShader:send("strength", 0.9)
 
@@ -906,7 +906,7 @@ end
 
 function Scene.draw()
     if pause then
-        love.graphics.setShader(monoShader)
+        monoShader:push()
     end
 
     fore.camera.push("world", true)
@@ -970,7 +970,7 @@ function Scene.draw()
     gameData.game.effectUI.draw(GameState.player)
 
     if pause then
-        love.graphics.setShader()
+        fore.shader.pop()
         --fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,90})
         menuStack:draw()
 

@@ -14,7 +14,7 @@ local timer = 1
 local fogXShift, fogYShift = 0, 0
 local logoY = 0
 
-local breathShader = love.graphics.newShader("okanerun/assets/shaders/menu_breathing.glsl")
+local breathShader = fore.shader.new("okanerun/assets/shaders/menu_breathing.glsl")
 
 local logScore = 0
 
@@ -436,7 +436,7 @@ function Scene.draw()
     local x = PANEL_WIDTH + areaW / 2
     local y = fore.data.height
 
-    love.graphics.setShader(breathShader)
+    breathShader:push()
     fore.graphics.imageScaled(
         "menu_portrait",
         x,
@@ -447,7 +447,7 @@ function Scene.draw()
         iw / 2,
         ih
     )
-    love.graphics.setShader()
+    fore.shader.pop()
 
     iw, ih = fore.graphics.getImage("menu_fog"):getDimensions()
     fore.graphics.imageScaled(
