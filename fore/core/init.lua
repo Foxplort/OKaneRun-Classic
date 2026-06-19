@@ -1,14 +1,4 @@
 ---@class fore
----@field scenes fore.scenes
----@field graphics any
----@field audio fore.audio
----@field math table
----@field conf table
----@field data table
----@field debug any
----@field version string
----@field camera fore.camera
----@field hooks table<string, function[]>
 local Fore = {
     version = "2.0.0-dev",
 }
@@ -53,6 +43,7 @@ function Fore.init(config)
     Fore.data.devmode = false
     Fore.data.isCatchingUp = false
     Fore.time = require("fore.backend." .. backend .. ".time")
+    Fore.window = require("fore.backend." .. backend .. ".window")
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything
@@ -86,30 +77,16 @@ function Fore.init(config)
     return Fore
 end
 
-
+---Starts up the engine's work
 function Fore:start()
-    love.window.setMode(
-        self.data.width*self.data.scale,
-        self.data.height*self.data.scale,
-        { 
-            fullscreen = self.data.fullscreen,
-            vsync = self.data.vsync,
-            resizable = self.data.resizable,
-            minwidth = self.data.width,
-            minheight = self.data.height,
-            msaa = (self.conf.pixelated and 4) or 0,
-        }
-    )
-
-    love.window.setTitle(self.data.title)
-    if self.data.icon then
-        love.window.setIcon(love.image.newImageData(self.data.icon))
-    end
+    self.window.init(self)
 
     self.camera.systemInit(self)
     self.graphics.init()
     Fore.transition.init()
+
     self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)
+
     if self.conf.pixelated then
         self.scenes.canvas:setFilter("nearest", "nearest")
     else
@@ -158,8 +135,7 @@ function Fore:update(dt)
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end
     if self.input:pressed("editor") and self.data.devmode then self.editor.toggle() end
     if self.input:pressed("fullscreen") then
-        self.data.fullscreen = not self.data.fullscreen
-        love.window.setFullscreen(self.data.fullscreen, "desktop")
+        self.window.setFullscreen(not self.data.fullscreen)
         self.graphics.updateFonts()
     end
 
