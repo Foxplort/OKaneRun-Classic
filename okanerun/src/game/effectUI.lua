@@ -61,7 +61,7 @@ function EffectUI.draw(player)
 
         local entry = player.effects[id]
         local amountApplied = entry and entry.amount or 0
-        fore.graphics.text(tostring(amountApplied), x+2, y+22, 1)
+        fore.text.text(tostring(amountApplied), x+2, y+22, 1)
 
         if selected then
             fore.graphics.rect(
@@ -72,8 +72,8 @@ function EffectUI.draw(player)
                 false
             )
 
-            fore.graphics.text(tostring(id), 10, 65, 1)
-            fore.graphics.text("Debug; press B to return", 10, 55, 1)
+            fore.text.text(tostring(id), 10, 65, 1)
+            fore.text.text("Debug; press B to return", 10, 55, 1)
         end
 
         -- icon (safe)

@@ -25,7 +25,7 @@ local yChange = 0
 
 local function lineText(text)
     c = {255, 255, 255, textAlpha}
-    fore.graphics.text(text, 0, 125 + 15 * (textLine-1) - yChange, 1, c, fore.data.width, "center")
+    fore.text.text(text, 0, 125 + 15 * (textLine-1) - yChange, 1, c, fore.data.width, "center")
     textLine = textLine+1
 end
 
@@ -87,7 +87,7 @@ function Scene.draw()
         textAlpha = 255 - (hold / HOLD_TIME) * 255
 
         if state == "warning" then
-            fore.graphics.text("WARNING", 0, 90-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
+            fore.text.text("WARNING", 0, 90-yChange, 2, {255,0,0, textAlpha}, fore.data.width, "center")
             lineText("This is an early arcade prototype released as-is.")
             lineText("Systems are simple and not fully balanced.")
             lineText("-- Also --")
@@ -119,7 +119,7 @@ function Scene.draw()
         fore.graphics.rect(x - 10, capY, 2, capH, {255,255,255,a})
         fore.graphics.rect(x + BAR_WIDTH + 8, capY, 2, capH, {255,255,255,a})
     elseif state == "presents" or state == "done" then
-        fore.graphics.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.data.width, "center")
+        fore.text.text("foxplort\npresents", 0, 155, 1, {255,255,255,255}, fore.data.width, "center")
     end
 
     textLine = 1

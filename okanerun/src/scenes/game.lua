@@ -978,9 +978,9 @@ function Scene.draw()
         local polygonShape = {center - 100, 25, center + 100, 25, center + 120, 50, center + 100, 75, center - 100, 75, center - 120, 50}
         fore.graphics.polygon(polygonShape, {0,0,0,200}, true)
         fore.graphics.polygon(polygonShape, {255,255,255,40}, false)
-        fore.graphics.textEx("playing", 220, 30, 1, {255,255,255}, (fore.data.width - 220), "center")
-        fore.graphics.textEx(GameState.area.levelName, 220, 40, 2, {255,255,255}, (fore.data.width - 220), "center")
-        fore.graphics.textEx("by " .. GameState.area.levelAuthor, 220, 60, 1, {255,255,255}, (fore.data.width - 220), "center")
+        fore.text.textEx("playing", 220, 30, 1, {255,255,255}, (fore.data.width - 220), "center")
+        fore.text.textEx(GameState.area.levelName, 220, 40, 2, {255,255,255}, (fore.data.width - 220), "center")
+        fore.text.textEx("by " .. GameState.area.levelAuthor, 220, 60, 1, {255,255,255}, (fore.data.width - 220), "center")
     elseif deathPause then
         fore.graphics.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
     end

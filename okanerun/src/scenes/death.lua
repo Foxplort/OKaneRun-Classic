@@ -113,7 +113,7 @@ function Scene.draw()
     local y = fore.data.height / 2
     local alpha = math.min(1, timer * 2)
     
-    fore.graphics.text(
+    fore.text.text(
         reason,
         PANEL_WIDTH,
         y - 20,
@@ -123,7 +123,7 @@ function Scene.draw()
         "center"
     )
     
-    fore.graphics.text(
+    fore.text.text(
         "score : " .. GameState.score,
         PANEL_WIDTH,
         y + 20,
@@ -133,7 +133,7 @@ function Scene.draw()
         "center"
     )
 
-    fore.graphics.text(
+    fore.text.text(
         "person best : " .. PB,
         PANEL_WIDTH,
         y + 40,

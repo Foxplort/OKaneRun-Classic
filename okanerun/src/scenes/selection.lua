@@ -356,7 +356,7 @@ function Scene.draw()
     end
 
     -- Header
-    fore.graphics.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100}, 130, "right")
+    fore.text.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100}, 130, "right")
 
     love.graphics.push()
     love.graphics.translate(0, -verticalScroll)
@@ -379,7 +379,7 @@ function Scene.draw()
             if rowAlpha > 0 then
                 -- Row title
                 local titleColor = isRowFocused and {255, 255, 255, rowAlpha * 255} or {127, 127, 127, rowAlpha * 180}
-                fore.graphics.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1 * FONT_S, titleColor)
+                fore.text.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1 * FONT_S, titleColor)
 
                 -- Items
                 love.graphics.push()
@@ -441,15 +441,15 @@ function Scene.draw()
                         fore.graphics.imageSafe(item.def.id, "missing", rx + CARD_W/2 - 16, ry + 10, 32, 32, 0, 0, 0, iconTint)
                         
                         -- ID/Name
-                        fore.graphics.text(item.def.id:upper(), rx + 5, ry + 50, 1 * FONT_S, txtCol, CARD_W - 10, "center")
+                        fore.text.text(item.def.id:upper(), rx + 5, ry + 50, 1 * FONT_S, txtCol, CARD_W - 10, "center")
                         
                         -- Desc
-                        fore.graphics.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8 * FONT_S, txtCol, CARD_W - 20, "left")
+                        fore.text.textEx(EffectsDesc[item.def.id] or "No description", rx + 10, ry + 70, 0.8 * FONT_S, txtCol, CARD_W - 20, "left")
 
                         -- Price for buffs
                         if isShop then
                             local priceCol = isSelected and {20, 25, 40, txtAlpha} or {themeCol[1], themeCol[2], themeCol[3], txtAlpha}
-                            fore.graphics.text(item.price .. "c", rx + CARD_W - 35, ry + CARD_H - 18, 1, priceCol, 30, "right")
+                            fore.text.text(item.price .. "c", rx + CARD_W - 35, ry + CARD_H - 18, 1, priceCol, 30, "right")
                         end
 
                     elseif row.type == "buttons" then
@@ -467,7 +467,7 @@ function Scene.draw()
                             fore.graphics.rect(bx - 3, by - 3, btnW + 6, btnH + 6, {0, 127, 127, rowAlpha * 180}, true)
                         end
                         fore.graphics.rect(bx, by, btnW, btnH, bCol)
-                        fore.graphics.text(item.txt, bx, by + 15, 1, tCol, btnW, "center")
+                        fore.text.text(item.txt, bx, by + 15, 1, tCol, btnW, "center")
                     end
                 end
                 love.graphics.pop()
@@ -480,7 +480,7 @@ function Scene.draw()
     -- Message overlay
     if messageTimer > 0 then
         local alpha = math.min(1, messageTimer * 2)
-        fore.graphics.text(message, 0, fore.data.height - 40, 1, {1, 0.3, 0.3, alpha}, fore.data.width, "center")
+        fore.text.text(message, 0, fore.data.height - 40, 1, {1, 0.3, 0.3, alpha}, fore.data.width, "center")
     end
 
     if fore.save.get("hints") then
@@ -490,7 +490,7 @@ function Scene.draw()
         end
 
         if not fore.data.phone then
-            fore.graphics.textEx(
+            fore.text.textEx(
                 input_hint,
                 fore.data.width - 170, fore.data.height - 30, 0.75, {255, 255, 255, 70}, 150, "right"
             )

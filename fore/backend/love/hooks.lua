@@ -82,7 +82,7 @@ function Hooks.register(fore)
     end
 
     love.resize = function(w,h)
-        fore.graphics.updateFonts()
+        fore.text.updateFonts()
         fore.last_font_scale = fore.data.scale
     end
 

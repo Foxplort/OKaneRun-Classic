@@ -27,8 +27,8 @@ function Fore.init(config)
     Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
     Fore.loaderThread:start()
 
-    Fore.graphics = require("fore.backend." .. backend .. ".graphics")
-    Fore.graphics.fore = Fore
+    Fore.graphics = require("fore.backend." .. backend .. ".graphics.graphics")
+    Fore.text = require("fore.backend." .. backend .. ".graphics.text")
     Fore.shader = require("fore.backend." .. backend .. ".shader")
     Fore.math = require("fore.utils.math")
     Fore.audio = require("fore.backend." .. backend .. ".audio")
@@ -82,7 +82,8 @@ function Fore:start()
     self.window.init(self)
 
     self.camera.systemInit(self)
-    self.graphics.init()
+    self.graphics.init(self)
+    self.text.init(self)
     Fore.transition.init()
 
     self.scenes.canvas = love.graphics.newCanvas(fore.conf.width, fore.conf.height)

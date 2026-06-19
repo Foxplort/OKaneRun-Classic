@@ -253,8 +253,8 @@ function Menu:click(tx, ty, stack)
                 fullText = opt.txt .. " < " .. opt.getValue() .. " >"
             end
             
-            local textWidth = fore.graphics.getTextWidth(fullText, 1)
-            local textHeight = fore.graphics.getTextHeight(1)
+            local textWidth = fore.text.getTextWidth(fullText, 1)
+            local textHeight = fore.text.getTextHeight(1)
             local iconSize = textHeight * 1.2
             
             local logicalWidth = textWidth
@@ -331,9 +331,9 @@ function Menu:drawContent(focused)
         )
     end
 
-    local titleWidth = fore.graphics.getTextWidth(self.title, 2)
+    local titleWidth = fore.text.getTextWidth(self.title, 2)
     local titleX = getTextX(self.align, panelX, panelW, titleWidth)
-    fore.graphics.text(self.title, titleX, y, 2, {1,1,1,a})
+    fore.text.text(self.title, titleX, y, 2, {1,1,1,a})
 
     local viewTop = y + 60 - 10
     local viewBottom = fore.data.height - self.viewBottomOffset
@@ -362,8 +362,8 @@ function Menu:drawContent(focused)
             if opt.type == "scroll" and opt.getValue then
                 fullText = opt.txt .. " < " .. opt.getValue() .. " >"
             end
-            local textWidth = fore.graphics.getTextWidth(fullText, 1) * fontSize
-            local textHeight = fore.graphics.getTextHeight(fontSize)
+            local textWidth = fore.text.getTextWidth(fullText, 1) * fontSize
+            local textHeight = fore.text.getTextHeight(fontSize)
             local iconSize = textHeight * 1.2
             
             local logicalWidth = textWidth
@@ -382,7 +382,7 @@ function Menu:drawContent(focused)
                 currentX = currentX + iconSize + 8
             end
 
-            fore.graphics.text(fullText, currentX, yy, fontSize, c)
+            fore.text.text(fullText, currentX, yy, fontSize, c)
             
             if opt.type == "checkbox" and opt.state then
                 local cbIcon = opt.state() and "checkbox_true" or "checkbox_false"
@@ -427,7 +427,7 @@ function Menu:drawDescription()
     -- background
     fore.graphics.rect(x-1, y-1, self.commentW+2, self.commentH+2, {1,1,1,a}, false)
 
-    fore.graphics.textEx(
+    fore.text.textEx(
         self.comment,
         x+12, y+12,
         1,
@@ -487,12 +487,12 @@ function MenuStack:draw()
         end
 
         if fore.data.phone then
-            fore.graphics.textEx(
+            fore.text.textEx(
                 input_hint,
                 20, fore.data.height - 40, 1, {255, 255, 255, 120}
             )
         else
-            fore.graphics.textEx(
+            fore.text.textEx(
                 input_hint,
                 20, fore.data.height - 40, 0.75, {255, 255, 255, 70}
             )

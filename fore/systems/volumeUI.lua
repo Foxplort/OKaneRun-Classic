@@ -69,7 +69,7 @@ function VolumeIndicator:draw()
         textColor = {150, 150, 255, alpha255}
     end
     
-    self.fore.graphics.text("Volume: " .. volumePercent .. "%", x + 10 * uiScale, y + 12 * uiScale, uiScale, textColor)
+    self.fore.text.text("Volume: " .. volumePercent .. "%", x + 10 * uiScale, y + 12 * uiScale, uiScale, textColor)
     
     local barX, barY, barH = x + 10 * uiScale, y + height - 15 * uiScale, 8 * uiScale
     local fullBarW = width - 20 * uiScale

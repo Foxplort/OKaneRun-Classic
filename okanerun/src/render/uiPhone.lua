@@ -33,10 +33,10 @@ local function drawLevelIntro()
 
     local textY = 100 - yOffset
 
-    fore.graphics.text(levelIntroName, 0, textY, 2, {255, 255, 255, alpha * 255}, fore.data.width, "center")
+    fore.text.text(levelIntroName, 0, textY, 2, {255, 255, 255, alpha * 255}, fore.data.width, "center")
     
     if levelIntroAuthor then
-        fore.graphics.text("by " .. levelIntroAuthor, 0, textY + 40, 1, {200, 200, 200, alpha * 255}, fore.data.width, "center")
+        fore.text.text("by " .. levelIntroAuthor, 0, textY + 40, 1, {200, 200, 200, alpha * 255}, fore.data.width, "center")
     end
 end
 
@@ -92,7 +92,7 @@ local function drawCoinIndicator()
     local coins = GameState.area.coins
     local full = #coins > 0
     local coinText = full and (#coins .. " left") or "deposit"
-    fore.graphics.text(coinText, fore.data.width-80, 35, 1, 255, 80, "center")
+    fore.text.text(coinText, fore.data.width-80, 35, 1, 255, 80, "center")
 
     local centerX, centerY = fore.data.width - 40, 40
     local radius, baseThick = 22, 4
@@ -300,7 +300,7 @@ local function drawDashIndicator()
         elseif fore.input:getMethod() == "touch" then
             input_hint = "DASH READY"
         end
-        fore.graphics.text(input_hint, x - 5, y, 1, {0,0,0,200}, w, "center")
+        fore.text.text(input_hint, x - 5, y, 1, {0,0,0,200}, w, "center")
     end
 end
 

@@ -8,6 +8,11 @@ Renderer.debugColor = {255, 0, 255}
 local loader_channel = love.thread.getChannel("fore_loader")
 local response_channel = love.thread.getChannel("fore_response")
 
+local TypeRef = require("fore.backend.love.graphics.types")
+local setColor = TypeRef.setColor
+local coloring = TypeRef.coloring
+local filling = TypeRef.filling
+
 Renderer.fore = nil
 Renderer.pending_assets = 0
 
@@ -15,71 +20,10 @@ Renderer.asset_registry = {}
 Renderer.planned_loads = {}
 Renderer.planned_unloads = {}
 
-Renderer.base_font_sizes = {
-    small = 2,
-    medium = 4,
-    large = 8
-}
-
-function Renderer.init()
-    Renderer.updateFonts()
-    return Renderer
-end
-
----Updates font objects to match current screen scale
-function Renderer.updateFonts()
-    local scale = (Renderer.fore and Renderer.fore.data and Renderer.fore.data.scale) or 1
-    
-    scale = math.max(0.1, scale)
-
-    if scale < 2 then scale = scale * 2 end
-
-    Renderer.fonts = {
-        small = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.small * scale)),
-        medium = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.medium * scale)),
-        large = love.graphics.newFont("fore/assets/fonts/JetBrainsMono.ttf", 8, "normal", math.floor(Renderer.base_font_sizes.large * scale))
-    }
-    
-    for _, font in pairs(Renderer.fonts) do
-        font:setFilter("linear", "linear")
-    end
-end
-
-function Renderer.setFontScale(s)
-    local font = "small"
-    if s < 1.4 then font = "small"
-    elseif s < 2.4 then font = "medium"
-    else font = "large" end 
-    love.graphics.setFont(Renderer.fonts[font])
-    return font
-end
-
--- INNER FUNCTIONS
-
-local function coloring(c, pA)
-    pA = pA or 1
-    if not c then return 1, 1, 1, pA end
-    local r, g, b, a = 1, 1, 1, 1
-    if type(c) == "number" then
-        local v = c > 1 and c / 255 or c
-        r, g, b = v, v, v
-    elseif type(c) == "table" then
-        r, g, b, a = c[1] or 255, c[2] or 255, c[3] or 255, c[4] or 255
-        if r > 1 or g > 1 or b > 1 or a > 1 then
-            r, g, b, a = r/255, g/255, b/255, a/255
-        end
-    end
-    return r, g, b, a * pA
-end
-
-local function setColor(c)
-    love.graphics.setColor(coloring(c))
-end
-
-local function filling(f)
-    if f == nil then f = true end
-    if f then f = "fill" else f = "line" end
-    return f
+---Initializes the backend
+---@param foreRef table
+function Renderer.init(foreRef)
+    Renderer.fore = foreRef
 end
 
 -- BASIC FUNCTIONS
@@ -237,8 +181,8 @@ function Renderer.graph(points, x, y, w, h, color, min, max, target)
     Renderer.line(vertices, color, 1)
     
     -- Draw min/max labels
-    Renderer.text(string.format("%.1f", mx), x + w - 35, y - 15, 0.7, {200, 200, 200})
-    Renderer.text(string.format("%.1f", mn), x + w - 35, y + h + 2, 0.7, {200, 200, 200})
+    Renderer.fore.text.text(string.format("%.1f", mx), x + w - 35, y - 15, 0.7, {200, 200, 200})
+    Renderer.fore.text.text(string.format("%.1f", mn), x + w - 35, y + h + 2, 0.7, {200, 200, 200})
 end
 
 function Renderer.sparkline(points, x, y, w, h, color)
@@ -284,127 +228,6 @@ function Renderer.polygon(vertices, c, f)
     else
         love.graphics.polygon("line", vertices)
     end
-end
-
-function Renderer.text(text, x, y, s, c, wrap, align)
-    s = s or {1, 1}
-    if type(s) == "number" then s = {s, s} end
-    local sx = s[1] or 1
-    local sy = s[2] or s[1]
-    align = align or "left"
-
-    local font = Renderer.setFontScale(math.max(sx, sy))
-
-    setColor(c)
-    local height = 0
-    if wrap then
-        local width, lines = Renderer.fonts[font]:getWrap(text, wrap/sx)
-        love.graphics.printf(text, x, y, wrap/sx, align, 0, sx, sy)
-        height = #lines * Renderer.fonts[font]:getHeight() * sy
-    else
-        love.graphics.print(text, x, y, 0, sx, sy)
-        height = Renderer.fonts[font]:getHeight() * sy
-    end
-    return height
-end
-
-local function parseStyledText(str, defaultColor)
-    local segments, stack, i = {}, { defaultColor }, 1
-    str = str:gsub("%[br%]", "\n")
-    while i <= #str do
-        local s, e, cap = str:find("%[c=([%w_,]+)%]", i)
-        local cs, ce = str:find("%[/c%]", i)
-        local nextS = s or (#str + 1)
-        local nextE = cs or (#str + 1)
-        if nextS < nextE and nextS == i then
-            local p = {}
-            for v in cap:gmatch("[^,]+") do table.insert(p, tonumber(v) or v) end
-            table.insert(stack, p)
-            i = e + 1
-        elseif nextE <= nextS and nextE == i then
-            if #stack > 1 then table.remove(stack) end
-            i = ce + 1
-        else
-            local stop = math.min(nextS, nextE)
-            table.insert(segments, { text = str:sub(i, stop - 1), color = stack[#stack] })
-            i = stop
-        end
-    end
-    return segments
-end
-
-local function layoutStyledText(segments, maxWidth, scale)
-    local lines, currentLine, currentWidth = {}, {}, 0
-    local function flush()
-        table.insert(lines, currentLine)
-        currentLine, currentWidth = {}, 0
-    end
-    for _, seg in ipairs(segments) do
-        local lastPos = 1
-        while lastPos <= #seg.text do
-            local nlS, nlE = seg.text:find("\n", lastPos)
-            local part = seg.text:sub(lastPos, (nlS or 0) - 1)
-            if #part > 0 then
-                for word, space in part:gmatch("([^%s]+)(%s*)") do
-                    local fW = word .. space
-                    local w = Renderer.getTextWidth(fW, scale)
-                    if maxWidth and currentWidth + w > maxWidth and currentWidth > 0 then flush() end
-                    table.insert(currentLine, { text = fW, color = seg.color })
-                    currentWidth = currentWidth + w
-                end
-            end
-            if nlS then flush() lastPos = nlE + 1 else break end
-        end
-    end
-    table.insert(lines, currentLine)
-    return lines
-end
-
-function Renderer.textAdvanced(text, x, y, s, c, wrap, align)
-    s = type(s) == "table" and s[1] or s or 1
-    local _, _, _, baseAlpha = coloring(c)
-
-    Renderer.setFontScale(s)
-
-    local lineHeight = love.graphics.getFont():getHeight() * s
-    local lines = layoutStyledText(parseStyledText(text, c), wrap, s)
-
-    for i, line in ipairs(lines) do
-        local cx = x
-        if align and align ~= "left" and wrap then
-            local lw = 0
-            for _, seg in ipairs(line) do lw = lw + Renderer.getTextWidth(seg.text, s) end
-            cx = align == "center" and x + (wrap - lw)/2 or x + wrap - lw
-        end
-        for _, seg in ipairs(line) do
-            local r, g, b, a = coloring(seg.color, baseAlpha)
-            love.graphics.setColor(r, g, b, a)
-            love.graphics.print(seg.text, cx, y + (i - 1) * lineHeight, 0, s, s)
-            cx = cx + Renderer.getTextWidth(seg.text, s)
-        end
-    end
-    
-    return #lines * lineHeight
-end
-
-function Renderer.textEx(text, x, y, s, c, wrap, align)
-    if type(text) == "string" and (text:find("[c=", 1, true) or text:find("[br", 1, true)) then
-        return Renderer.textAdvanced(text, x, y, s, c, wrap, align)
-    else
-        return Renderer.text(text, x, y, s, c, wrap, align)
-    end
-end
-
-function Renderer.getTextWidth(text, scale)
-    scale = scale or 1
-    local font = love.graphics.getFont()
-    return font:getWidth(text) * scale
-end
-
-function Renderer.getTextHeight(scale)
-    scale = scale or 1
-    local font = love.graphics.getFont()
-    return font:getHeight() * scale
 end
 
 function Renderer.imageScaled(name, x, y, sx, sy, r, ox, oy, c)

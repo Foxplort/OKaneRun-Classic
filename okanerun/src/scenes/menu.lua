@@ -186,7 +186,7 @@ local function createMenus()
     fullscreenOpt.action = function()
         fore.data.fullscreen = not fore.data.fullscreen
         love.window.setFullscreen(fore.data.fullscreen, "desktop")
-        fore.graphics.updateFonts()
+        fore.text.updateFonts()
         fore.save.set("fullscreen", fore.data.fullscreen)
         fore.save.write()
     end
@@ -233,7 +233,7 @@ local function createMenus()
         if idx > #resolutions then idx = 1 end
         local w, h = resolutions[idx][1], resolutions[idx][2]
         love.window.updateMode(w, h)
-        fore.graphics.updateFonts()
+        fore.text.updateFonts()
     end
     resolutionOpt.desc = [[
     [c=255,255,0,255]Default: 1280x720[/c][br]
@@ -471,7 +471,7 @@ function Scene.draw()
         0.35, 0.35
     )
 
-    fore.graphics.text(
+    fore.text.text(
         "--- v" .. fore.conf.version .. " ---",
         PANEL_WIDTH,
         85 + logoY,

@@ -165,10 +165,10 @@ local function drawDocument(doc)
     fore.graphics.imageSafe(doc.icon or "missing", "missing", sx + 16, sy + 16, 32, 32, 0, 0, 0, doc.tint)
     
     -- Metadata
-    fore.graphics.text(doc.name:upper(), sx, sy + 80, 1.2, {255, 255, 255}, sidebarW - 40, "left")
-    fore.graphics.textEx(doc.desc, sx, sy + 110, 0.8, {160, 170, 180}, sidebarW - 40, "left")
+    fore.text.text(doc.name:upper(), sx, sy + 80, 1.2, {255, 255, 255}, sidebarW - 40, "left")
+    fore.text.textEx(doc.desc, sx, sy + 110, 0.8, {160, 170, 180}, sidebarW - 40, "left")
     
-    fore.graphics.text("BACK [ESC]", sx, boxY + boxH - 30, 0.8, {100, 110, 120})
+    fore.text.text("BACK [ESC]", sx, boxY + boxH - 30, 0.8, {100, 110, 120})
 
     -- Body Text Area
     local tx = boxX + sidebarW
@@ -198,10 +198,10 @@ local function drawDocument(doc)
 
         if isTitle then
             cy = cy + (cy > 0 and 20 or 0)
-            fore.graphics.text(content:upper(), 0, cy, 1.4, doc.tint)
+            fore.text.text(content:upper(), 0, cy, 1.4, doc.tint)
             cy = cy + 35
         else
-            local h = fore.graphics.textEx(content, 0, cy, 1.0, {200, 210, 220}, tw, "left")
+            local h = fore.text.textEx(content, 0, cy, 1.0, {200, 210, 220}, tw, "left")
             cy = cy + h + 10
         end
     end
@@ -231,8 +231,8 @@ function Scene.draw()
 
     if currentMode == "list" then
         -- Header
-        fore.graphics.text("INTERNAL RECORDS", 60, 25, 2.5, {255, 250, 240})
-        fore.graphics.text("Progress: " .. logScore .. " pts", fore.data.width - 220, 30, 1.0, {0, 200, 220})
+        fore.text.text("INTERNAL RECORDS", 60, 25, 2.5, {255, 250, 240})
+        fore.text.text("Progress: " .. logScore .. " pts", fore.data.width - 220, 30, 1.0, {0, 200, 220})
 
         love.graphics.push()
         love.graphics.translate(0, -listVScroll)
@@ -266,7 +266,7 @@ function Scene.draw()
 
             if unlocked then
                 local txtCol = isSelected and {20, 25, 40} or {200, 210, 230}
-                fore.graphics.text(doc.name:upper(), rx + 5, ry + 20, 1, txtCol, CARD_W - 10, "center")
+                fore.text.text(doc.name:upper(), rx + 5, ry + 20, 1, txtCol, CARD_W - 10, "center")
                 
                 -- Icon
                 fore.graphics.imageSafe(doc.icon or "missing", "missing", rx + CARD_W/2 - 12, ry + 50, 24, 24, 0, 0, 0, isSelected and {20,25,40} or themeCol)
@@ -280,12 +280,12 @@ function Scene.draw()
                         
                         fore.graphics.rect(sx, sy, sw, sh, {0, 0, 0, 220})
                         fore.graphics.rect(sx, sy, sw, sh, {255, 255, 255, 100}, false)
-                        fore.graphics.textEx(doc.desc, sx + 10, sy + 10, 0.8, {255, 255, 255}, sw - 20, "left")
+                        fore.text.textEx(doc.desc, sx + 10, sy + 10, 0.8, {255, 255, 255}, sw - 20, "left")
                     end
                 end
             else
-                fore.graphics.text("LOCKED", rx + 5, ry + 35, 1, {80, 85, 90}, CARD_W - 10, "center")
-                fore.graphics.text(doc.scoreReq .. " pts", rx + 5, ry + 55, 0.8, {60, 65, 70}, CARD_W - 10, "center")
+                fore.text.text("LOCKED", rx + 5, ry + 35, 1, {80, 85, 90}, CARD_W - 10, "center")
+                fore.text.text(doc.scoreReq .. " pts", rx + 5, ry + 55, 0.8, {60, 65, 70}, CARD_W - 10, "center")
             end
         end
 

@@ -156,7 +156,7 @@ function Debug.draw()
     end
     
     -- Panel size
-    fore.graphics.setFontScale(uiScale)
+    fore.text.setFontScale(uiScale)
     local font = love.graphics.getFont()
     local w = 0; for _,l in ipairs(lines) do w = math.max(w, font:getWidth(l) * uiScale) end
     w = w + pad * 2
@@ -170,23 +170,23 @@ function Debug.draw()
     -- Text
     for i,l in ipairs(lines) do
         local col = l:find("^%-") and {200,200,200} or {255,255,255}
-        fore.graphics.text(l, x+pad, y+pad + (i-1)*lh, uiScale, col)
+        fore.text.text(l, x+pad, y+pad + (i-1)*lh, uiScale, col)
     end
     
     -- Graph
     if graphH > 0 then
         local gx, gy = x+pad, y + h - graphH - 2 * uiScale
         local gw = w - pad*2
-        fore.graphics.text("Frame (ms)", gx, gy - 12 * uiScale, 0.7 * uiScale, {200,200,200})
+        fore.text.text("Frame (ms)", gx, gy - 12 * uiScale, 0.7 * uiScale, {200,200,200})
         fore.graphics.graph(frameHistory, gx, gy, gw, graphH - 15 * uiScale, {255,200,100}, 0, 33.33, 16.67)
-        fore.graphics.text("60", gx+gw - 20 * uiScale, gy - 10 * uiScale, 0.6 * uiScale, {100,255,100})
+        fore.text.text("60", gx+gw - 20 * uiScale, gy - 10 * uiScale, 0.6 * uiScale, {100,255,100})
     end
     
     -- Hint with background
     local hint = "K:close Tab:page +/-:detail"
     local hw, hh = font:getWidth(hint) * uiScale, font:getHeight() * uiScale
     fore.graphics.rect(x, y+h + 2 * uiScale, hw + 6 * uiScale, hh + 4 * uiScale, {0,0,0,180})
-    fore.graphics.text(hint, x + 3 * uiScale, y+h + 4 * uiScale, uiScale, {200,200,200})
+    fore.text.text(hint, x + 3 * uiScale, y+h + 4 * uiScale, uiScale, {200,200,200})
 end
 
 return Debug
