@@ -1,7 +1,7 @@
 local utf8 = require("utf8")
 local Editor = {}
 
-local foreRef = nil
+local fore = nil
 local json = require("fore.utils.json")
 local zipwriter = require("fore.utils.zipwriter")
 
@@ -120,8 +120,8 @@ function Editor.redo()
     end
 end
 
-function Editor.init(fore)
-    foreRef = fore
+function Editor.init(foreRef)
+    fore = foreRef
     
     if love.filesystem.getInfo("editor_settings.json") then
         local s = love.filesystem.read("editor_settings.json")
@@ -195,7 +195,7 @@ function Editor.save()
     end
     
     -- Generate Preview
-    local pW, pH, vW, vH = foreRef:computeInternalResolution()
+    local pW, pH, vW, vH = fore:computeInternalResolution()
     local cvs = love.graphics.newCanvas(vW, vH)
     love.graphics.setCanvas(cvs)
     love.graphics.clear(0.05, 0.05, 0.05, 1)
@@ -621,8 +621,8 @@ end
 
 function Editor.mousemoved(x, y, dx, dy, istouch)
     if Editor.camera.dragging then
-        Editor.camera.x = Editor.camera.x - (dx / foreRef.data.scale) / Editor.camera.zoom
-        Editor.camera.y = Editor.camera.y - (dy / foreRef.data.scale) / Editor.camera.zoom
+        Editor.camera.x = Editor.camera.x - (dx / fore.data.scale) / Editor.camera.zoom
+        Editor.camera.y = Editor.camera.y - (dy / fore.data.scale) / Editor.camera.zoom
     end
     
     if Editor.mouse.resizeObj and Editor.mouse.resizeCorner then
@@ -662,8 +662,8 @@ function Editor.update(dt)
     local screenW, screenH = love.graphics.getDimensions()
     local mx, my = love.mouse.getPosition()
     
-    local pW, pH, vW, vH = foreRef:computeInternalResolution()
-    local scale = foreRef.data.scale
+    local pW, pH, vW, vH = fore:computeInternalResolution()
+    local scale = fore.data.scale
     local offsetX = (screenW - pW) / 2
     local offsetY = (screenH - pH) / 2
     
@@ -693,12 +693,12 @@ local function drawButton(id, txt, x, y, w, h, active, action)
         color = P_BTN_HOVER
     end
     
-    foreRef.draw2d.rect(x, y, w, h, color, true)
-    foreRef.draw2d.rect(x, y, w, h, P_BTN_BORDER, false)
+    fore.draw2d.rect(x, y, w, h, color, true)
+    fore.draw2d.rect(x, y, w, h, P_BTN_BORDER, false)
     
-    local th = foreRef.text.getTextHeight(Editor.uiScale)
-    local tw = foreRef.text.getTextWidth(txt, Editor.uiScale)
-    foreRef.text.text(txt, x + (w - tw)/2, y + (h - th)/2, Editor.uiScale, {1,1,1,1})
+    local th = fore.text.getTextHeight(Editor.uiScale)
+    local tw = fore.text.getTextWidth(txt, Editor.uiScale)
+    fore.text.text(txt, x + (w - tw)/2, y + (h - th)/2, Editor.uiScale, {1,1,1,1})
 end
 
 local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
@@ -707,9 +707,9 @@ local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
     if isNumber and not active then rawDisplay = tostring(math.floor(tonumber(value) or 0)) end
     local displayVal = active and Editor.inputText or rawDisplay
     
-    foreRef.text.text(label, x, y + (h - foreRef.text.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
+    fore.text.text(label, x, y + (h - fore.text.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
     
-    local lw = foreRef.text.getTextWidth(label, Editor.uiScale) + 10
+    local lw = fore.text.getTextWidth(label, Editor.uiScale) + 10
     local bx = x + lw
     local bw = w - lw
     
@@ -732,19 +732,19 @@ local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
         color = P_BTN_HOVER
     end
     
-    foreRef.draw2d.rect(bx, y, bw, h, color, true)
-    foreRef.draw2d.rect(bx, y, bw, h, P_BTN_BORDER, false)
+    fore.draw2d.rect(bx, y, bw, h, color, true)
+    fore.draw2d.rect(bx, y, bw, h, P_BTN_BORDER, false)
     
     -- Clip text so it doesn't bleed out of bounds
     love.graphics.setScissor(bx, y, bw, h)
-    foreRef.text.text(displayVal .. (active and "_" or ""), bx + 5, y + (h - foreRef.text.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
+    fore.text.text(displayVal .. (active and "_" or ""), bx + 5, y + (h - fore.text.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
     love.graphics.setScissor()
 end
 
 function Editor.drawWorld()
     if Editor.loadMenuOpen then return end
     
-    local pW, pH, vW, vH = foreRef:computeInternalResolution()
+    local pW, pH, vW, vH = fore:computeInternalResolution()
     
     love.graphics.push()
     love.graphics.translate(vW/2, vH/2)
@@ -753,7 +753,7 @@ function Editor.drawWorld()
     
     -- Level Boundaries Outline
     if not Editor.isPreview then
-        foreRef.draw2d.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
+        fore.draw2d.rect(0, 0, Editor.mapWidth, Editor.mapHeight, {1, 0, 0, 0.4}, false)
     end
     
     local function drawGrid()
@@ -773,12 +773,12 @@ function Editor.drawWorld()
         local endY = math.floor((cy + hh) / snapVal) * snapVal
         
         if style == "Lines" then
-            for x = startX, endX, snapVal do foreRef.draw2d.line({x, startY, x, endY}, gridColor) end
-            for y = startY, endY, snapVal do foreRef.draw2d.line({startX, y, endX, y}, gridColor) end
+            for x = startX, endX, snapVal do fore.draw2d.line({x, startY, x, endY}, gridColor) end
+            for y = startY, endY, snapVal do fore.draw2d.line({startX, y, endX, y}, gridColor) end
         else
             for x = startX, endX, snapVal do
                 for y = startY, endY, snapVal do
-                    foreRef.draw2d.rect(x-1, y-1, 2, 2, gridColor, true)
+                    fore.draw2d.rect(x-1, y-1, 2, 2, gridColor, true)
                 end
             end
         end
@@ -796,9 +796,9 @@ function Editor.drawWorld()
                     else
                         local c = typ.color or {0.8, 0.8, 0.8}
                         if typ.shape == "point" then
-                            foreRef.draw2d.mCirc(obj.x, obj.y, 5, c, true)
+                            fore.draw2d.mCirc(obj.x, obj.y, 5, c, true)
                         elseif typ.shape == "rectangle" then
-                            foreRef.draw2d.rect(obj.x, obj.y, obj.w or 20, obj.h or 20, c, true)
+                            fore.draw2d.rect(obj.x, obj.y, obj.w or 20, obj.h or 20, c, true)
                         end
                     end
                 end
@@ -812,9 +812,9 @@ function Editor.drawWorld()
             local typ = Editor.types[sel.type]
             local c = {1, 1, 1, 0.9}
             if typ.shape == "point" then
-                foreRef.draw2d.mCirc(sel.x, sel.y, 8, c, false)
+                fore.draw2d.mCirc(sel.x, sel.y, 8, c, false)
             else
-                foreRef.draw2d.rect(sel.x, sel.y, sel.w or 20, sel.h or 20, c, false)
+                fore.draw2d.rect(sel.x, sel.y, sel.w or 20, sel.h or 20, c, false)
             end
         end
         
@@ -826,10 +826,10 @@ function Editor.drawWorld()
                 local c = {0, 0.5, 1, 1}
                 local hs = 5 / Editor.camera.zoom
                 local w, h = o.w or 40, o.h or 40
-                foreRef.draw2d.rect(o.x - hs, o.y - hs, hs*2, hs*2, c, true)
-                foreRef.draw2d.rect(o.x + w - hs, o.y - hs, hs*2, hs*2, c, true)
-                foreRef.draw2d.rect(o.x - hs, o.y + h - hs, hs*2, hs*2, c, true)
-                foreRef.draw2d.rect(o.x + w - hs, o.y + h - hs, hs*2, hs*2, c, true)
+                fore.draw2d.rect(o.x - hs, o.y - hs, hs*2, hs*2, c, true)
+                fore.draw2d.rect(o.x + w - hs, o.y - hs, hs*2, hs*2, c, true)
+                fore.draw2d.rect(o.x - hs, o.y + h - hs, hs*2, hs*2, c, true)
+                fore.draw2d.rect(o.x + w - hs, o.y + h - hs, hs*2, hs*2, c, true)
             end
         end
         
@@ -839,13 +839,13 @@ function Editor.drawWorld()
             local curX, curY = Editor.mouse.wx, Editor.mouse.wy
             local mx, my = math.min(Editor.mouse.marqueeStart.x, curX), math.min(Editor.mouse.marqueeStart.y, curY)
             local mw, mh = math.abs(curX - Editor.mouse.marqueeStart.x), math.abs(curY - Editor.mouse.marqueeStart.y)
-            foreRef.draw2d.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.3}, true)
-            foreRef.draw2d.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.8}, false)
+            fore.draw2d.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.3}, true)
+            fore.draw2d.rect(mx, my, mw, mh, {0.3, 0.6, 1.0, 0.8}, false)
         elseif Editor.mouse.draggingRect then
             local curX, curY = snap(Editor.mouse.wx), snap(Editor.mouse.wy)
             local mx, my = math.min(Editor.mouse.rectStartX, curX), math.min(Editor.mouse.rectStartY, curY)
             local mw, mh = math.abs(curX - Editor.mouse.rectStartX), math.abs(curY - Editor.mouse.rectStartY)
-            foreRef.draw2d.rect(mx, my, mw, mh, {1, 1, 1, 0.3}, true)
+            fore.draw2d.rect(mx, my, mw, mh, {1, 1, 1, 0.3}, true)
         end
     end
     
@@ -857,18 +857,18 @@ function Editor.drawUI()
     Editor.uiRects = {}
     
     if Editor.modal then
-        foreRef.draw2d.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
+        fore.draw2d.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
         
         local modalW, modalH = 400, 200
         local mx, my = (screenW - modalW)/2, (screenH - modalH)/2
-        foreRef.draw2d.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
-        foreRef.draw2d.rect(mx, my, modalW, modalH, P_BORDER, false)
+        fore.draw2d.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
+        fore.draw2d.rect(mx, my, modalW, modalH, P_BORDER, false)
         
-        foreRef.text.text(Editor.modal.title, mx + 20, my + 20, Editor.uiScale * 1.2, {1,1,1,1})
+        fore.text.text(Editor.modal.title, mx + 20, my + 20, Editor.uiScale * 1.2, {1,1,1,1})
         
         -- Word wrap text manually (naive)
         love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 120)
-        foreRef.text.text(Editor.modal.text, mx + 20, my + 60, Editor.uiScale, {0.8,0.8,0.8,1})
+        fore.text.text(Editor.modal.text, mx + 20, my + 60, Editor.uiScale, {0.8,0.8,0.8,1})
         love.graphics.setScissor()
         
         table.insert(Editor.uiRects, {x=mx + modalW - 190, y=my + modalH - 50, w=80, h=30, modalAction=true, action=function()
@@ -878,9 +878,9 @@ function Editor.drawUI()
         local btnYesColor = P_BTN_IDLE
         local mpx, mpy = Editor.mouse.px, Editor.mouse.py
         if mpx >= mx + modalW - 190 and mpx <= mx + modalW - 110 and mpy >= my + modalH - 50 and mpy <= my + modalH - 20 then btnYesColor = P_BTN_HOVER end
-        foreRef.draw2d.rect(mx + modalW - 190, my + modalH - 50, 80, 30, btnYesColor, true)
-        foreRef.draw2d.rect(mx + modalW - 190, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
-        foreRef.text.text("Yes", mx + modalW - 190 + 25, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
+        fore.draw2d.rect(mx + modalW - 190, my + modalH - 50, 80, 30, btnYesColor, true)
+        fore.draw2d.rect(mx + modalW - 190, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
+        fore.text.text("Yes", mx + modalW - 190 + 25, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
         
         table.insert(Editor.uiRects, {x=mx + modalW - 100, y=my + modalH - 50, w=80, h=30, modalAction=true, action=function()
             if Editor.modal.onNo then Editor.modal.onNo() end
@@ -888,21 +888,21 @@ function Editor.drawUI()
         end})
         local btnNoColor = P_BTN_IDLE
         if mpx >= mx + modalW - 100 and mpx <= mx + modalW - 20 and mpy >= my + modalH - 50 and mpy <= my + modalH - 20 then btnNoColor = P_BTN_HOVER end
-        foreRef.draw2d.rect(mx + modalW - 100, my + modalH - 50, 80, 30, btnNoColor, true)
-        foreRef.draw2d.rect(mx + modalW - 100, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
-        foreRef.text.text("No", mx + modalW - 100 + 30, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
+        fore.draw2d.rect(mx + modalW - 100, my + modalH - 50, 80, 30, btnNoColor, true)
+        fore.draw2d.rect(mx + modalW - 100, my + modalH - 50, 80, 30, P_BTN_BORDER, false)
+        fore.text.text("No", mx + modalW - 100 + 30, my + modalH - 50 + 7, Editor.uiScale, {1,1,1,1})
         return
     end
 
     if Editor.loadMenuOpen then
-        foreRef.draw2d.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
+        fore.draw2d.rect(0, 0, screenW, screenH, {0, 0, 0, 0.85}, true)
         
         local modalW, modalH = 600, 500
         local mx, my = (screenW - modalW)/2, (screenH - modalH)/2
-        foreRef.draw2d.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
-        foreRef.draw2d.rect(mx, my, modalW, modalH, P_BORDER, false)
+        fore.draw2d.rect(mx, my, modalW, modalH, P_BG_SIDE, true)
+        fore.draw2d.rect(mx, my, modalW, modalH, P_BORDER, false)
         
-        foreRef.text.text("Select a Level to Load", mx + 20, my + 20, Editor.uiScale, {1,1,1,1})
+        fore.text.text("Select a Level to Load", mx + 20, my + 20, Editor.uiScale, {1,1,1,1})
         drawButton("btn_close_menu", "Cancel", mx + modalW - 100, my + 15, 80, 30, false, function() Editor.loadMenuOpen = false end)
         
         love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 80)
@@ -923,7 +923,7 @@ function Editor.drawUI()
     local toolX = 140
     local rows = 1
     for id, def in pairs(Editor.types) do
-        local w = foreRef.text.getTextWidth(" + " .. id, Editor.uiScale) + 30
+        local w = fore.text.getTextWidth(" + " .. id, Editor.uiScale) + 30
         if toolX + w > screenW - 170 then
             toolX = 140
             rows = rows + 1
@@ -932,15 +932,15 @@ function Editor.drawUI()
     end
     botH = 20 + rows * 40
     
-    foreRef.draw2d.rect(0, 0, screenW, topH, P_BG_TOP, true)
-    foreRef.draw2d.rect(0, topH, leftW, screenH - topH - botH, P_BG_SIDE, true)
-    foreRef.draw2d.rect(screenW - rightW, topH, rightW, screenH - topH - botH, P_BG_SIDE, true)
-    foreRef.draw2d.rect(0, screenH - botH, screenW, botH, P_BG_BOT, true)
+    fore.draw2d.rect(0, 0, screenW, topH, P_BG_TOP, true)
+    fore.draw2d.rect(0, topH, leftW, screenH - topH - botH, P_BG_SIDE, true)
+    fore.draw2d.rect(screenW - rightW, topH, rightW, screenH - topH - botH, P_BG_SIDE, true)
+    fore.draw2d.rect(0, screenH - botH, screenW, botH, P_BG_BOT, true)
     
-    foreRef.draw2d.line({0, topH, screenW, topH}, P_BORDER)
-    foreRef.draw2d.line({leftW, topH, leftW, screenH - botH}, P_BORDER)
-    foreRef.draw2d.line({screenW - rightW, topH, screenW - rightW, screenH - botH}, P_BORDER)
-    foreRef.draw2d.line({0, screenH - botH, screenW, screenH - botH}, P_BORDER)
+    fore.draw2d.line({0, topH, screenW, topH}, P_BORDER)
+    fore.draw2d.line({leftW, topH, leftW, screenH - botH}, P_BORDER)
+    fore.draw2d.line({screenW - rightW, topH, screenW - rightW, screenH - botH}, P_BORDER)
+    fore.draw2d.line({0, screenH - botH, screenW, screenH - botH}, P_BORDER)
     
     -- TOP PANEL
     local curX = 10
@@ -991,12 +991,12 @@ function Editor.drawUI()
     
     -- LEFT PANEL (Hierarchy)
     love.graphics.setScissor(0, topH, leftW, screenH - topH - botH)
-    foreRef.text.text("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+    fore.text.text("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     local listY = topH + 40 - Editor.leftScroll
     for _, layerName in ipairs(Editor.layers) do
         if listY + 25 > topH and listY < screenH - botH then
-            foreRef.text.text("[" .. layerName .. "]", 10, listY, Editor.uiScale, {1, 0.8, 0.2, 1})
+            fore.text.text("[" .. layerName .. "]", 10, listY, Editor.uiScale, {1, 0.8, 0.2, 1})
         end
         listY = listY + 30
         
@@ -1018,7 +1018,7 @@ function Editor.drawUI()
     love.graphics.setScissor()
     
     -- BOTTOM PANEL (Tools)
-    foreRef.text.text("-- Tools --", 10, screenH - botH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+    fore.text.text("-- Tools --", 10, screenH - botH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     toolX = 10
     local toolY = screenH - botH + 10
@@ -1029,7 +1029,7 @@ function Editor.drawUI()
     toolX = toolX + 130
     
     for id, def in pairs(Editor.types) do
-        local w = foreRef.text.getTextWidth(" + " .. id, Editor.uiScale) + 30
+        local w = fore.text.getTextWidth(" + " .. id, Editor.uiScale) + 30
         if toolX + w > screenW - 170 then
             toolX = 140
             toolY = toolY + 40
@@ -1070,12 +1070,12 @@ function Editor.drawUI()
     local inspX = screenW - rightW + 10
     
     if #Editor.selectedObjects > 0 then
-        foreRef.text.text("-- Properties --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        fore.text.text("-- Properties --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         local sy = topH + 40
         
         if #Editor.selectedObjects == 1 then
             local o = Editor.selectedObjects[1]
-            foreRef.text.text("Type: " .. o.type, inspX, sy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+            fore.text.text("Type: " .. o.type, inspX, sy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
             sy = sy + 30
             
             drawInput("obj_x", "X:", o.x, inspX, sy, 180, 25, true, function(v) o.x = v; Editor.pushHistory() end)
@@ -1104,7 +1104,7 @@ function Editor.drawUI()
             end)
             sy = sy + 30
         else
-            foreRef.text.text("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy, Editor.uiScale, {0.4, 0.7, 1.0, 1})
+            fore.text.text("Multiple Selected: " .. #Editor.selectedObjects, inspX, sy, Editor.uiScale, {0.4, 0.7, 1.0, 1})
             sy = sy + 40
             
             drawButton("btn_obj_layer_multi", "Set Layer to: " .. Editor.activeLayer, inspX, sy, 200, 25, false, function()
@@ -1116,24 +1116,24 @@ function Editor.drawUI()
             sy = sy + 30
         end
         
-        foreRef.text.text("(Use Delete action at bottom", inspX, sy + 15, Editor.uiScale, {0.5, 0.5, 0.5, 1})
-        foreRef.text.text(" or DEL key to remove)", inspX, sy + 30, Editor.uiScale, {0.5, 0.5, 0.5, 1})
+        fore.text.text("(Use Delete action at bottom", inspX, sy + 15, Editor.uiScale, {0.5, 0.5, 0.5, 1})
+        fore.text.text(" or DEL key to remove)", inspX, sy + 30, Editor.uiScale, {0.5, 0.5, 0.5, 1})
     else
-        foreRef.text.text("-- Level Meta --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        fore.text.text("-- Level Meta --", inspX, topH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         local gy = topH + 40
         drawInput("map_n", "Name:", Editor.levelName, inspX, gy, 200, 25, false, function(v) Editor.levelName = v; Editor.pushHistory() end)
         gy = gy + 30
         drawInput("map_a", "Author:", Editor.levelAuthor, inspX, gy, 200, 25, false, function(v) Editor.levelAuthor = v; Editor.pushHistory() end)
         gy = gy + 40
         
-        foreRef.text.text("-- Level Settings --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        fore.text.text("-- Level Settings --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         gy = gy + 30
         drawInput("map_w", "Map W:", Editor.mapWidth, inspX, gy, 180, 25, true, function(v) Editor.mapWidth = v; Editor.pushHistory() end)
         gy = gy + 30
         drawInput("map_h", "Map H:", Editor.mapHeight, inspX, gy, 180, 25, true, function(v) Editor.mapHeight = v; Editor.pushHistory() end)
         gy = gy + 40
         
-        foreRef.text.text("-- Global Toggles --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        fore.text.text("-- Global Toggles --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         gy = gy + 30
         
         local gl = Editor.globalToggles["gridLayer"] or "Behind"
@@ -1164,7 +1164,7 @@ function Editor.drawUI()
         end)
         gy = gy + 40
         
-        foreRef.text.text("-- Layer Manager --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
+        fore.text.text("-- Layer Manager --", inspX, gy, Editor.uiScale, {0.8, 0.8, 0.8, 1})
         gy = gy + 30
         
         for i, l in ipairs(Editor.layers) do
