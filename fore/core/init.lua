@@ -4,6 +4,7 @@ local Fore = {
 }
 
 local backend = nil
+local miscUtil = nil
 
 ---Initialize the engine
 ---@param config table
@@ -27,25 +28,31 @@ function Fore.init(config)
     Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
     Fore.loaderThread:start()
 
+    -- Graphics and Audio
     Fore.assets = require("fore.systems.assets")
     Fore.assets.init(Fore)
     
     Fore.text = require("fore.backend." .. backend .. ".graphics.text")
     Fore.draw2d = require("fore.backend." .. backend .. ".graphics.draw2d")
-    Fore.shader = require("fore.backend." .. backend .. ".shader")
-    Fore.math = require("fore.utils.math")
+    Fore.shader = require("fore.backend." .. backend .. ".graphics.shader")
+
     Fore.audio = require("fore.backend." .. backend .. ".audio")
     Fore.audio.init(Fore)
+
+    -- Utils
+    Fore.math = require("fore.utils.math")
     Fore.queuer = require("fore.systems.queuer")
     Fore.levelLoader = require("fore.utils.levelLoader")
+    Fore.time = require("fore.backend." .. backend .. ".time")
 
+    -- Core
     Fore.conf = require("fore.core.config").init(config)
     Fore.data = require("fore.core.data").init(config, Fore.conf)
-    Fore.data.OS = love.system.getOS()
-    Fore.data.phone = (Fore.data.OS == "Android") or (Fore.data.OS == "iOS")
+    miscUtil = require("fore.backend." .. backend .. ".misc").init(Fore)
+    Fore.data.OS = miscUtil.platform()
+    Fore.data.phone = miscUtil.isMobile()
     Fore.data.devmode = false
     Fore.data.isCatchingUp = false
-    Fore.time = require("fore.backend." .. backend .. ".time")
     Fore.window = require("fore.backend." .. backend .. ".window")
 
     Fore.hooks = {
@@ -153,7 +160,7 @@ function Fore:update(dt)
         cb(dt)
     end
 
-    if self.debug.enabled then self.debug.update()
+    if self.debug.enabled then self.debug.update(dt)
     else
         local changedVol = false
         local vol = self.audio.masterVolume

@@ -55,10 +55,9 @@ function Debug.keypressed(k)
     end
 end
 
-function Debug.update()
+function Debug.update(dt)
     if not Debug.enabled then return end
     
-    local dt = love.timer.getDelta()
     local frameMs = dt * 1000
     
     table.insert(frameTimes, frameMs)
@@ -115,7 +114,7 @@ function Debug.draw()
     -- Header
     local hdr = string.format(fore.conf.name .. " [%s] | %d/%d", fore.conf.version, Debug.page, Debug.maxPages)
     local ehdr = string.format("Fore Engine [%s] | Lv%d", fore.version, Debug.detailLevel)
-    local backendHdr = string.format("Backend: %s", fore.backend)
+    local backendHdr = string.format("Backend: %s | OS: %s", fore.backend:upper(), fore.data.OS:upper())
     table.insert(lines, hdr)
     table.insert(lines, ehdr)
     table.insert(lines, backendHdr)
