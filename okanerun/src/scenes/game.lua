@@ -120,8 +120,8 @@ local function damagePlayer(amount, timeMod, source)
         p.lastDamageSource = source
 
         -- camera feedback
-        fore.camera.addShake("world", 3)
-        fore.camera.addShake("ui", 3)
+        fore.camera2d.addShake("world", 3)
+        fore.camera2d.addShake("ui", 3)
 
         if p.hp.count <= 0 then
             fore.save.set("deaths", fore.save.get("deaths") + 1)
@@ -217,8 +217,8 @@ function Scene.enter()
         },
     }
 
-    fore.camera.init(GameState.area.mapWidth, GameState.area.mapHeight)
-    fore.camera.setPosition(
+    fore.camera2d.init(GameState.area.mapWidth, GameState.area.mapHeight)
+    fore.camera2d.setPosition(
         GameState.player.pos.x + GameState.player.stat.body.w / 2,
         GameState.player.pos.y + GameState.player.stat.body.h / 2,
         true
@@ -843,8 +843,8 @@ function Scene.update(dt)
         local camTargetX = GameState.player.pos.x + GameState.player.stat.body.w / 2
         local camTargetY = GameState.player.pos.y + GameState.player.stat.body.h / 2
 
-        fore.camera.update(camTargetX, camTargetY, dt)
-        fore.camera.setCategoryZoom("world", GameState.player.camZoom, false)
+        fore.camera2d.update(camTargetX, camTargetY, dt)
+        fore.camera2d.setCategoryZoom("world", GameState.player.camZoom, false)
 
         -- Tails Math
         local speed = math.sqrt(
@@ -910,7 +910,7 @@ function Scene.draw()
         monoShader:push()
     end
 
-    fore.camera.push("world", true)
+    fore.camera2d.push("world", true)
 
     -- ## BASE DRAW PART ##
 
@@ -960,11 +960,11 @@ function Scene.draw()
         end
     end
 
-    fore.camera.pop()
+    fore.camera2d.pop()
 
     -- ## USER INERTFACE ##
 
-    fore.camera.push("ui", false)
+    fore.camera2d.push("ui", false)
 
     gameData.render.ui.draw()
 
@@ -986,7 +986,7 @@ function Scene.draw()
         fore.draw2d.rect(0,0,fore.data.width,fore.data.height,{0,0,0,255})
     end
 
-    fore.camera.pop()
+    fore.camera2d.pop()
 
     -- ## END OF UI ##
 end

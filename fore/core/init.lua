@@ -79,7 +79,7 @@ function Fore.init(config)
     Fore.save.init(config.save or {}, Fore)
 
     Fore.transition = require("fore.systems.transition")
-    Fore.camera = require("fore.systems.camera")
+    Fore.camera2d = require("fore.systems.camera2d")
 
 
     return Fore
@@ -87,8 +87,9 @@ end
 
 ---Starts up the engine's work
 function Fore:start()
+    math.randomseed(os.time()) 
     self.window.init(self)
-    self.camera.systemInit(self)
+    self.camera2d.systemInit(self)
     self.text.init(self)
     self.draw2d.init(self)
     self.transition.init()

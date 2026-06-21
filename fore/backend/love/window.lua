@@ -85,4 +85,11 @@ function Window.getDrawCalls()
     return love.graphics.getStats().drawcalls
 end
 
+---Translates the current coordinate system matrix
+---@param tx number X offset
+---@param ty number Y offset
+function Window.translateMatrix(tx, ty)
+    love.graphics.translate(tx, ty)
+end
+
 return Window

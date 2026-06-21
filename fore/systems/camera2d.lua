@@ -63,7 +63,7 @@ local smoothMode = "exponential"
 
 -- Helper
 local function randf(a)
-    return (love.math.random() * 2 - 1) * a
+    return (math.random() * 2 - 1) * a
 end
 
 -- Create a new camera category
@@ -268,35 +268,35 @@ end
 function Camera.push(category)
     local cat = categories[category]
     if not cat or not cat.active then
-        love.graphics.push()
+        foreRef.window.pushMatrix()
         return
     end
     
-    love.graphics.push()
+    foreRef.window.pushMatrix()
     
     if cat.followWorld then
         -- WORLD CATEGORY
-        love.graphics.translate(halfW, halfH)
-        love.graphics.scale(worldCam.zoom * cat.zoom, worldCam.zoom * cat.zoom)
-        love.graphics.translate(-worldCam.x * cat.parallax, -worldCam.y * cat.parallax)
+        foreRef.window.translateMatrix(halfW, halfH)
+        foreRef.window.scaleMatrix(worldCam.zoom * cat.zoom, worldCam.zoom * cat.zoom)
+        foreRef.window.translateMatrix(-worldCam.x * cat.parallax, -worldCam.y * cat.parallax)
         
         -- Shake and offset
-        love.graphics.translate(cat.shake.x, cat.shake.y)
-        love.graphics.translate(cat.offsetX, cat.offsetY)
+        foreRef.window.translateMatrix(cat.shake.x, cat.shake.y)
+        foreRef.window.translateMatrix(cat.offsetX, cat.offsetY)
     else
         -- UI CATEGORY
         if cat.zoom ~= 1 then
-            love.graphics.scale(cat.zoom, cat.zoom)
+            foreRef.window.scaleMatrix(cat.zoom, cat.zoom)
         end
         
         -- Shake and offset
-        love.graphics.translate(cat.shake.x, cat.shake.y)
-        love.graphics.translate(cat.offsetX, cat.offsetY)
+        foreRef.window.translateMatrix(cat.shake.x, cat.shake.y)
+        foreRef.window.translateMatrix(cat.offsetX, cat.offsetY)
     end
 end
 
 function Camera.pop()
-    love.graphics.pop()
+    foreRef.window.popMatrix()
 end
 
 function Camera.addShake(category, amount)
