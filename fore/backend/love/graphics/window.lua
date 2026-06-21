@@ -125,4 +125,29 @@ function Window.translateMatrix(tx, ty)
     love.graphics.translate(tx, ty)
 end
 
+---Sets a bounding scissor cut region on the physical render frame context
+function Window.setScissor(x, y, w, h)
+    if not x then
+        love.graphics.setScissor()
+    else
+        love.graphics.setScissor(x, y, w, h)
+    end
+end
+
+---Creates a new raw drawable canvas frame buffer texture instance
+function Window.newCanvas(w, h)
+    return love.graphics.newCanvas(w, h)
+end
+
+---Targets the current rendering outputs to a custom target canvas structure
+function Window.setCanvas(canvasInstance)
+    love.graphics.setCanvas(canvasInstance)
+end
+
+---Opens a URL or a native system local file folder using the OS default application
+---@param url string
+function Window.openURL(url)
+    love.system.openURL(url)
+end
+
 return Window

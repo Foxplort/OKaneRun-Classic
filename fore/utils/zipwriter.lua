@@ -2,6 +2,14 @@ local ZipWriter = {}
 
 local bit = require("bit")
 
+local pack = string.pack or (love and love.data and function(fmt, ...) 
+    return love.data.pack("string", fmt, ...) 
+end)
+
+if not pack then 
+    error("ZipWriter Error: Environment does not feature a valid binary string packet serializer.") 
+end
+
 local crc_table = {}
 for i = 0, 255 do
     local c = i
@@ -49,16 +57,16 @@ function ZipWriter.write(files)
         -- Local File Header
         local lfh = {}
         table.insert(lfh, "PK\3\4") -- Signature
-        table.insert(lfh, string.pack("<I2", 10)) -- Version needed (1.0)
-        table.insert(lfh, string.pack("<I2", 0))  -- Flags
-        table.insert(lfh, string.pack("<I2", 0))  -- Compression (0 = store)
-        table.insert(lfh, string.pack("<I2", time))
-        table.insert(lfh, string.pack("<I2", date))
-        table.insert(lfh, string.pack("<I4", crc_num))
-        table.insert(lfh, string.pack("<I4", size)) -- compressed size
-        table.insert(lfh, string.pack("<I4", size)) -- uncompressed size
-        table.insert(lfh, string.pack("<I2", #name))
-        table.insert(lfh, string.pack("<I2", 0)) -- extra field length
+        table.insert(lfh, pack("<I2", 10)) -- Version needed (1.0)
+        table.insert(lfh, pack("<I2", 0))  -- Flags
+        table.insert(lfh, pack("<I2", 0))  -- Compression (0 = store)
+        table.insert(lfh, pack("<I2", time))
+        table.insert(lfh, pack("<I2", date))
+        table.insert(lfh, pack("<I4", crc_num))
+        table.insert(lfh, pack("<I4", size)) -- compressed size
+        table.insert(lfh, pack("<I4", size)) -- uncompressed size
+        table.insert(lfh, pack("<I2", #name))
+        table.insert(lfh, pack("<I2", 0)) -- extra field length
         table.insert(lfh, name)
         
         local lfh_str = table.concat(lfh)
@@ -68,22 +76,22 @@ function ZipWriter.write(files)
         -- Central Directory Header
         local cdh = {}
         table.insert(cdh, "PK\1\2") -- Signature
-        table.insert(cdh, string.pack("<I2", 0)) -- Version made by
-        table.insert(cdh, string.pack("<I2", 10)) -- Version needed
-        table.insert(cdh, string.pack("<I2", 0))  -- Flags
-        table.insert(cdh, string.pack("<I2", 0))  -- Compression
-        table.insert(cdh, string.pack("<I2", time))
-        table.insert(cdh, string.pack("<I2", date))
-        table.insert(cdh, string.pack("<I4", crc_num))
-        table.insert(cdh, string.pack("<I4", size))
-        table.insert(cdh, string.pack("<I4", size))
-        table.insert(cdh, string.pack("<I2", #name))
-        table.insert(cdh, string.pack("<I2", 0)) -- extra field length
-        table.insert(cdh, string.pack("<I2", 0)) -- file comment length
-        table.insert(cdh, string.pack("<I2", 0)) -- disk number start
-        table.insert(cdh, string.pack("<I2", 0)) -- internal file attr
-        table.insert(cdh, string.pack("<I4", 0)) -- external file attr
-        table.insert(cdh, string.pack("<I4", offset)) -- local header offset
+        table.insert(cdh, pack("<I2", 0)) -- Version made by
+        table.insert(cdh, pack("<I2", 10)) -- Version needed
+        table.insert(cdh, pack("<I2", 0))  -- Flags
+        table.insert(cdh, pack("<I2", 0))  -- Compression
+        table.insert(cdh, pack("<I2", time))
+        table.insert(cdh, pack("<I2", date))
+        table.insert(cdh, pack("<I4", crc_num))
+        table.insert(cdh, pack("<I4", size))
+        table.insert(cdh, pack("<I4", size))
+        table.insert(cdh, pack("<I2", #name))
+        table.insert(cdh, pack("<I2", 0)) -- extra field length
+        table.insert(cdh, pack("<I2", 0)) -- file comment length
+        table.insert(cdh, pack("<I2", 0)) -- disk number start
+        table.insert(cdh, pack("<I2", 0)) -- internal file attr
+        table.insert(cdh, pack("<I4", 0)) -- external file attr
+        table.insert(cdh, pack("<I4", offset)) -- local header offset
         table.insert(cdh, name)
         
         local cdh_str = table.concat(cdh)
@@ -98,13 +106,13 @@ function ZipWriter.write(files)
     -- End of Central Directory Record
     local eocd = {}
     table.insert(eocd, "PK\5\6") -- Signature
-    table.insert(eocd, string.pack("<I2", 0)) -- this disk
-    table.insert(eocd, string.pack("<I2", 0)) -- cd disk
-    table.insert(eocd, string.pack("<I2", #files)) -- records on this disk
-    table.insert(eocd, string.pack("<I2", #files)) -- total records
-    table.insert(eocd, string.pack("<I4", cd_size)) -- cd size
-    table.insert(eocd, string.pack("<I4", offset)) -- cd offset
-    table.insert(eocd, string.pack("<I2", 0)) -- comment length
+    table.insert(eocd, pack("<I2", 0)) -- this disk
+    table.insert(eocd, pack("<I2", 0)) -- cd disk
+    table.insert(eocd, pack("<I2", #files)) -- records on this disk
+    table.insert(eocd, pack("<I2", #files)) -- total records
+    table.insert(eocd, pack("<I4", cd_size)) -- cd size
+    table.insert(eocd, pack("<I4", offset)) -- cd offset
+    table.insert(eocd, pack("<I2", 0)) -- comment length
     
     table.insert(out, cd_str)
     table.insert(out, table.concat(eocd))

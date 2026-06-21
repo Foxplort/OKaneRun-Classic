@@ -4,6 +4,7 @@ local Editor = {}
 local fore = nil
 local json = require("fore.utils.json")
 local zipwriter = require("fore.utils.zipwriter")
+local input_raw = nil
 
 -- Editor State
 Editor.enabled = false
@@ -130,6 +131,8 @@ function Editor.init(foreRef)
             if data and data.globals then Editor.globalToggles = data.globals end
         end
     end
+
+    input_raw = require("fore.backend." .. fore.backend .. ".input")
     
     Editor.pushHistory()
     return Editor
@@ -191,14 +194,14 @@ function Editor.save()
     local fileTarget = "levels/" .. safeName .. ".4lf"
     
     if not fore.files.exists("levels") then
-        love.filesystem.createDirectory("levels")
+        fore.files.createDirectory("levels")
     end
     
     -- Generate Preview
     local pW, pH, vW, vH = fore:computeInternalResolution()
-    local cvs = love.graphics.newCanvas(vW, vH)
-    love.graphics.setCanvas(cvs)
-    love.graphics.clear(0.05, 0.05, 0.05, 1)
+    local cvs = fore.window.newCanvas(vW, vH)
+    fore.window.setCanvas(cvs)
+    fore.window.clear({12, 12, 12, 255})
     
     -- Temporarily draw world onto preview
     local oldZoom = Editor.camera.zoom
@@ -221,7 +224,7 @@ function Editor.save()
     Editor.camera.x = oldCamX
     Editor.camera.y = oldCamY
     
-    love.graphics.setCanvas()
+    fore.window.setCanvas()
     local imgData = cvs:newImageData()
     local pngFileData = imgData:encode("png")
     
@@ -238,12 +241,10 @@ function Editor.loadLevelFile(filename)
         local mntPath = "temp_mount_editor"
         local path = "levels/" .. filename
         
-        local fd = love.filesystem.newFileData(path)
-        if fd then
-            love.filesystem.mount(fd, mntPath)
-            
-            if fore.files.exists(mntPath .. "/meta.json") then
-                local str = fore.files.read(mntPath .. "/meta.json")
+        if fore.files.mountArchive(path, mntPath) then
+            local metaPath = mntPath .. "/meta.json"
+            if fore.files.exists(metaPath) then
+                local str = fore.files.read(metaPath)
                 if str then
                     local data = json.decode(str)
                     if data and data.objects then
@@ -268,7 +269,7 @@ function Editor.loadLevelFile(filename)
                     end
                 end
             end
-            love.filesystem.unmount(fd)
+            fore.files.unmountArchive(mntPath)
         end
     end
 end
@@ -338,7 +339,7 @@ function Editor.mousepressed(px, py, button, istouch)
         if not clickedInputId then Editor.onInputCommit = nil end
     end
 
-    local screenW, screenH = love.graphics.getDimensions()
+    local screenW, screenH = fore.window.getResolution()
     if py < topH or py > screenH - botH or px < leftW or px > screenW - rightW then
         hitUI = true
     end
@@ -401,7 +402,7 @@ function Editor.mousepressed(px, py, button, istouch)
                 end
                 
                 if not inSelection then
-                    if love.keyboard.isDown("lshift", "rshift") then
+                    if input_raw.isKeyDown("lshift", "rshift") then
                         table.insert(Editor.selectedObjects, hitObj)
                     else
                         Editor.selectedObjects = {hitObj}
@@ -413,7 +414,7 @@ function Editor.mousepressed(px, py, button, istouch)
                     Editor.mouse.dragOffsets[s] = {x = s.x - Editor.mouse.wx, y = s.y - Editor.mouse.wy}
                 end
             elseif not hitObj then
-                if not love.keyboard.isDown("lshift", "rshift") then
+                if not input_raw.isKeyDown("lshift", "rshift") then
                     Editor.selectedObjects = {}
                 end
                 Editor.mouse.marqueeStart = {x = Editor.mouse.wx, y = Editor.mouse.wy}
@@ -516,7 +517,7 @@ function Editor.wheelmoved(x, y)
         return
     end
 
-    local screenW, screenH = love.graphics.getDimensions()
+    local screenW, screenH = fore.window.getResolution()
     if Editor.mouse.px < leftW and Editor.mouse.py > topH and Editor.mouse.py < screenH - botH then
         Editor.leftScroll = math.max(0, Editor.leftScroll - y * 40)
         return
@@ -565,7 +566,7 @@ function Editor.keypressed(key)
         return
     end
 
-    if love.keyboard.isDown("lctrl", "rctrl") then
+    if input_raw.isKeyDown("lctrl", "rctrl") then
         if key == "c" then
             Editor.clipboard = deepcopy(Editor.selectedObjects)
         elseif key == "v" and #Editor.clipboard > 0 then
@@ -593,7 +594,7 @@ function Editor.keypressed(key)
             end
             Editor.pushHistory()
         elseif key == "z" then
-            if love.keyboard.isDown("lshift", "rshift") then
+            if input_raw.isKeyDown("lshift", "rshift") then
                 Editor.redo()
             else
                 Editor.undo()
@@ -659,8 +660,8 @@ function Editor.mousemoved(x, y, dx, dy, istouch)
 end
 
 function Editor.update(dt)
-    local screenW, screenH = love.graphics.getDimensions()
-    local mx, my = love.mouse.getPosition()
+    local screenW, screenH = fore.window.getResolution()
+    local mx, my = input_raw.getMousePosition()
     
     local pW, pH, vW, vH = fore:computeInternalResolution()
     local scale = fore.data.scale
@@ -736,9 +737,9 @@ local function drawInput(id, label, value, x, y, w, h, isNumber, onCommit)
     fore.draw2d.rect(bx, y, bw, h, P_BTN_BORDER, false)
     
     -- Clip text so it doesn't bleed out of bounds
-    love.graphics.setScissor(bx, y, bw, h)
+    fore.window.setScissor(bx, y, bw, h)
     fore.text.text(displayVal .. (active and "_" or ""), bx + 5, y + (h - fore.text.getTextHeight(Editor.uiScale))/2, Editor.uiScale, {1,1,1,1})
-    love.graphics.setScissor()
+    fore.window.setScissor()
 end
 
 function Editor.drawWorld()
@@ -746,10 +747,10 @@ function Editor.drawWorld()
     
     local pW, pH, vW, vH = fore:computeInternalResolution()
     
-    love.graphics.push()
-    love.graphics.translate(vW/2, vH/2)
-    love.graphics.scale(Editor.camera.zoom, Editor.camera.zoom)
-    love.graphics.translate(-Editor.camera.x, -Editor.camera.y)
+    fore.window.pushMatrix()
+    fore.window.translateMatrix(vW/2, vH/2)
+    fore.window.scaleMatrix(Editor.camera.zoom, Editor.camera.zoom)
+    fore.window.translateMatrix(-Editor.camera.x, -Editor.camera.y)
     
     -- Level Boundaries Outline
     if not Editor.isPreview then
@@ -849,11 +850,11 @@ function Editor.drawWorld()
         end
     end
     
-    love.graphics.pop()
+    fore.window.popMatrix()
 end
 
 function Editor.drawUI()
-    local screenW, screenH = love.graphics.getDimensions()
+    local screenW, screenH = fore.window.getResolution()
     Editor.uiRects = {}
     
     if Editor.modal then
@@ -867,9 +868,9 @@ function Editor.drawUI()
         fore.text.text(Editor.modal.title, mx + 20, my + 20, Editor.uiScale * 1.2, {1,1,1,1})
         
         -- Word wrap text manually (naive)
-        love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 120)
+        fore.window.setScissor(mx + 20, my + 60, modalW - 40, modalH - 120)
         fore.text.text(Editor.modal.text, mx + 20, my + 60, Editor.uiScale, {0.8,0.8,0.8,1})
-        love.graphics.setScissor()
+        fore.window.setScissor()
         
         table.insert(Editor.uiRects, {x=mx + modalW - 190, y=my + modalH - 50, w=80, h=30, modalAction=true, action=function()
             if Editor.modal.onYes then Editor.modal.onYes() end
@@ -905,7 +906,7 @@ function Editor.drawUI()
         fore.text.text("Select a Level to Load", mx + 20, my + 20, Editor.uiScale, {1,1,1,1})
         drawButton("btn_close_menu", "Cancel", mx + modalW - 100, my + 15, 80, 30, false, function() Editor.loadMenuOpen = false end)
         
-        love.graphics.setScissor(mx + 20, my + 60, modalW - 40, modalH - 80)
+        fore.window.setScissor(mx + 20, my + 60, modalW - 40, modalH - 80)
         local ly = my + 60 - Editor.loadMenuScroll
         for i, file in ipairs(Editor.loadMenuFiles) do
             if ly + 40 > my + 60 and ly < my + modalH - 20 then
@@ -916,7 +917,7 @@ function Editor.drawUI()
             end
             ly = ly + 45
         end
-        love.graphics.setScissor()
+        fore.window.setScissor()
         return
     end
     
@@ -952,7 +953,7 @@ function Editor.drawUI()
     
     addTopBtn("load", "Load Level", 120, function()
         Editor.loadMenuFiles = {}
-        for _, file in ipairs(love.filesystem.getDirectoryItems("levels/")) do
+        for _, file in ipairs(fore.files.listFiles("levels/")) do
             if file:match("%.4lf$") then
                 table.insert(Editor.loadMenuFiles, file)
             end
@@ -976,7 +977,7 @@ function Editor.drawUI()
         Editor.snap = 10
     end)
     addTopBtn("clear", "Clear Layout", 120, function() Editor.clear() end)
-    addTopBtn("folder", "Open Saves Folder", 180, function() love.system.openURL("file://"..love.filesystem.getSaveDirectory()) end)
+    addTopBtn("folder", "Open Saves Folder", 180, function() fore.window.openURL("file://"..fore.files.getHomeDirectoryRoots()) end)
     
     curX = screenW - 100
     drawButton("btn_play", "Play", curX, curY, 80, 30, false, function()
@@ -990,7 +991,7 @@ function Editor.drawUI()
     end)
     
     -- LEFT PANEL (Hierarchy)
-    love.graphics.setScissor(0, topH, leftW, screenH - topH - botH)
+    fore.window.setScissor(0, topH, leftW, screenH - topH - botH)
     fore.text.text("-- Scene Objects --", 10, topH + 10 - Editor.leftScroll, Editor.uiScale, {0.8, 0.8, 0.8, 1})
     
     local listY = topH + 40 - Editor.leftScroll
@@ -1015,7 +1016,7 @@ function Editor.drawUI()
             end
         end
     end
-    love.graphics.setScissor()
+    fore.window.setScissor()
     
     -- BOTTOM PANEL (Tools)
     fore.text.text("-- Tools --", 10, screenH - botH + 10, Editor.uiScale, {0.8, 0.8, 0.8, 1})

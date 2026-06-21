@@ -29,22 +29,18 @@ function LevelLoader.load(path, customParser)
     elseif path:match("%.4lf$") then
         local mntPath = "temp_mount_level_" .. tostring(fore.time.getTicks()):gsub("%.", "")
         
-        -- use FileData to bypass OS path constraints and PhysFS extension restrictions
-        local fd = love.filesystem.newFileData(path)
-        if not fd then error("Could not load file data for " .. path) end
-        
-        local success = love.filesystem.mount(fd, mntPath)
+        local success = fore.files.mountArchive(path, mntPath)
         if not success then error("Could not mount FileData for " .. path) end
         
         data = LevelLoader.loadJSON(mntPath .. "/meta.json", customParser)
-        love.filesystem.unmount(fd)
+        fore.files.unmountArchive(mntPath)
     else
         -- load file as Lua table
-        local chunk = love.filesystem.load(path)
+        local chunk, err = loadfile(path)
         if chunk then
             data = chunk()
         else
-            error("Could not load lua map: " .. path)
+            error("Could not load lua map: " .. path .. " | Error: " .. tostring(err))
         end
         data.levelName = string.match(path, "([^/\\]*)$")
         if data.levelName then data.levelName = string.sub(data.levelName, 1, -5) end

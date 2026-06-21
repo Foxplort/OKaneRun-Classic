@@ -31,6 +31,8 @@ function Input.init(fore, deadzone)
             taps = {}
         }
     }, Input)
+
+    self.backend = require("fore.backend." .. fore.backend .. ".input")
     
     -- Register core engine actions
     self:registerAll({
@@ -86,7 +88,7 @@ function Input:update(dt)
         -- Keyboard
         if bind.keys then
             for _, key in ipairs(bind.keys) do
-                if love.keyboard.isDown(key) then
+                if self.backend.isKeyDown(key) then
                     down = true
                     axisValue = 1
                     break
