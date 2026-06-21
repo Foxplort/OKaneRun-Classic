@@ -265,4 +265,14 @@ function Draw2DUtil.newTextureInstance(imgData, imgtype)
     return img
 end
 
+-- MISC
+
+---Stencil masks
+function Draw2DUtil.stencilMask(maskCallback, testMode, drawCallback)
+    love.graphics.stencil(maskCallback, "replace", 1)
+    love.graphics.setStencilTest(testMode, 1)
+    drawCallback()
+    love.graphics.setStencilTest()
+end
+
 return Draw2DUtil
