@@ -96,6 +96,9 @@ end
 
 function Scene.exit()
     fore.audio.fadeOutAndUnload("death_music", 2.0)
+    fore.assets.scheduleUnload("icon_exit")
+    fore.assets.scheduleUnload("icon_back")
+    fore.assets.scheduleUnload("icon_play")
 end
 
 function Scene.update(dt)
