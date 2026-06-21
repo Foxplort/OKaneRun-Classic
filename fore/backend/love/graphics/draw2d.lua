@@ -275,4 +275,31 @@ function Draw2DUtil.stencilMask(maskCallback, testMode, drawCallback)
     love.graphics.setStencilTest()
 end
 
+---Creates a texture from raw bytes.
+---@param w number Width of the texture.
+---@param h number Height of the texture.
+---@param byteString string String containing raw RGBA bytes.
+---@return Image
+function Draw2DUtil.newTextureFromBytes(w, h, byteString)
+    local imgData = love.image.newImageData(w, h)
+    
+    -- Map character bytes directly into pixel indices
+    local index = 1
+    for y = 0, h - 1 do
+        for x = 0, w - 1 do
+            local r = byteString:byte(index) / 255
+            local g = byteString:byte(index+1) / 255
+            local b = byteString:byte(index+2) / 255
+            local a = byteString:byte(index+3) / 255
+            imgData:setPixel(x, y, r, g, b, a)
+            index = index + 4
+        end
+    end
+    
+    local tex = love.graphics.newImage(imgData)
+    tex:setWrap("repeat", "repeat")
+    tex:setFilter("nearest", "nearest")
+    return tex
+end
+
 return Draw2DUtil

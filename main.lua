@@ -28,6 +28,7 @@ Fx = {}
 Fx.cl = require("okanerun.src.utils.collision") -- Cl - Collision
 Fx.ll = require("okanerun.src.utils.levelLoader") -- LL - Level Loader
 
+if fore.isMobile and not love then error("Fore error: Mobile version can only run on Love2d backend!") end
 fore.mobileControls = require("okanerun.src.systems.mobileControls").init(fore)
 
 fore.audio.load("select", "okanerun/assets/sounds/ui/select.wav", false, "sfx")

@@ -66,7 +66,7 @@ function Debug.update(dt)
     
     timer = timer + dt
     if timer >= updateRate then
-        local gStats = love.graphics.getStats()
+        local gStats = fore.window.getRenderStats()
         local aStats = fore.audio.getStats()
         
         stats.fps = fore.time.getFPS()
@@ -156,7 +156,7 @@ function Debug.draw()
     
     -- Panel size
     fore.text.setFontScale(uiScale)
-    local font = love.graphics.getFont()
+    local font = fore.text.fonts[fore.text.active_font_key]
     local w = 0; for _,l in ipairs(lines) do w = math.max(w, font:getWidth(l) * uiScale) end
     w = w + pad * 2
     local graphH = (Debug.page==1 and Debug.detailLevel>=2 and #frameHistory>1) and (45 * uiScale) or 0

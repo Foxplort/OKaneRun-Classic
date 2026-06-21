@@ -67,6 +67,13 @@ function Window.setCursor(path, x, y)
     love.mouse.setCursor(cursor)
 end
 
+function Window.setResolution(w, h)
+    fore.data.width = w
+    fore.data.height = h
+    fore.data.scale = 1
+    Window.apply()
+end
+
 
 -- ####################
 --    MISC FUNCTIONS
@@ -148,6 +155,17 @@ end
 ---@param url string
 function Window.openURL(url)
     love.system.openURL(url)
+end
+
+---Quits the engine instance.
+function Window.quit()
+    love.event.quit()
+end
+
+---Gets graphics pipeline performance analytics metrics
+---@return table
+function Window.getRenderStats()
+    return love.graphics.getStats()
 end
 
 return Window

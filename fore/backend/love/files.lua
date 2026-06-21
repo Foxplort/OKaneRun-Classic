@@ -45,6 +45,12 @@ function Files.getHomeDirectoryRoots()
     return love.filesystem.getSaveDirectory()
 end
 
+---Remove a file
+---@param path string
+function Files.remove(path)
+    return love.filesystem.remove(path)
+end
+
 ---Mounts a directory or compressed zip archive path to a virtual folder mount point
 ---@param path string The path to the file/archive inside your layout folder
 ---@param mountPoint string The virtual engine folder path to map it to

@@ -215,7 +215,7 @@ function Menu:activate(stack)
         pitch = 1.0 + math.random(-3, 3)/100,
         volume = 0.4
     })
-    if o.link then love.system.openURL(o.link) end
+    if o.link then fore.window.openURL(o.link) end
     if o.push then stack:push(o.push()) return end
     if o.pop then stack:pop() return end
     if o.type == "checkbox" and o.action then
@@ -447,7 +447,7 @@ MenuStack.__index = MenuStack
 function MenuStack.new(root)
     return setmetatable({
         stack = { root },
-        canvas = love.graphics.newCanvas(fore.data.width, fore.data.height)
+        canvas = fore.window.newCanvas(fore.data.width, fore.data.height)
     }, MenuStack)
 end
 

@@ -39,7 +39,7 @@ local particles = {}
 
 local function shuffle(t)
     for i = #t, 2, -1 do
-        local j = love.math.random(i)
+        local j = math.random(i)
         t[i], t[j] = t[j], t[i]
     end
 end
@@ -82,7 +82,7 @@ local function buildRows()
     for _, b in ipairs(pickedBuffs) do
         table.insert(rows[1].items, {
             def = b,
-            price = love.math.random(1, 4),
+            price = math.random(1, 4),
             bought = false
         })
     end
@@ -358,8 +358,8 @@ function Scene.draw()
     -- Header
     fore.text.text("Coins: " .. coins, fore.data.width - 160, 30, 1.2, {255, 240, 100}, 130, "right")
 
-    love.graphics.push()
-    love.graphics.translate(0, -verticalScroll)
+    fore.window.pushMatrix()
+    fore.window.translateMatrix(0, -verticalScroll)
 
     -- Rows
     local currentY = MARGIN_TOP
@@ -382,8 +382,8 @@ function Scene.draw()
                 fore.text.text(row.name:upper(), MARGIN_LEFT, ry - 25, 1 * FONT_S, titleColor)
 
                 -- Items
-                love.graphics.push()
-                love.graphics.translate(-row.scroll, 0)
+                fore.window.pushMatrix()
+                fore.window.translateMatrix(-row.scroll, 0)
                 
                 for j, item in ipairs(row.items) do
                     local rx = MARGIN_LEFT + (j - 1) * (CARD_W + CARD_SPACING)
@@ -470,12 +470,12 @@ function Scene.draw()
                         fore.text.text(item.txt, bx, by + 15, 1, tCol, btnW, "center")
                     end
                 end
-                love.graphics.pop()
+                fore.window.popMatrix()
             end
             currentY = currentY + rowHeight
         end
     end
-    love.graphics.pop()
+    fore.window.popMatrix()
 
     -- Message overlay
     if messageTimer > 0 then

@@ -27,7 +27,7 @@ local function createMenus()
     local exit_submenu = Menu:new{
         title = "QUIT?",
         options = {
-            { txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit" },
+            { txt = "Confirm", action = function() fore.window.quit() end, icon = "icon_exit" },
             { txt = "Cancel", pop = true, icon = "icon_back" }
         }
     }

@@ -53,9 +53,7 @@ local function getSpikePolygon(x, width, spikeCount, depth, yShift)
 end
 
 ---Creates dither image so that phone version doesn't crash on launch
----@return Image
-local function createDitherData()
-    local data = love.image.newImageData(4, 4)
+local function createDitherTexture()
     local matrix = {
         0,  8,  2,  10,
         12, 4,  14, 6,
@@ -63,24 +61,20 @@ local function createDitherData()
         15, 7,  13, 5
     }
     
-    for i, val in ipairs(matrix) do
-        local x = (i - 1) % 4
-        local y = math.floor((i - 1) / 4)
-        local c = val / 16
-        data:setPixel(x, y, c, c, c, 1)
+    local bytes = {}
+    for _, val in ipairs(matrix) do
+        local c = math.floor((val / 16) * 255)
+        table.insert(bytes, string.char(c, c, c, 255)) -- Raw RGBA bytes string stream
     end
     
-    local tex = love.graphics.newImage(data)
-    -- Important: set wrap to repeat so the pattern tiles!
-    tex:setWrap("repeat", "repeat")
-    -- Use "nearest" filter to keep the dither sharp
-    tex:setFilter("nearest", "nearest")
-    return tex
+    -- Request the driver layout tool to compile this byte stream into a hardware texture wrapper
+    return fore.draw2d.newTextureFromBytes(4, 4, table.concat(bytes))
 end
 
 function T.init()
     dither_shader = fore.shader.new("fore/assets/shaders/dither.glsl")
-    dither_shader:send("ditherTex", createDitherData())
+    dither_tex = createDitherTexture()
+    dither_shader:send("ditherTex", dither_tex)
 end
 
 ---@param style "spike"|"dither"

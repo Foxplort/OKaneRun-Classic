@@ -18,7 +18,7 @@ local breathShader = fore.shader.new("okanerun/assets/shaders/menu_breathing.gls
 
 local logScore = 0
 
-local vsyncStatus = true and (love.window.getVSync() == 1 or love.window.getVSync() == -1) or false
+local vsyncStatus = fore.data.vsync or false
 mobileContrastStatus = fore.save.get("mobileContrast") -- I am too lazy to make it NOT a global variable
 mobileUiStatus = fore.save.get("mobileUi") -- Same as the one above
 local skipIntroStatus = fore.save.get("skipIntro")
@@ -53,7 +53,7 @@ local function createMenus()
     vsyncOpt.state = function() return vsyncStatus end
     vsyncOpt.action = function()
         vsyncStatus = not vsyncStatus
-        love.window.setVSync(vsyncStatus)
+        fore.window.setVSync(vsyncStatus)
         fore.save.set("vsync", vsyncStatus)
         fore.save.write()
     end
@@ -185,7 +185,7 @@ local function createMenus()
     fullscreenOpt.state = function() return fore.data.fullscreen end
     fullscreenOpt.action = function()
         fore.data.fullscreen = not fore.data.fullscreen
-        love.window.setFullscreen(fore.data.fullscreen, "desktop")
+        fore.window.setFullscreen(fore.data.fullscreen)
         fore.text.updateFonts()
         fore.save.set("fullscreen", fore.data.fullscreen)
         fore.save.write()
@@ -208,7 +208,7 @@ local function createMenus()
     }
     
     local function getResIndex()
-        local w, h = love.graphics.getDimensions()
+        local w, h = fore.window.getResolution()
         for i, res in ipairs(resolutions) do
             if res[1] == w and res[2] == h then
                 return i
@@ -232,7 +232,7 @@ local function createMenus()
         if idx < 1 then idx = #resolutions end
         if idx > #resolutions then idx = 1 end
         local w, h = resolutions[idx][1], resolutions[idx][2]
-        love.window.updateMode(w, h)
+        fore.window.setResolution(w, h)
         fore.text.updateFonts()
     end
     resolutionOpt.desc = [[
@@ -314,7 +314,7 @@ local function createMenus()
     exit = Menu:new{
         title = "QUIT?",
         options = {
-            { txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit" },
+            { txt = "Confirm", action = function() fore.window.quit() end, icon = "icon_exit" },
             { txt = "Cancel", pop = true, icon = "icon_back" }
         }
     }

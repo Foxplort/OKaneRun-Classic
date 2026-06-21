@@ -170,7 +170,7 @@ function Scene.enter()
         local target = "custom.4lf"
         if fore.files.exists("play_queue.txt") then
             target = fore.files.read("play_queue.txt")
-            love.filesystem.remove("play_queue.txt")
+            fore.files.remove("play_queue.txt")
         end
         
         if fore.files.exists("levels/" .. target) then
@@ -265,7 +265,7 @@ function Scene.enter()
         outline = true,
         options = {
             {
-                txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit",
+                txt = "Confirm", action = function() fore.window.quit() end, icon = "icon_exit",
                 desc = [[
                 Are you sure you want to quit?
                 The progress won't be saved.[br]

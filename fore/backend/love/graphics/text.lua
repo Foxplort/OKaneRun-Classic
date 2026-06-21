@@ -12,6 +12,7 @@ TextUtil.base_font_sizes = {
 }
 
 TextUtil.fonts = {}
+TextUtil.active_font_key = "small"
 
 function TextUtil.init(foreRef)
     fore = foreRef
@@ -41,12 +42,14 @@ end
 ---@param s number The scale factor
 ---@return string The font name
 function TextUtil.setFontScale(s)
-    local font = "small"
-    if s < 1.4 then font = "small"
-    elseif s < 2.4 then font = "medium"
-    else font = "large" end 
-    love.graphics.setFont(TextUtil.fonts[font])
-    return font
+    local fontKey = "small"
+    if s < 1.4 then fontKey = "small"
+    elseif s < 2.4 then fontKey = "medium"
+    else fontKey = "large" end 
+
+    TextUtil.active_font_key = fontKey
+    love.graphics.setFont(TextUtil.fonts[fontKey])
+    return fontKey
 end
 
 ---Draws a text to the screen with smart scaling
@@ -147,7 +150,8 @@ function TextUtil.textAdvanced(text, x, y, s, c, wrap, align)
 
     TextUtil.setFontScale(s)
 
-    local lineHeight = love.graphics.getFont():getHeight() * s
+    local activeFont = TextUtil.fonts[TextUtil.active_font_key]
+    local lineHeight = activeFont:getHeight() * s
     local lines = layoutStyledText(parseStyledText(text, c), wrap, s)
 
     for i, line in ipairs(lines) do
@@ -179,13 +183,13 @@ end
 
 function TextUtil.getTextWidth(text, scale)
     scale = scale or 1
-    local font = love.graphics.getFont()
+    local font = TextUtil.fonts[TextUtil.active_font_key]
     return font:getWidth(text) * scale
 end
 
 function TextUtil.getTextHeight(scale)
     scale = scale or 1
-    local font = love.graphics.getFont()
+    local font = TextUtil.fonts[TextUtil.active_font_key]
     return font:getHeight() * scale
 end
 
