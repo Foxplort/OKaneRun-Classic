@@ -77,7 +77,6 @@ function EffectUI.draw(player)
         end
 
         -- icon (safe)
-        love.graphics.setColor(1, 1, 1, 1)
         fore.draw2d.imageSafe(
             id, "missing",
             x, y,
@@ -88,11 +87,11 @@ function EffectUI.draw(player)
         -- duration
         local inst = player.effects[id]
         if inst and inst.timeLeft then
-            love.graphics.setColor(1, 1, 1, 0.9)
-            love.graphics.print(
+            fore.text.text(
                 string.format("%.1f", inst.timeLeft),
                 x, y + EffectUIDat.size + 2,
-                0, 0.7, 0.7
+                0.7, 
+                {255, 255, 255, 229}
             )
         end
     end

@@ -14,6 +14,6 @@ return {
   },
 
   render = function(self, isEditor)
-     love.graphics.circle("fill", self.x, self.y, 5)
+     fore.draw2d.mCirc(self.x, self.y, 5)
   end
 }

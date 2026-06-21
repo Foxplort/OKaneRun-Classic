@@ -309,16 +309,17 @@ effects.trail = {
         local depth = inst.points[#inst.points].y - 3
 
         fore.queuer.submit(L.ACTOR, depth, function()
-            love.graphics.stencil(function()
-                for _, g in ipairs(GameState.area.ground) do
-                    love.graphics.rectangle("fill", g.x, g.y, g.w, g.h)
+            fore.draw2d.stencilMask(
+                function()
+                    for _, g in ipairs(GameState.area.ground) do
+                        fore.draw2d.rect(g.x, g.y, g.w, g.h)
+                    end
+                end,
+                "equal",
+                function()
+                    fore.draw2d.line(vertices, {255,0,0,120}, 6)
                 end
-            end, "replace", 1)
-            love.graphics.setStencilTest("equal", 1)
-
-            fore.draw2d.line(vertices, {255,0,0,120}, 6)
-
-            love.graphics.setStencilTest()
+            )
         end)
     end,
 }

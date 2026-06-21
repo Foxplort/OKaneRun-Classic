@@ -46,7 +46,7 @@ function VolumeIndicator:draw()
     self:update(fore.time.getDelta())
     
     local uiScale = math.max(1, self.fore.data.scale / 1.5)
-    local screenW = love.graphics.getWidth()
+    local screenW = fore.window.getResolution()
     local width, height, padding = self.WIDTH * uiScale, self.HEIGHT * uiScale, self.PADDING * uiScale
     
     local x = screenW - width - padding

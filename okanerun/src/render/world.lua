@@ -2,6 +2,30 @@ local Objects = require("okanerun.src.data.objects")
 
 local World = {}
 
+local function coinDraw(c)
+    local alpha = 255-math.abs(math.min(0, c.z*6))
+
+    fore.draw2d.circ(
+        c.x + 2.5 - 1,
+        c.y - c.z - 15 + 1,
+        10, 15,
+        {230, 140, 0, alpha},
+        true, 7
+    )
+
+    fore.draw2d.circ(
+        c.x + 2.5,
+        c.y - c.z - 15,
+        10, 15,
+        {255, 200, 0, alpha},
+        true, 7
+    )
+
+    fore.draw2d.circ(c.x+4+2.5, c.y-c.z-13, 2, 10, {230, 140, 0, alpha}, true, 4)
+    fore.draw2d.circ(c.x+6+2.5, c.y-c.z-13, 4, 5, {255, 255, 160, alpha}, true, 5)
+    fore.draw2d.circ(c.x+7.5+2.5, c.y-c.z-12, 2, 3, {255, 255, 255, alpha}, true, 5)
+end
+
 function World.renderCoins()
     -- Real coins
     for _, c in ipairs(GameState.area.coins) do
@@ -13,38 +37,20 @@ function World.renderCoins()
         -- Coin
         fore.queuer.submit(L.ACTOR, c.y, function()
             if c.z < -1 then
-                love.graphics.stencil(function()
-                    for _, g in ipairs(GameState.area.ground) do
-                        love.graphics.rectangle("fill", g.x, g.y, g.w, g.h-15)
+                fore.draw2d.stencilMask(
+                    function()
+                        for _, g in ipairs(GameState.area.ground) do
+                            fore.draw2d.rect(g.x, g.y, g.w, g.h-15)
+                        end
+                    end,
+                    "notequal",
+                    function()
+                        coinDraw(c)
                     end
-                end, "replace", 1)
-                -- "notequal 1" means: Only draw where the stencil (ground) is NOT
-                love.graphics.setStencilTest("notequal", 1)
+                )
+            else
+                coinDraw(c)
             end
-
-            local alpha = 255-math.abs(math.min(0, c.z*6))
-
-            fore.draw2d.circ(
-                c.x + 2.5 - 1,
-                c.y - c.z - 15 + 1,
-                10, 15,
-                {230, 140, 0, alpha},
-                true, 7
-            )
-
-            fore.draw2d.circ(
-                c.x + 2.5,
-                c.y - c.z - 15,
-                10, 15,
-                {255, 200, 0, alpha},
-                true, 7
-            )
-
-            fore.draw2d.circ(c.x+4+2.5, c.y-c.z-13, 2, 10, {230, 140, 0, alpha}, true, 4)
-            fore.draw2d.circ(c.x+6+2.5, c.y-c.z-13, 4, 5, {255, 255, 160, alpha}, true, 5)
-            fore.draw2d.circ(c.x+7.5+2.5, c.y-c.z-12, 2, 3, {255, 255, 255, alpha}, true, 5)
-
-            love.graphics.setStencilTest() -- Reset stencil
         end)
 
         -- Shadow

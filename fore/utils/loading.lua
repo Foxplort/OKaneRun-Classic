@@ -27,16 +27,12 @@ function Loading.draw()
 
     local x = fore.data.width - RADIUS - 20
     local y = fore.data.height - RADIUS - 20
-
-    love.graphics.setLineWidth(THICKNESS)
     
     -- Background "Donut"
-    fore.draw2d.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false)
+    fore.draw2d.arc(x, y, RADIUS, 0, math.pi * 2, {34, 32, 52}, "open", false, 16, THICKNESS)
 
     -- Moving "White Section"
-    fore.draw2d.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false)
-    
-    love.graphics.setLineWidth(1)
+    fore.draw2d.arc(x, y, RADIUS, angle, angle + (math.pi / 2), {255, 255, 255}, "open", false, 16, THICKNESS)
 end
 
 function Loading.stop()

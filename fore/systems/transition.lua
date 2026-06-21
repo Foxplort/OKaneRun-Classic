@@ -159,7 +159,7 @@ function T.draw()
         local dither_val = lagged_p < 0.5 and (lagged_p * 2) or (1 - (lagged_p - 0.5) * 2)
         dither_shader:send("progress", dither_val)
         
-        love.graphics.rectangle("fill", 0, 0, fore.data.width, fore.data.height)
+        fore.draw2d.rect(0,0, fore.data.width, fore.data.height)
         fore.shader.pop()
     elseif current_style == "spike" then
         local sw, c = fore.data.width, T.config
