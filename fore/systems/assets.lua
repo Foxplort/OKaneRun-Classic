@@ -10,9 +10,6 @@ Assets.pending_assets = 0
 Assets.planned_loads = {}
 Assets.planned_unloads = {}
 
-local loader_channel = love.thread.getChannel("fore_loader")
-local response_channel = love.thread.getChannel("fore_response")
-
 local fore = nil
 
 function Assets.init(foreRef)
@@ -28,7 +25,7 @@ function Assets.loadImage(name, path, imgtype)
     Assets.pending_assets = Assets.pending_assets + 1
     Assets.asset_registry[name] = {type = "image", path = path, imgtype = imgtype or "linear"}
     
-    loader_channel:push({
+    fore.worker.push({
         cmd = "load_image", 
         name = name, 
         path = path, 
@@ -40,7 +37,7 @@ function Assets.loadAudioStatic(name, path, category)
     Assets.pending_assets = Assets.pending_assets + 1
     Assets.asset_registry[name] = {type = "audio", path = path, category = category}
     
-    loader_channel:push({
+    fore.worker.push({
         cmd = "load_audio", 
         name = name, 
         path = path, 
@@ -60,7 +57,7 @@ function Assets.update_loading()
     local max_uploads = 1
 
     while uploads_this_frame < max_uploads do
-        local msg = response_channel:pop()
+        local msg = fore.worker.pop()
         if not msg then break end
 
         if msg.type == "image" then

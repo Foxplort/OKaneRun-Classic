@@ -20,13 +20,9 @@ function Fore.init(config)
     if Fore.backend == nil then error("Fore Error: Not running on a supported backend.") end
     backend = Fore.backend
 
-    Fore.channels = {
-        loader = love.thread.getChannel("fore_loader"),
-        response = love.thread.getChannel("fore_response")
-    }
-
-    Fore.loaderThread = love.thread.newThread("fore/utils/loaderThread.lua")
-    Fore.loaderThread:start()
+    -- Threads (AKA Worker)
+    Fore.worker = require("fore.backend." .. backend .. ".worker")
+    Fore.worker.init(Fore)
 
     -- Graphics and Audio
     Fore.assets = require("fore.systems.assets")
