@@ -17,6 +17,7 @@ function Config.init(userConfig)
         
         -- Starting scene (must be provided)
         startScene = userConfig.startScene,
+        msaa = userConfig.pixelated and 0 or (userConfig.msaa or 4),
     }
     
     assert(config.startScene, "Config must specify a startScene")

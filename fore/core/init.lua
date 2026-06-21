@@ -35,6 +35,7 @@ function Fore.init(config)
     Fore.text = require("fore.backend." .. backend .. ".graphics.text")
     Fore.draw2d = require("fore.backend." .. backend .. ".graphics.draw2d")
     Fore.shader = require("fore.backend." .. backend .. ".graphics.shader")
+    Fore.canvas = require("fore.backend." .. backend .. ".graphics.canvas").init(Fore)
 
     Fore.audio = require("fore.backend." .. backend .. ".audio")
     Fore.audio.init(Fore)
@@ -90,19 +91,15 @@ end
 ---Starts up the engine's work
 function Fore:start()
     self.window.init(self)
-
     self.camera.systemInit(self)
     self.text.init(self)
     self.draw2d.init(self)
     self.transition.init()
 
-    self.scenes.canvas = love.graphics.newCanvas(self.conf.width, self.conf.height)
-
-    if self.conf.pixelated then
-        self.scenes.canvas:setFilter("nearest", "nearest")
-    else
-        self.scenes.canvas:setFilter("linear", "linear")
-    end
+    self.scenes.canvas = self.canvas.new(self.conf.width, self.conf.height, {
+        pixelated = self.conf.pixelated,
+        msaa = self.conf.msaa,
+    })
 
     self.audio.setMasterVolume(self.save.get_engine("volume"))
 
@@ -195,10 +192,10 @@ function Fore:draw()
     self:rebuildCanvas(pW, pH)
     self.data.width = vW
     self.data.height = vH
-    local screenW, screenH = love.graphics.getDimensions()
+    local screenW, screenH = self.window.getResolution()
 
     -- CLEAR SCREEN
-    love.graphics.clear(8/255, 15/255, 20/255)
+    self.window.clear({8, 15, 20})
 
     -- Raw-pre-draw hooks (UNSCALED, DIRECT TO SCREEN)
     for _, cb in ipairs(self.hooks.rawPreDraw) do
@@ -206,72 +203,58 @@ function Fore:draw()
     end
 
     -- RENDER TO CANVAS (SCALED CONTENT)
-    love.graphics.setCanvas({self.canvas, stencil = true})
-    love.graphics.clear(0.01, 0.01, 0.02)
+    self.canvasInstance:clear(0.01, 0.01, 0.02)
+    self.canvasInstance:beginRender()
 
-    love.graphics.push()
-    love.graphics.scale(self.data.scale, self.data.scale)
+    self.window.pushMatrix()
+    self.window.scaleMatrix(self.data.scale, self.data.scale)
     
     -- Pre-draw hooks
-    for _, cb in ipairs(self.hooks.preDraw) do
-        cb()
-    end
+    for _, cb in ipairs(self.hooks.preDraw) do cb() end
 
     -- Game rendering
     if not self.editor.enabled then
         self.scenes:draw()
 
         -- Draw hooks
-        for _, cb in ipairs(self.hooks.draw) do
-            cb()
-        end
+        for _, cb in ipairs(self.hooks.draw) do cb() end
         
         self.transition.draw()
     else
         self.editor.drawWorld()
     end
 
-    -- Post-draw hooks
     if self.mobileControls then self.mobileControls:draw() end
 
-    for _, cb in ipairs(self.hooks.postDraw) do
-        cb()
-    end
+    -- Post-draw hooks
+    for _, cb in ipairs(self.hooks.postDraw) do cb() end
 
-    love.graphics.pop()
-    love.graphics.setCanvas()
+    self.window.popMatrix()
+    self.canvasInstance:endRender()
 
     -- Pre-cavas-draw hooks
-    for _, cb in ipairs(self.hooks.preCanvasDraw) do
-        cb()
-    end
+    for _, cb in ipairs(self.hooks.preCanvasDraw) do cb() end
 
     -- DRAW CANVAS TO SCREEN
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.draw(
-        self.canvas,
+    self.window.drawCanvasToScreen(
+        self.canvasInstance,
         math.floor((screenW - pW) / 2),
         math.floor((screenH - pH) / 2)
     )
 
     -- Raw-post-draw hooks (UNSCALED, DIRECT TO SCREEN)
-    for _, cb in ipairs(self.hooks.rawPostDraw) do
-        cb()
-    end
+    for _, cb in ipairs(self.hooks.rawPostDraw) do cb() end
 
     if self.editor.enabled then
         self.editor.drawUI()
     end
 
-    -- Debug UI
-    if self.debug.enabled then
-        self.debug.draw()
-    end
+    -- Debug and Volume UIs
     self._volumeIndicator:draw()
 
-    -- Update debug draw calls
     if self.debug.enabled then
-        self.debug.dc = love.graphics.getStats().drawcalls
+        self.debug.draw()
+        self.debug.dc = self.window.getDrawCalls()
     end
 end
 
@@ -282,8 +265,7 @@ end
 function Fore:rebuildCanvas(w, h)
     if w == self.lastCanvasW and h == self.lastCanvasH then return end
 
-    self.canvas = love.graphics.newCanvas(w, h)
-    self.canvas:setFilter("linear", "linear")
+    self.canvasInstance = self.canvas.new(w, h, { pixelated = false })
 
     self.lastCanvasW = w
     self.lastCanvasH = h
@@ -292,7 +274,7 @@ end
 ---Computes the internal graphics scale
 ---@return number, number, number, number #actual W, actual H, canvas W, canvas H 
 function Fore:computeInternalResolution()
-    self.data.windowWidth, self.data.windowHeight = love.graphics.getDimensions()
+    self.data.windowWidth, self.data.windowHeight = self.window.getResolution()
     
     -- How much are we need to scale the base resolution to fit the screen
     self.data.scale = math.min(self.data.windowWidth / self.conf.width, self.data.windowHeight / self.conf.height)

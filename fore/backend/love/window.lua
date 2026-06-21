@@ -40,4 +40,49 @@ function Window.setFullscreen(enabled)
     love.window.setFullscreen(enabled, "desktop")
 end
 
+---Clears the entire window with a color
+---@param color table { r, g, b } 0-255
+function Window.clear(color)
+    love.graphics.clear(color[1]/255, color[2]/255, color[3]/255, 1)
+end
+
+---Returns current window resolution (w, h)
+---@return table<number, number> { width, height }
+function Window.getResolution()
+    return love.graphics.getDimensions()
+end
+
+---Pushes a coordinate transformation matrix onto the stack
+function Window.pushMatrix()
+    love.graphics.push()
+end
+
+---Pops a coordinate transformation matrix off the stack
+function Window.popMatrix()
+    love.graphics.pop()
+end
+
+---Scales the current transformation matrix
+---@param sx number X scale
+---@param sy number Y scale
+function Window.scaleMatrix(sx, sy)
+    love.graphics.scale(sx, sy)
+end
+
+---Blits a compiled canvas object centered on the screen buffer
+---@param canvasObj table The fore.canvas instance wrapper
+---@param x number Screen placement X
+---@param y number Screen placement Y
+function Window.drawCanvasToScreen(canvasObj, x, y)
+    if not canvasObj or not canvasObj.native then return end
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.draw(canvasObj.native, x, y)
+end
+
+---Returns hardware render profile stats for debugging
+---@return number Total drawcalls this frame
+function Window.getDrawCalls()
+    return love.graphics.getStats().drawcalls
+end
+
 return Window
