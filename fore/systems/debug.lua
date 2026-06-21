@@ -69,7 +69,7 @@ function Debug.update(dt)
         local gStats = love.graphics.getStats()
         local aStats = fore.audio.getStats()
         
-        stats.fps = love.timer.getFPS()
+        stats.fps = fore.time.getFPS()
         stats.frame = frameMs
         stats.draws = Debug.dc
         stats.canvases = gStats.canvases

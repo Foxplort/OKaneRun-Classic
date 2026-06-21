@@ -41,6 +41,7 @@ function Fore.init(config)
     Fore.queuer = require("fore.systems.queuer")
     Fore.levelLoader = require("fore.utils.levelLoader")
     Fore.time = require("fore.backend." .. backend .. ".time")
+    Fore.task = require("fore.systems.task")
 
     -- Core
     Fore.conf = require("fore.core.config").init(config)
@@ -134,6 +135,7 @@ function Fore:update(dt)
 
     self.assets.update_loading()
     self.input:update()
+    self.task.update(dt)
     if self.mobileControls then self.mobileControls:update(dt) end
     
     if self.input:pressed("debug") then self.debug.enabled = not self.debug.enabled end

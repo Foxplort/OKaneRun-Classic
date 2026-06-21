@@ -24,12 +24,21 @@ local damageText = {
 local reason = "THE FATE IS UNKNOWN"
 
 local function createMenus()
+    local exit_submenu = Menu:new{
+        title = "QUIT?",
+        options = {
+            { txt = "Confirm", action = function() love.event.quit() end, icon = "icon_exit" },
+            { txt = "Cancel", pop = true, icon = "icon_back" }
+        }
+    }
+
     local main = Menu:new{
         title = "THE END",
         style = "plain",
         options = {
             {
                 txt = "Retry",
+                icon = "icon_play",
                 action = function()
                     require(fore.scenes:get("menu")).enter()
                     fore.save.set("total_runs", fore.save.get("total_runs") + 1)
@@ -42,6 +51,7 @@ local function createMenus()
             },
             {
                 txt = "Main Menu",
+                icon = "icon_back",
                 action = function()
                     fore.transition.start("spike", function()
                         fore.scenes:goTo("menu")
@@ -50,9 +60,8 @@ local function createMenus()
             },
             {
                 txt = "Exit",
-                action = function()
-                    love.event.quit()
-                end
+                icon = "icon_exit",
+                push = function() return exit_submenu end
             }
         }
     }
@@ -63,6 +72,10 @@ end
 function Scene.enter()
     MP = require("okanerun.src.systems.menuParticles")
     MP.init(0)
+
+    fore.assets.scheduleLoad("icon_exit", "okanerun/assets/images/ui/menu/exit.png", "linear")
+    fore.assets.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
+    fore.assets.scheduleLoad("icon_play", "okanerun/assets/images/ui/menu/play.png", "linear")
 
     local root = createMenus()
     stack = Stack.new(root)

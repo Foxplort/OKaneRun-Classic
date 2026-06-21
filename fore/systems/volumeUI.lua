@@ -43,7 +43,7 @@ end
 function VolumeIndicator:draw()
     if not self.visible then return end
     
-    self:update(love.timer.getDelta())
+    self:update(fore.time.getDelta())
     
     local uiScale = math.max(1, self.fore.data.scale / 1.5)
     local screenW = love.graphics.getWidth()

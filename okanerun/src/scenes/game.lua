@@ -365,8 +365,9 @@ function Scene.update(dt)
                 volume = 0.07
             })
             fore.transition.start("dither", function()
-                love.timer.sleep(2.5)
-                fore.scenes:goTo("death")
+                fore.task.delay(2.5, function()
+                    fore.scenes:goTo("death")
+                end)
             end, nil, 0, 1.2, false)
         end
         return
