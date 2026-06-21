@@ -33,12 +33,45 @@ function Window.apply()
     end
 end
 
+
+-- ######################
+--    SETTER FUNCTIONS
+-- ######################
+
+
 ---Sets whether the window is fullscreen at runtime
 ---@param enabled boolean
 function Window.setFullscreen(enabled)
     fore.data.fullscreen = enabled
     love.window.setFullscreen(enabled, "desktop")
 end
+
+---Sets whether vsync is active on the window environment at runtime
+---@param enabled boolean
+function Window.setVSync(enabled)
+    fore.data.vsync = enabled
+    love.window.setVSync(enabled)
+end
+
+---Sets a custom hardware mouse cursor configuration
+---@param path string File path to the cursor graphic
+---@param x number X offset of the hotspot (default 0)
+---@param y number Y offset of the hotspot (default 0)
+function Window.setCursor(path, x, y)
+    if not path then
+        love.mouse.setCursor()
+        return
+    end
+    local imageData = love.image.newImageData(path)
+    local cursor = love.mouse.newCursor(imageData, x or 0, y or 0)
+    love.mouse.setCursor(cursor)
+end
+
+
+-- ####################
+--    MISC FUNCTIONS
+-- ####################
+
 
 ---Clears the entire window with a color
 ---@param color table { r, g, b } 0-255

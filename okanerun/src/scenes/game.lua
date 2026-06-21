@@ -168,12 +168,12 @@ function Scene.enter()
     
     if fore.editor and fore.editor.playCustom then
         local target = "custom.4lf"
-        if love.filesystem.getInfo("play_queue.txt") then
-            target = love.filesystem.read("play_queue.txt")
+        if fore.files.exists("play_queue.txt") then
+            target = fore.files.read("play_queue.txt")
             love.filesystem.remove("play_queue.txt")
         end
         
-        if love.filesystem.getInfo("levels/" .. target) then
+        if fore.files.exists("levels/" .. target) then
             GameState.area = Fx.ll.load("levels/" .. target)
         else
             GameState.area = Fx.ll.load("okanerun/src/data/levels/" .. levelList[math.random(#levelList)] .. ".4lf")
@@ -230,7 +230,7 @@ function Scene.enter()
     fore.assets.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(gameData.game.effects) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
-        if love.filesystem.getInfo(path) then
+        if fore.files.exists(path) then
             fore.assets.scheduleLoad(eff.id, path)
             table.insert(loadedImages, eff.id)
         end

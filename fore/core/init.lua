@@ -37,6 +37,7 @@ function Fore.init(config)
     Fore.audio.init(Fore)
 
     -- Utils
+    Fore.files = require("fore.backend." .. backend .. ".files")
     Fore.math = require("fore.utils.math")
     Fore.queuer = require("fore.systems.queuer")
     Fore.levelLoader = require("fore.utils.levelLoader")
@@ -51,7 +52,7 @@ function Fore.init(config)
     Fore.data.phone = miscUtil.isMobile()
     Fore.data.devmode = false
     Fore.data.isCatchingUp = false
-    Fore.window = require("fore.backend." .. backend .. ".window")
+    Fore.window = require("fore.backend." .. backend .. ".graphics.window")
 
     Fore.hooks = {
         preUpdate = {},     -- Called before everything

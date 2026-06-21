@@ -123,8 +123,8 @@ end
 function Editor.init(foreRef)
     fore = foreRef
     
-    if love.filesystem.getInfo("editor_settings.json") then
-        local s = love.filesystem.read("editor_settings.json")
+    if fore.files.exists("editor_settings.json") then
+        local s = fore.files.read("editor_settings.json")
         if s then
             local data = json.decode(s)
             if data and data.globals then Editor.globalToggles = data.globals end
@@ -165,7 +165,7 @@ end
 
 function Editor.saveSettings()
     local d = { globals = Editor.globalToggles }
-    love.filesystem.write("editor_settings.json", json.encode(d))
+    fore.files.write("editor_settings.json", json.encode(d))
 end
 
 function Editor.save()
@@ -190,7 +190,7 @@ function Editor.save()
     if safeName == "" then safeName = "custom" end
     local fileTarget = "levels/" .. safeName .. ".4lf"
     
-    if not love.filesystem.getInfo("levels") then
+    if not fore.files.exists("levels") then
         love.filesystem.createDirectory("levels")
     end
     
@@ -230,11 +230,11 @@ function Editor.save()
         {name = "preview.png", data = pngFileData:getString()}
     })
     
-    love.filesystem.write(fileTarget, zipData)
+    fore.files.write(fileTarget, zipData)
 end
 
 function Editor.loadLevelFile(filename)
-    if filename:match("%.4lf$") and love.filesystem.getInfo("levels/" .. filename) then
+    if filename:match("%.4lf$") and fore.files.exists("levels/" .. filename) then
         local mntPath = "temp_mount_editor"
         local path = "levels/" .. filename
         
@@ -242,8 +242,8 @@ function Editor.loadLevelFile(filename)
         if fd then
             love.filesystem.mount(fd, mntPath)
             
-            if love.filesystem.getInfo(mntPath .. "/meta.json") then
-                local str = love.filesystem.read(mntPath .. "/meta.json")
+            if fore.files.exists(mntPath .. "/meta.json") then
+                local str = fore.files.read(mntPath .. "/meta.json")
                 if str then
                     local data = json.decode(str)
                     if data and data.objects then

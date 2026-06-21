@@ -7,6 +7,7 @@ fore = require("fore.core.init").init({
     pixelBank = 128,
     icon = "okanerun/assets/images/system/fm.png",
     save = {
+        -- Stats
         total_runs = 0,
         deaths = 0,
         effects_obtained = 0,
@@ -119,10 +120,7 @@ fore:introduce("load", function()
 
     GameState.area = Fx.ll.load("okanerun/src/data/levels/Shifted Geometry.4lf")
     
-    love.mouse.setCursor(love.mouse.newCursor(
-        love.image.newImageData("okanerun/assets/images/system/cursor.png"),
-        0, 0
-    ))
+    fore.window.setCursor("okanerun/assets/images/system/cursor.png")
 end)
 
 fore:introduce("update", function(dt)
@@ -160,7 +158,7 @@ fore.editor.onToggle = function(enabled)
 end
 
 fore.editor.onPlay = function(levelName)
-    love.filesystem.write("play_queue.txt", levelName .. ".4lf")
+    fore.files.write("play_queue.txt", levelName .. ".4lf")
     if fore.editor.enabled then fore.editor.toggle() end
     fore.editor.playCustom = true
     fore.scenes:goTo("game")
@@ -170,8 +168,4 @@ require("okanerun.src.systems.gameEditor").init(fore)
 
 fore:start()
 
-if fore.save.get("vsync") then
-    love.window.setVSync(true)
-else
-    love.window.setVSync(false)
-end
+fore.window.setVSync(fore.save.get("vsync") == true)

@@ -2,7 +2,7 @@ local LevelLoader = {}
 local json = require("fore.utils.json")
 
 function LevelLoader.loadJSON(path, customParser)
-    local content, err = love.filesystem.read(path)
+    local content, err = fore.files.read(path)
     if not content then error("Could not load " .. path .. ": " .. tostring(err)) end
     local raw = json.decode(content)
     

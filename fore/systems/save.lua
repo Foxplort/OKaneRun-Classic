@@ -29,8 +29,8 @@ function save.init(user_defaults, foreref)
         save._data.game = user_defaults
     end
 
-    if love.filesystem.getInfo(save._path) then
-        local content = love.filesystem.read(save._path)
+    if fore.files.exists(save._path) then
+        local content = fore.files.read(save._path)
         local ok, decoded = pcall(json.decode, content)
         if ok and type(decoded) == "table" then
             -- Merge loaded data into our current data structure
@@ -52,7 +52,7 @@ end
 function save.write()
     local ok, str = pcall(json.encode, save._data)
     if ok then
-        return love.filesystem.write(save._path, str)
+        return fore.files.write(save._path, str)
     end
     return false
 end

@@ -145,7 +145,7 @@ function Scene.enter()
     fore.assets.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png")
     for id, eff in pairs(require("okanerun.src.game.effects")) do
         local path = "okanerun/assets/images/buffs/" .. eff.id .. ".png"
-        if love.filesystem.getInfo(path) then
+        if fore.files.exists(path) then
             fore.assets.scheduleLoad(eff.id, path)
             table.insert(loadedImages, eff.id)
         end
