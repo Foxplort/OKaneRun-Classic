@@ -1,5 +1,14 @@
 local Player = {}
 
+local c = {
+    white = {255,255,255,255},
+    black = {0,0,0,255},
+    g1 = {187, 187, 187, 255},
+    g2 = {24, 24, 24, 255},
+    plCol = {255, 255, 255, 255},
+    ghCol = {0, 255, 255, 255}
+}
+
 -- HELPER FUNCTIONS
 
 local function getPlayerSprite(p)
@@ -26,9 +35,21 @@ local function drawPlayerSprite(p, x, y, z, sx, sy, color)
 
     -- Alignment crosshair
     if fore.debug.enabled and fore.data.devmode then
-        fore.draw2d.rect(tx - 2, ty - 2, 4, 4, {0, 0, 0, 255})
-        fore.draw2d.rect(tx - 1, ty - 1, 2, 2, {255, 255, 255, 255})
+        fore.draw2d.rect(tx - 2, ty - 2, 4, 4, c.black)
+        fore.draw2d.rect(tx - 1, ty - 1, 2, 2, c.white)
     end
+end
+
+
+local _ps, _pm, _vs, _opacityFade, _playerCol
+local _after, _ghostAlpha
+
+local function drawGhostBody()
+    local pc = GameState.player.inv and 120 or 200
+    c.ghCol[2] = pc / 1.3
+    c.ghCol[3] = pc
+    c.ghCol[4] = _ghostAlpha
+    drawPlayerSprite(GameState.player, _after.x, _after.y, _after.z, _after.sx, _after.sy, c.ghCol)
 end
 
 -- MAIN RENDER INTERFACE
@@ -46,7 +67,7 @@ function Player.render()
         fore.draw2d.stencilMask(
             function()
                 for _, g in ipairs(GameState.area.ground) do
-                    fore.draw2d.rect(g.x, g.y, g.w, g.h, {255, 255, 255, 255}, true)
+                    fore.draw2d.rect(g.x, g.y, g.w, g.h, c.white, true)
                 end
             end,
             "equal",
@@ -60,8 +81,10 @@ function Player.render()
                 local alpha = math.max(60, 160 - ps.pos.z * 1.5)
                 local cx = ps.pos.x + pm.w * 0.5
                 local cy = ps.pos.y - 2
-
-                fore.draw2d.circ(cx - w * 0.5, cy - h * 0.5 + 2, w, h, {0, 0, 0, alpha}, true, 16)
+                
+                c.black[4] = alpha
+                fore.draw2d.circ(cx - w * 0.5, cy - h * 0.5 + 2, w, h, c.black, true, 16)
+                c.black[4] = 255
             end
         )
     end)
@@ -71,13 +94,16 @@ function Player.render()
         -- Core drawing block containing both pieces
         local function drawCharacterBody()
             -- Draw trailing segments behind character body matrix
-            fore.draw2d.tail(ps.tail, {24, 24, 24, opacityFade}, 2, {187, 187, 187, opacityFade}, 1) 
+            c.g1[4] = opacityFade
+            c.g2[4] = opacityFade
+            fore.draw2d.tail(ps.tail, c.g2, 2, c.g1, 1)
             
             -- Draw character skin
-            drawPlayerSprite(
-                ps, ps.pos.x, ps.pos.y, ps.pos.z, vs.sx, vs.sy,
-                {playerCol, playerCol, playerCol, opacityFade}
-            )
+            c.plCol[1] = playerCol
+            c.plCol[2] = playerCol
+            c.plCol[3] = playerCol
+            c.plCol[4] = opacityFade
+            drawPlayerSprite(ps, ps.pos.x, ps.pos.y, ps.pos.z, vs.sx, vs.sy, c.plCol)
         end
 
         -- If falling into pits/negative depth space, crop visuals below the floor boundaries
@@ -86,7 +112,7 @@ function Player.render()
                 function()
                     for _, g in ipairs(GameState.area.ground) do
                         if g.y >= ps.pos.y then
-                            fore.draw2d.rect(g.x, g.y, g.w, g.h, {255, 255, 255, 255}, true)
+                            fore.draw2d.rect(g.x, g.y, g.w, g.h, c.white, true)
                         end
                     end
                 end,
@@ -102,17 +128,13 @@ function Player.render()
     -- 3. AFTERIMAGES SYSTEM PASS
     for _, a in ipairs(ps.afterimages) do
         fore.queuer.submit(L.ACTOR, a.y, function()
-            local alpha = (a.life / 0.4) * 120
-
-            local function drawGhostBody()
-                drawPlayerSprite(ps, a.x, a.y, a.z, a.sx, a.sy, {0, playerCol / 1.3, playerCol, alpha})
-            end
-
+            _ghostAlpha = (a.life / 0.4) * 120
+            _after = a
             if a.z < 0 then
                 fore.draw2d.stencilMask(
                     function()
                         for _, g in ipairs(GameState.area.ground) do
-                            fore.draw2d.rect(g.x, g.y, g.w, g.h, {255, 255, 255, 255}, true)
+                            fore.draw2d.rect(g.x, g.y, g.w, g.h, c.white, true)
                         end
                     end,
                     "notequal",
