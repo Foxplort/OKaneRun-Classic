@@ -1,27 +1,57 @@
 local DrawQueue = {}
-local queue = {}
+
+local entries = {}
+local count = 0
+local pos = {} -- sorted position indices
 
 function DrawQueue.submit(layer, depth, fn)
-    queue[#queue + 1] = {
-        layer = layer,
-        depth = depth,
-        fn = fn
-    }
+    count = count + 1
+    local e = entries[count]
+    if not e then
+        e = { layer = 0, depth = 0, fn = nil }
+        entries[count] = e
+    end
+    e.layer = layer
+    e.depth = depth
+    e.fn = fn
 end
 
 function DrawQueue.draw()
-    table.sort(queue, function(a, b)
-        if a.layer ~= b.layer then
-            return a.layer < b.layer
-        end
-        return a.depth < b.depth
-    end)
-
-    for _, item in ipairs(queue) do
-        item.fn()
+    -- Build position array for the active slice only
+    for i = 1, count do
+        pos[i] = i
     end
 
-    queue = {}
+    -- Insertion sort on positions (fast for small N, no allocation)
+    for i = 2, count do
+        local pi = pos[i]
+        local ei = entries[pi]
+        local j = i - 1
+        while j >= 1 do
+            local pj = pos[j]
+            local ej = entries[pj]
+            local swap = false
+            if ei.layer ~= ej.layer then
+                swap = ei.layer < ej.layer
+            else
+                swap = ei.depth < ej.depth
+            end
+            if swap then
+                pos[j + 1] = pj
+                j = j - 1
+            else
+                break
+            end
+        end
+        pos[j + 1] = pi
+    end
+
+    -- Execute in sorted order
+    for i = 1, count do
+        entries[pos[i]].fn()
+    end
+
+    count = 0
 end
 
 return DrawQueue
