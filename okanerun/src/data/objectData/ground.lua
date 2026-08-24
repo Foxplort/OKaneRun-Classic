@@ -1,3 +1,48 @@
+-- Predefined colors
+local col = {
+  {0,0,0,63},
+  {25, 30, 45},
+  {15, 20, 28},
+  {150, 200, 255, 15},
+  {150, 200, 255, 20}
+}
+
+-- Decoration colors
+local ca_desktop = {col[3][1], col[3][2], col[3][3], 30}
+local ca_mobile  = {col[2][1], col[2][2], col[2][3], 30}
+
+-- Draw functions
+local function drawOutline(t)
+  fore.draw2d.rect(t.x, t.y, t.w, t.h, col[1], false)
+  fore.draw2d.rect(t.x-1, t.y-1, t.w+2, t.h+2, col[1], false)
+end
+
+local function drawMain(t)
+  local c = (mobileContrastStatus or fore.data.phone) and col[2] or col[3]
+  fore.draw2d.rect(t.x, t.y, t.w, t.h, c)
+  if not (mobileContrastStatus or fore.data.phone) then
+    for gx = t.x, t.x + t.w-1, 40 do
+      for gy = t.y, t.y + t.h-1, 40 do
+        fore.draw2d.rect(gx, gy, 1, 1, col[5])
+      end
+    end
+  else
+    for gx = t.x, t.x + t.w-2, 40 do
+      for gy = t.y, t.y + t.h-2, 40 do
+        fore.draw2d.rect(gx, gy, 2, 2, col[4])
+      end
+    end
+  end
+end
+
+local function drawDec(t)
+  local ca = (mobileContrastStatus or fore.data.phone) and ca_mobile or ca_desktop
+  fore.draw2d.rect(t.x, t.y+20, t.w, t.h+20, ca)
+  fore.draw2d.rect(t.x, t.y+15, t.w, t.h+15, ca)
+  fore.draw2d.rect(t.x, t.y+10, t.w, t.h+10, ca)
+  fore.draw2d.rect(t.x, t.y+5,  t.w, t.h+5,  ca)
+end
+
 return {
   fields = {
     { name = "x", type = "number", step = 1 },
@@ -18,46 +63,14 @@ return {
   end,
 
   render = function(self, isEditor)
-      local c = (mobileContrastStatus or fore.data.phone) and {25, 30, 45} or {15, 20, 28}
-      local ca = {c[1], c[2], c[3], 30}
-
-      local drawOutline = function()
-        fore.draw2d.rect(self.x, self.y, self.w, self.h, {0,0,0,63}, false)
-        fore.draw2d.rect(self.x-1, self.y-1, self.w+2, self.h+2, {0,0,0,63}, false)
-      end
-      
-      local drawMain = function()
-          fore.draw2d.rect(self.x, self.y, self.w, self.h, c)
-          if not (mobileContrastStatus or fore.data.phone) then
-            for gx = self.x, self.x + self.w-1, 40 do
-                for gy = self.y, self.y + self.h-1, 40 do
-                    fore.draw2d.rect(gx, gy, 1, 1, {150, 200, 255, 20})
-                end
-            end
-          else
-            for gx = self.x, self.x + self.w-2, 40 do
-                for gy = self.y, self.y + self.h-2, 40 do
-                    fore.draw2d.rect(gx, gy, 2, 2, {150, 200, 255, 15})
-                end
-            end
-          end
-      end
-
-      local drawDec = function()
-          fore.draw2d.rect(self.x, self.y+20, self.w, self.h+20, ca)
-          fore.draw2d.rect(self.x, self.y+15, self.w, self.h+15, ca)
-          fore.draw2d.rect(self.x, self.y+10, self.w, self.h+10, ca)
-          fore.draw2d.rect(self.x, self.y+5,  self.w, self.h+5,  ca)
-      end
-
       if isEditor then
-          drawMain()
-          drawDec()
+          drawMain(self)
+          drawDec(self)
       else
-          fore.queuer.submit(L.FLOOR, self.y, drawMain)
-          fore.queuer.submit(L.FLOOR_DEC, self.y, drawDec)
+          fore.queuer.submit(L.FLOOR, self.y, function() drawMain(self) end)
+          fore.queuer.submit(L.FLOOR_DEC, self.y, function() drawDec(self) end)
           if (mobileContrastStatus or fore.data.phone) then
-            fore.queuer.submit(L.FLOOR_DEC, self.y + 10000, drawOutline)
+            fore.queuer.submit(L.FLOOR_DEC, self.y + 10000, function() drawOutline(self) end)
           end
       end
   end
