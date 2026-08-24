@@ -67,10 +67,10 @@ return {
           drawMain(self)
           drawDec(self)
       else
-          fore.queuer.submit(L.FLOOR, self.y, function() drawMain(self) end)
-          fore.queuer.submit(L.FLOOR_DEC, self.y, function() drawDec(self) end)
+          fore.queuer.submit(L.FLOOR, self.y, drawMain, self)
+          fore.queuer.submit(L.FLOOR_DEC, self.y, drawDec, self)
           if (mobileContrastStatus or fore.data.phone) then
-            fore.queuer.submit(L.FLOOR_DEC, self.y + 10000, function() drawOutline(self) end)
+            fore.queuer.submit(L.FLOOR_DEC, self.y + 10000, drawOutline, self)
           end
       end
   end

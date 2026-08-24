@@ -4,16 +4,17 @@ local entries = {}
 local count = 0
 local pos = {} -- sorted position indices
 
-function DrawQueue.submit(layer, depth, fn)
+function DrawQueue.submit(layer, depth, fn, data)
     count = count + 1
     local e = entries[count]
     if not e then
-        e = { layer = 0, depth = 0, fn = nil }
+        e = { layer = 0, depth = 0, fn = nil, data = nil }
         entries[count] = e
     end
     e.layer = layer
     e.depth = depth
     e.fn = fn
+    e.data = data
 end
 
 function DrawQueue.draw()
@@ -48,7 +49,12 @@ function DrawQueue.draw()
 
     -- Execute in sorted order
     for i = 1, count do
-        entries[pos[i]].fn()
+        local e = entries[pos[i]]
+        if e.data then
+            e.fn(e.data)
+        else
+            e.fn()
+        end
     end
 
     count = 0
