@@ -749,6 +749,12 @@ function Scene.update(dt)
                 table.insert(GameState.player.coinChain, coin)
                 table.remove(GameState.area.coins, i)
                 gameData.game.effectSys.apply(GameState.player, gameData.game.effects["coin"])
+                if GameState.player.effectRef.hope then
+                    invTime = GameState.player.effectRef.hope
+                end
+                if GameState.player.effectRef.adrenaline then
+                    GameState.player.dash.cooldown = 0
+                end
             end
         end
 

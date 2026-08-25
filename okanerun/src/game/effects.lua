@@ -674,6 +674,36 @@ effects.chance = {
     end,
 }
 
+effects.hope = {
+    id = "hope",
+    type = "buff",
+    duration = nil,
+    maxAmount = 1,
 
+    onApply = function(player)
+        if not player.effectRef.hope then player.effectRef.hope = 0 end
+        player.effectRef.hope = player.effectRef.hope + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.hope = player.effectRef.hope - 1
+    end,
+}
+
+effects.adrenaline = {
+    id = "adrenaline",
+    type = "buff",
+    duration = nil,
+    maxAmount = 1,
+
+    onApply = function(player)
+        if not player.effectRef.adrenaline then player.effectRef.adrenaline = 0 end
+        player.effectRef.adrenaline = player.effectRef.adrenaline + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.adrenaline = player.effectRef.adrenaline - 1
+    end,
+}
 
 return effects
