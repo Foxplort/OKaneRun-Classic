@@ -16,6 +16,8 @@ fore = require("fore.core.init").init({
         effects_obtained = 0,
         coins_deposited = 0,
         personal_best = 0,
+        -- Pendium
+        seen_effects = {},
         -- Settings
         vsync = true,
         mobileContrast = false,

@@ -203,6 +203,7 @@ function Scene.draw()
         currentY = currentY + 30
 
         -- Grid of cards
+        local seen = fore.save.get("seen_effects") or {}
         for i, eff in ipairs(sec.items) do
             local col = ((i - 1) % COLS) + 1
             local row = math.ceil(i / COLS)
@@ -210,14 +211,20 @@ function Scene.draw()
             local ry = currentY + (row - 1) * (CARD_H + CARD_SPACING)
 
             local isSelected = (isCurrentSection and selectedIndex == i)
+            local isSeen = seen[eff.id]
 
-            -- Theme colors
-            local themeCol = eff.type == "buff" and {0, 200, 180} or {220, 20, 80}
+            -- Theme colors (gray if unseen)
+            local themeCol
+            if isSeen then
+                themeCol = eff.type == "buff" and {0, 200, 180} or {220, 20, 80}
+            else
+                themeCol = {80, 80, 90}
+            end
 
             -- Card background
-            local bgCol = {40, 45, 55, 220}
+            local bgCol = isSeen and {40, 45, 55, 220} or {30, 32, 38, 200}
             if isSelected then
-                bgCol = {220, 240, 255, 255}
+                bgCol = isSeen and {220, 240, 255, 255} or {120, 125, 135, 255}
                 fore.draw2d.rect(rx - 3, ry - 3, CARD_W + 6, CARD_H + 6,
                     {themeCol[1], themeCol[2], themeCol[3], 150}, true)
             end
@@ -236,11 +243,14 @@ function Scene.draw()
 
             -- Icon
             local iconCol = isSelected and {20, 25, 40, 255} or {themeCol[1], themeCol[2], themeCol[3], 255}
-            fore.draw2d.imageSafe(eff.id, "missing", rx + CARD_W/2 - 16, ry + 8, 32, 32, 0, 0, 0, iconCol)
+            local iconKey = isSeen and eff.id or "missing"
+            fore.draw2d.imageSafe(iconKey, "missing", rx + CARD_W/2 - 16, ry + 8, 32, 32, 0, 0, 0, iconCol)
 
             -- Name
             local nameCol = isSelected and {20, 25, 40, 255} or {180, 200, 220, 255}
-            fore.text.text(eff.id:upper(), rx + 4, ry + 50, 0.8, nameCol, CARD_W - 8, "center")
+            if not isSeen then nameCol = isSelected and {60, 65, 75, 255} or {80, 85, 95, 255} end
+            local displayName = isSeen and eff.id:upper() or "???"
+            fore.text.text(displayName, rx + 4, ry + 50, 0.8, nameCol, CARD_W - 8, "center")
         end
 
         currentY = currentY + math.ceil(#sec.items / COLS) * (CARD_H + CARD_SPACING) + 10
@@ -253,8 +263,15 @@ function Scene.draw()
     if item and detailW > 80 then
         local dx = detailX
         local dy = MARGIN_TOP
+        local seen = fore.save.get("seen_effects") or {}
+        local isSeen = seen[item.id]
 
-        local themeCol = item.type == "buff" and {0, 200, 180} or {220, 20, 80}
+        local themeCol
+        if isSeen then
+            themeCol = item.type == "buff" and {0, 200, 180} or {220, 20, 80}
+        else
+            themeCol = {80, 80, 90}
+        end
 
         -- Detail panel background
         fore.draw2d.rect(dx, dy, detailW, detailH, {25, 30, 40, 230})
@@ -263,20 +280,29 @@ function Scene.draw()
             {themeCol[1], themeCol[2], themeCol[3], 15})
 
         -- Large icon
-        fore.draw2d.imageSafe(item.id, "missing", dx + detailW/2 - 32, dy + 15, 64, 64, 0, 0, 0,
+        local iconKey = isSeen and item.id or "missing"
+        fore.draw2d.imageSafe(iconKey, "missing", dx + detailW/2 - 32, dy + 15, 64, 64, 0, 0, 0,
             {themeCol[1], themeCol[2], themeCol[3], 255})
 
         -- Name
-        fore.text.text(item.id:upper(), dx + 10, dy + 90, 1.2, {255, 255, 255}, detailW - 20, "center")
+        local displayName = isSeen and item.id:upper() or "???"
+        local nameCol = isSeen and {255, 255, 255} or {100, 100, 110}
+        fore.text.text(displayName, dx + 10, dy + 90, 1.2, nameCol, detailW - 20, "center")
 
         -- Type badge
-        local typeText = item.type == "buff" and "BLESSING" or "CURSE"
-        local typeCol = item.type == "buff" and {0, 200, 180} or {220, 20, 80}
-        fore.text.text(typeText, dx + 10, dy + 115, 0.7, typeCol, detailW - 20, "center")
+        if isSeen then
+            local typeText = item.type == "buff" and "BLESSING" or "CURSE"
+            local typeCol = item.type == "buff" and {0, 200, 180} or {220, 20, 80}
+            fore.text.text(typeText, dx + 10, dy + 115, 0.7, typeCol, detailW - 20, "center")
+        end
 
         -- Description
-        local desc = EffectsDesc[item.id] or "No description"
-        fore.text.textEx(desc, dx + 10, dy + 140, 0.8, {180, 200, 220}, detailW - 20, "left")
+        if isSeen then
+            local desc = EffectsDesc[item.id] or "No description"
+            fore.text.textEx(desc, dx + 10, dy + 140, 0.8, {180, 200, 220}, detailW - 20, "left")
+        else
+            fore.text.text("[NOT YET DISCOVERED]", dx + 10, dy + 140, 0.8, {80, 85, 95}, detailW - 20, "center")
+        end
     end
 
     -- Bottom hint

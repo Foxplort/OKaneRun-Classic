@@ -137,7 +137,24 @@ function Scene.enter()
     animTimer = 0
     verticalScroll = 0
     buildRows()
-    
+
+    -- Mark all offered effects as seen in pendium
+    local seen = fore.save.get("seen_effects") or {}
+    local changed = false
+    for _, row in ipairs(rows) do
+        if row.items then
+            for _, item in ipairs(row.items) do
+                if item.def and not seen[item.def.id] then
+                    seen[item.def.id] = true
+                    changed = true
+                end
+            end
+        end
+    end
+    if changed then
+        fore.save.set("seen_effects", seen)
+    end
+
     currentRow = 3
     if #rows[1].items > 0 then currentRow = 1
     elseif #rows[2].items > 0 then currentRow = 2 end
