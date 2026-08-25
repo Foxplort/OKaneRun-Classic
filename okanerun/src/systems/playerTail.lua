@@ -51,7 +51,7 @@ function PlayerTail.updateTail(tail, anchorX, anchorY, dt)
         
         -- Link Constraint
         local dx, dy = s.x - prev.x, s.y - prev.y
-        local dist = math.sqrt(dx*dx + dy*dy)
+        local dist = math.sqrt(dx*dx + dy*dy) / (GameState.player.sprite.scale / 0.4)
         if dist == 0 then dist = 0.001 end
 
         -- If the segment is too far, pull it back

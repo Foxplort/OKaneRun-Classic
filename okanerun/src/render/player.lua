@@ -96,7 +96,7 @@ function Player.render()
             -- Draw trailing segments behind character body matrix
             c.g1[4] = opacityFade
             c.g2[4] = opacityFade
-            fore.draw2d.tail(ps.tail, c.g2, 2, c.g1, 1)
+            fore.draw2d.tail(ps.tail, c.g2, 2, c.g1, 1 + (GameState.player.sprite.scale / 0.4 - 1))
             
             -- Draw character skin
             c.plCol[1] = playerCol

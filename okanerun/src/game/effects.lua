@@ -706,4 +706,33 @@ effects.adrenaline = {
     end,
 }
 
+effects.grow = {
+    id = "grow",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 10,
+
+    onApply = function(player)
+        player.base.body.w = player.base.body.w * 1.2
+        player.base.body.h = player.base.body.h * 1.2
+        player.base.body.hitbox.w = player.base.body.hitbox.w * 1.2
+        player.base.body.hitbox.h = player.base.body.hitbox.h * 1.2
+        player.base.body.hitbox.xt = player.base.body.hitbox.xt * 1.2
+        player.base.body.hitbox.yt = player.base.body.hitbox.yt * 1.2
+        player.base.body.hitbox.t = player.base.body.hitbox.t * 1.2
+        player.sprite.scale = player.sprite.scale * 1.2
+    end,
+
+    onRemove = function(player)
+        player.base.body.w = player.base.body.w / 1.2
+        player.base.body.h = player.base.body.h / 1.2
+        player.base.body.hitbox.w = player.base.body.hitbox.w / 1.2
+        player.base.body.hitbox.h = player.base.body.hitbox.h / 1.2
+        player.base.body.hitbox.xt = player.base.body.hitbox.xt / 1.2
+        player.base.body.hitbox.yt = player.base.body.hitbox.yt / 1.2
+        player.base.body.hitbox.t = player.base.body.hitbox.t / 1.2
+        player.sprite.scale = player.sprite.scale / 1.2
+    end,
+}
+
 return effects

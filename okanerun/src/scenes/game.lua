@@ -862,7 +862,8 @@ function Scene.update(dt)
         gameData.systems.tail.updateTail(
             GameState.player.tail,
             GameState.player.pos.x + GameState.player.base.body.w / 2,
-            GameState.player.pos.y - GameState.player.pos.z - 22 + (GameState.player.anim.state == "walk" and (GameState.player.anim.frame == 2 or GameState.player.anim.frame == 3) and 2 or 0),
+            GameState.player.pos.y - GameState.player.pos.z - 22 + (GameState.player.anim.state == "walk" and
+            (GameState.player.anim.frame == 2 or GameState.player.anim.frame == 3) and 2 or 0) - 20 * (GameState.player.sprite.scale / 0.4 - 1),
             dt
         )
 
