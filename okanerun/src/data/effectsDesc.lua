@@ -7,7 +7,7 @@ local EffectsDesc =
     healthy = "Gain [c=255,0,0]1 [/c]more health.",
     scanline = "Spawns [c=255,0,0]1 [/c]scanline that deals [c=255,0,0]1 [/c]damage on contact.",
     trail = "Moving spawns a trail behind dealing [c=255,0,0]1 [/c]damage on contact.",
-    zoomed = "Increases camera zoom by [c=255,0,0]10%[/c].",
+    zoomed = "Camera zooms in by [c=255,0,0]5%[/c] for each coin you carry.",
     explosive = "Spawns up to [c=255,0,0]5 [/c]mines every [c=255,0,0]1.5 [/c]second that explode after [c=255,0,0]1 [/c]second, dealing [c=255,0,0]1 [/c]damage on contact and [c=255,0,0]2 [/c]damage from explosion.",
     bloodloss = "Deacreases invincibility frames duration by [c=255,0,0]40%[/c].",
     confused = "Reverses movement controls for the next [c=255,0,0]40 [/c]seconds.",

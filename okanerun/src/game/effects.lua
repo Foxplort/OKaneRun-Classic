@@ -328,14 +328,15 @@ effects.zoomed = {
     id = "zoomed",
     type = "debuff",
     duration = nil,
-    maxAmount = 3,
-    
+    maxAmount = 2,
+
     onApply = function(player)
-        player.camZoom = player.camZoom + 0.1
+        if not player.effectRef.zoomed then player.effectRef.zoomed = 0 end
+        player.effectRef.zoomed += 1
     end,
 
     onRemove = function(player)
-        player.camZoom = player.camZoom - 0.1
+        player.effectRef.zoomed -= 1
     end,
 }
 

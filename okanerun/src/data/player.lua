@@ -45,7 +45,7 @@ function Player.new()
 
         coinChain = {},
         effects = {},
-        camZoom = 0.9,
+        camZoom = 0.8,
         effectRef = {},
 
         dash = {

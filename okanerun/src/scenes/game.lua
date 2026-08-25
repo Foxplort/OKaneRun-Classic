@@ -879,7 +879,11 @@ function Scene.update(dt)
         local camTargetY = GameState.player.pos.y + GameState.player.stat.body.h / 2
 
         fore.camera2d.update(camTargetX, camTargetY, dt)
-        fore.camera2d.setCategoryZoom("world", GameState.player.camZoom, false)
+        -- Zoomed debuff
+        if GameState.player.effectRef.zoomed then
+            GameState.player.camZoom = 0.8 + #GameState.player.coinChain * (0.05 * GameState.player.effectRef.zoomed)
+        end
+        fore.camera2d.setCategoryZoom("world", GameState.player.camZoom, true)
 
         -- Tails Math
         local speed = math.sqrt(
