@@ -7,4 +7,5 @@ return {
     "Shifted Geometry",
     "Timeye",
     "Fading Half",
+    "Death Line",
 }
