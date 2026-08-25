@@ -42,6 +42,7 @@ fore.scenes:reg("menu", "okanerun.src.scenes.menu")
 fore.scenes:reg("game", "okanerun.src.scenes.game")
 fore.scenes:reg("selection", "okanerun.src.scenes.selection")
 fore.scenes:reg("death", "okanerun.src.scenes.death")
+fore.scenes:reg("pendium", "okanerun.src.scenes.pendium")
 
 
 fore.input:registerAll({

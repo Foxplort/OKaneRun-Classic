@@ -338,6 +338,11 @@ local function createMenus()
             ]], fore.save.get("total_runs"), fore.save.get("personal_best"), logScore)
         },
         { txt = "Settings", icon = "icon_settings", push = function() return settings end },
+        { txt = "Pendium", icon = "icon_pendium", action = function()
+            fore.transition.start("dither", function()
+                fore.scenes:goTo("pendium")
+            end, nil, 0, 0.5)
+        end},
         { txt = "Credits", icon = "icon_credits", push = function() return credits end },
         { txt = "Exit", icon = "icon_exit", push = function() return exit end }
     }
@@ -364,6 +369,7 @@ function Scene.enter()
     fore.assets.scheduleLoad("icon_love", "okanerun/assets/images/ui/menu/love.png", "linear")
     fore.assets.scheduleLoad("icon_fore", "okanerun/assets/images/ui/menu/fore.png", "linear")
     fore.assets.scheduleLoad("icon_back", "okanerun/assets/images/ui/menu/back.png", "linear")
+    fore.assets.scheduleLoad("icon_pendium", "okanerun/assets/images/ui/menu/pendium.png", "linear")
 
 
     fore.audio.load("menu_music", "okanerun/assets/sounds/music/001.ogg", false, "music")
@@ -405,7 +411,8 @@ function Scene.exit()
     fore.assets.scheduleUnload("icon_love")
     fore.assets.scheduleUnload("icon_fore")
     fore.assets.scheduleUnload("icon_back")
-    if fore.scenes.next ~= "records" then
+    fore.assets.scheduleUnload("icon_pendium")
+    if fore.scenes.next ~= "pendium" then
         fore.audio.fadeOutAndUnload("menu_music", 2.0)
     end
 end
