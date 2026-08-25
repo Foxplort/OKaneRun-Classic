@@ -79,6 +79,7 @@ function Fore.init(config)
     Fore.save = require("fore.systems.save")
     Fore.save.init(config.save or {}, Fore)
 
+    Fore.gc = require("fore.core.gc")
     Fore.transition = require("fore.systems.transition")
     Fore.camera2d = require("fore.systems.camera2d")
 
@@ -101,6 +102,7 @@ function Fore:start()
     })
 
     self.audio.setMasterVolume(self.save.get_engine("volume"))
+    self.gc.init(self.conf.gc or {})
 
     local init_setup = require("fore.backend." .. backend .. ".hooks")
     init_setup.register(self)
@@ -136,6 +138,7 @@ function Fore:update(dt)
     end
 
     self.assets.update_loading()
+    self.gc.update(dt)
     self.input:update()
     self.task.update(dt)
     if self.mobileControls then self.mobileControls:update(dt) end

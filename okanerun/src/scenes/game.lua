@@ -334,6 +334,7 @@ function Scene.exit()
     for _, eff in pairs(loadedImages) do
         fore.assets.scheduleUnload(eff)
     end
+    loadedImages = {}
     fore.assets.scheduleUnload("missing")
     fore.assets.scheduleUnload("icon_exit")
     fore.assets.scheduleUnload("icon_back")

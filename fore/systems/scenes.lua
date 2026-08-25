@@ -100,6 +100,7 @@ function SceneManager:update(dt)
         end
         self.frameOne = true
         self.fore.assets.flushAssetSchedule()
+        self.fore.gc.cleanup("Scene transition")
     end
 
     -- Waiting for the assets to load
