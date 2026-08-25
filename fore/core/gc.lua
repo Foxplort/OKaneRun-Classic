@@ -4,6 +4,7 @@ local GC = {}
 local collectTimer = 0
 local collectInterval = 30
 local verbose = false
+local dumpers = {}
 
 ---Initialize GC system.
 ---@param config? table { collectInterval: number, verbose: boolean }
@@ -11,6 +12,21 @@ function GC.init(config)
     config = config or {}
     collectInterval = config.collectInterval or 30
     verbose = config.verbose or false
+    return GC
+end
+
+---Register a leak dumper function. Called when GC detects memory growth.
+---The function should print diagnostic info about the game's state.
+---@param name string Identifier for this dumper
+---@param fn function Called with no args, should print() its findings
+function GC.registerDumper(name, fn)
+    dumpers[name] = fn
+end
+
+---Remove a registered dumper.
+---@param name string
+function GC.removeDumper(name)
+    dumpers[name] = nil
 end
 
 function GC.update(dt)
@@ -45,41 +61,38 @@ function GC.cleanup(label)
     return freed
 end
 
+---Engine-level diagnostics (assets, audio, hooks).
+---Games add their own via GC.registerDumper().
 function GC._dumpLeaks()
-    local counts = {}
+    -- Engine internals
     local imgCount = 0
     for _ in pairs(fore.assets.images) do imgCount = imgCount + 1 end
-    counts.images = imgCount
     local sndCount = 0
     for _ in pairs(fore.assets.sounds) do sndCount = sndCount + 1 end
-    counts.sounds = sndCount
     local regCount = 0
     for _ in pairs(fore.assets.asset_registry) do regCount = regCount + 1 end
-    counts.asset_registry = regCount
     local playCount = 0
     for _ in pairs(fore.audio.playing) do playCount = playCount + 1 end
-    counts.audio_playing = playCount
     local provCount = 0
     for _ in pairs(fore.debug.providers) do provCount = provCount + 1 end
-    counts.debug_providers = provCount
-    for hookName, hooks in pairs(fore.hooks) do
-        if #hooks > 0 then counts["hooks_" .. hookName] = #hooks end
-    end
-    if GameState and GameState.area then
-        counts.area_ground = GameState.area.ground and #GameState.area.ground or 0
-        counts.area_coins = GameState.area.coins and #GameState.area.coins or 0
-        counts.area_cores = GameState.area.cores and #GameState.area.cores or 0
-    end
-    if GameState and GameState.player then
-        local p = GameState.player
-        local effCount = 0
-        if p.effects then for _ in pairs(p.effects) do effCount = effCount + 1 end end
-        counts.player_effects = effCount
-        counts.player_zHistory = p.zHistory and #p.zHistory or 0
-    end
+
     print("[GC] Snapshot: " .. tostring(gcinfo()) .. " KB")
-    for k, v in pairs(counts) do
-        if v > 0 then print("  " .. k .. " = " .. v) end
+    if imgCount > 0 then print("  images = " .. imgCount) end
+    if sndCount > 0 then print("  sounds = " .. sndCount) end
+    if regCount > 0 then print("  asset_registry = " .. regCount) end
+    if playCount > 0 then print("  audio_playing = " .. playCount) end
+    if provCount > 0 then print("  debug_providers = " .. provCount) end
+
+    for hookName, hooks in pairs(fore.hooks) do
+        if #hooks > 0 then print("  hooks_" .. hookName .. " = " .. #hooks) end
+    end
+
+    -- Game-specific dumpers
+    for name, fn in pairs(dumpers) do
+        local ok, err = pcall(fn)
+        if not ok then
+            print("  [dumper '" .. name .. "' error: " .. tostring(err) .. "]")
+        end
     end
 end
 

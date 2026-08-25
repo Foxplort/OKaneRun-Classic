@@ -6,6 +6,9 @@ fore = require("fore.core.init").init({
     startScene = "intro",
     pixelBank = 128,
     icon = "okanerun/assets/images/system/fm.png",
+    gc = {
+        verbose = false,
+    },
     save = {
         -- Stats
         total_runs = 0,
@@ -108,6 +111,16 @@ L = {
 fore.editor.registerDefaultLayer("Floor")
 fore.editor.registerDefaultLayer("Subactor")
 fore.editor.registerDefaultLayer("Actor")
+
+fore.gc.registerDumper("GameState", function()
+    if GameState and GameState.area then
+        print("  area_ground = " .. (GameState.area.ground and #GameState.area.ground or 0))
+        print("  area_coins = " .. (GameState.area.coins and #GameState.area.coins or 0))
+    end
+    if GameState and GameState.player then
+        print("  player_zHistory = " .. (GameState.player.zHistory and #GameState.player.zHistory or 0))
+    end
+end)
 
 bgfx.init(70)
 

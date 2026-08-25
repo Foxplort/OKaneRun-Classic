@@ -79,7 +79,7 @@ function Fore.init(config)
     Fore.save = require("fore.systems.save")
     Fore.save.init(config.save or {}, Fore)
 
-    Fore.gc = require("fore.core.gc")
+    Fore.gc = require("fore.core.gc").init(config.gc or {})
     Fore.transition = require("fore.systems.transition")
     Fore.camera2d = require("fore.systems.camera2d")
 
@@ -102,7 +102,6 @@ function Fore:start()
     })
 
     self.audio.setMasterVolume(self.save.get_engine("volume"))
-    self.gc.init(self.conf.gc or {})
 
     local init_setup = require("fore.backend." .. backend .. ".hooks")
     init_setup.register(self)
