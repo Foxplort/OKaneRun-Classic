@@ -710,7 +710,7 @@ effects.grow = {
     id = "grow",
     type = "debuff",
     duration = nil,
-    maxAmount = 10,
+    maxAmount = 2,
 
     onApply = function(player)
         player.base.body.w = player.base.body.w * 1.2
@@ -732,6 +732,54 @@ effects.grow = {
         player.base.body.hitbox.yt = player.base.body.hitbox.yt / 1.2
         player.base.body.hitbox.t = player.base.body.hitbox.t / 1.2
         player.sprite.scale = player.sprite.scale / 1.2
+    end,
+}
+
+effects.magnet = {
+    id = "magnet",
+    type = "buff",
+    duration = nil,
+    maxAmount = 1,
+
+    onApply = function(player)
+        if not player.effectRef.magnet then player.effectRef.magnet = 0 end
+        player.effectRef.magnet = player.effectRef.magnet + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.magnet = player.effectRef.magnet - 1
+    end,
+}
+
+effects.double = {
+    id = "double",
+    type = "buff",
+    duration = nil,
+    maxAmount = 3,
+
+    onApply = function(player)
+        if not player.effectRef.double then player.effectRef.double = 0 end
+        player.effectRef.double = player.effectRef.double + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.double = player.effectRef.double - 1
+    end,
+}
+
+effects.backdraft = {
+    id = "backdraft",
+    type = "debuff",
+    duration = nil,
+    maxAmount = 1,
+
+    onApply = function(player)
+        if not player.effectRef.backdraft then player.effectRef.backdraft = 0 end
+        player.effectRef.backdraft = player.effectRef.backdraft + 1
+    end,
+
+    onRemove = function(player)
+        player.effectRef.backdraft = player.effectRef.backdraft - 1
     end,
 }
 

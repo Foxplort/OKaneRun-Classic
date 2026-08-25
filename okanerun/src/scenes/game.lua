@@ -20,6 +20,9 @@ local DECAY_TIME = 2
 
 local jumpQueue = {}
 
+local Objects = require("okanerun.src.data.objects")
+
+
 -- ######################## --
 -- ### HELPER FUNCTIONS ### --
 -- ######################## --
@@ -119,6 +122,16 @@ local function damagePlayer(amount, timeMod, source)
         p.hp.count = p.hp.count - amount
         p.lastDamageSource = source
 
+        -- Backdraft: knockback on damage
+        if amount > 0 and GameState.player.effectRef.backdraft then
+            local facing = p.vel.x >= 0 and 1 or -1
+            p.vel.x = -250 * facing
+            p.vel.z = 250
+            p.grounded = false
+            -- Brief loss of control
+            GameState.player.effectRef.backdraft_stun = 0.4
+        end
+
         -- camera feedback
         fore.camera2d.addShake("world", 3)
         fore.camera2d.addShake("ui", 3)
@@ -132,6 +145,9 @@ local function damagePlayer(amount, timeMod, source)
         if timeMod then invTime = invTime * timeMod end
         if GameState.player.effectRef.bloodloss then
             invTime = invTime * (0.6^GameState.player.effectRef.bloodloss) * (0.8^voided)
+        end
+        if GameState.player.effectRef.backdraft then
+            invTime = invTime * 1.2
         end
     end
 end
@@ -492,8 +508,13 @@ function Scene.update(dt)
             end
 
             if not GameState.player.dead then
-                if fore.input:down("right") then mx = mx + 1 end
-                if fore.input:down("left") then mx = mx - 1 end
+                -- Backdraft stun: skip input briefly
+                if GameState.player.effectRef.backdraft_stun and GameState.player.effectRef.backdraft_stun > 0 then
+                    mx = 0
+                else
+                    if fore.input:down("right") then mx = mx + 1 end
+                    if fore.input:down("left") then mx = mx - 1 end
+                end
                 if fore.input:down("up") then my = my - 1 end
                 if fore.input:down("down") then my = my + 1 end
                 if fore.input:pressed("pause") then 
@@ -706,6 +727,14 @@ function Scene.update(dt)
                 table.remove(GameState.player.coinChain, 1)
                 GameState.player.coins = GameState.player.coins + 1
                 GameState.score = GameState.score + 10
+
+                -- Double effect: chance for bonus coin
+                if GameState.player.effectRef.double then
+                    if math.random() < 0.1 * GameState.player.effectRef.double then
+                        GameState.player.coins = GameState.player.coins + 1
+                        GameState.score = GameState.score + 10
+                    end
+                end
                 checkPB()
 
                 gameData.game.effectSys.remove(GameState.player, "coin", 1)
@@ -728,7 +757,6 @@ function Scene.update(dt)
         end
 
 
-        local Objects = require("okanerun.src.data.objects")
         -- Collect coins
         for i, c in ipairs(GameState.area.coins) do
             if fore.math.aabb(Fx.cl.getPlayerHitbox(), Objects["coin"].hitbox(c)) and GameState.player.pos.z < 16 then
@@ -877,6 +905,14 @@ function Scene.update(dt)
         invTime = invTime - dt
         if invTime > 0 then GameState.player.inv = true else GameState.player.inv = false end
 
+        -- Backdraft stun timer
+        if GameState.player.effectRef.backdraft_stun then
+            GameState.player.effectRef.backdraft_stun = GameState.player.effectRef.backdraft_stun - dt
+            if GameState.player.effectRef.backdraft_stun <= 0 then
+                GameState.player.effectRef.backdraft_stun = nil
+            end
+        end
+
         if GameState.player.dash.cooldown > 0 then
             GameState.player.dash.cooldown = GameState.player.dash.cooldown - dt
         end
@@ -959,7 +995,7 @@ function Scene.draw()
         end
 
         for _, c in ipairs(GameState.area.coins) do
-            local ch = {x=c.x-13, y=c.y-14, w=26, h=24}
+            local ch = Objects["coin"].hitbox(c)
             fore.draw2d.rect(ch.x, ch.y, ch.w, ch.h, {255,255,127}, false)
         end
 

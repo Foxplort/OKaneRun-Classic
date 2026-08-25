@@ -21,6 +21,9 @@ local EffectsDesc =
     hope = "Upon picking up a coin, receive invincibility for the next [c=255,0,0]1 [/c]second.",
     adrenaline = "Upon picking up a coin, [c=255,0,0]instantly [/c]restore the dash.",
     grow = "Increases your size by [c=255,0,0]20%[/c].",
+    magnet = "Increases coin pickup radius by [c=255,0,0]60%[/c].",
+    double = "Each coin has a [c=255,0,0]10%[/c] chance give [c=255,0,0]2 [/c]coins on deposit.",
+    backdraft = "Taking damage knocks you backward and stuns you briefly, but grants [c=255,0,0]20%[/c] more invincibility frames.",
 }
 
 return EffectsDesc

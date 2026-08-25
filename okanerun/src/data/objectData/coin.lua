@@ -11,7 +11,15 @@ return {
   },
 
   hitbox = function(self)
-      return {x = self.x - 13, y = self.y - 14, w = 26, h = 24}
+      local w, h = 26, 24
+      local ox, oy = -13, -14
+      if GameState.player.effectRef.magnet and GameState.player.effectRef.magnet > 0 then
+          w = w * 1.6
+          h = h * 1.6
+          ox = -(w / 2)
+          oy = -(h / 2) + 2
+      end
+      return {x = self.x + ox, y = self.y + oy, w = w, h = h}
   end,
 
   render = function(self, isEditor)
