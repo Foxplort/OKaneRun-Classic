@@ -1,6 +1,6 @@
 ---@class fore
 local Fore = {
-    version = "2.0.0-dev",
+    version = "2.0.0",
 }
 
 local backend = nil
@@ -13,8 +13,6 @@ function Fore.init(config)
     Fore.backend = nil
     if love then
         Fore.backend = "love"
-    elseif rl then
-        Fore.backend = "raylib"
     end
 
     if Fore.backend == nil then error("Fore Error: Not running on a supported backend.") end
