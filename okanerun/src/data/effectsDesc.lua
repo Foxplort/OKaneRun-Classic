@@ -1,7 +1,7 @@
 local EffectsDesc =
 {
     haste = "Increases movement speed by [c=255,0,0]20%[/c].",
-    fatso = "Decreases jump height by [c=255,0,0]20%[/c].",
+    fatso = "Decreases jump height by [c=255,0,0]5% [/c]for each coin you carry.",
     winged = "Gain [c=255,0,0]1 [/c]extra jump.",
     icy = "Decreases friction by [c=255,0,0]50% [/c]and acceleration by [c=255,0,0]10%[/c].",
     healthy = "Gain [c=255,0,0]1 [/c]more health.",

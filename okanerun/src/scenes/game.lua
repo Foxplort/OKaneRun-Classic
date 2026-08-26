@@ -473,7 +473,13 @@ function Scene.update(dt)
                 if j.time <= 0 then
                     if GameState.player.jump.cons < GameState.player.stat.jump.lim then
                         GameState.player.jump.cons = GameState.player.jump.cons + 1
-                        GameState.player.vel.z = GameState.player.stat.jump.vel * j.mul
+                        local jumpVel = GameState.player.stat.jump.vel * j.mul
+                        -- Fatso curse
+                        if GameState.player.effectRef.fatso then
+                            local coinPenalty = 1 - (#GameState.player.coinChain * 0.05 * GameState.player.effectRef.fatso)
+                            jumpVel = jumpVel * math.max(0.2, coinPenalty)
+                        end
+                        GameState.player.vel.z = jumpVel
                         GameState.player.jump.timer = GameState.player.stat.jump.cd
 
                         GameState.player.visual.sx = 0.7

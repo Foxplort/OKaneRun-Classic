@@ -20,13 +20,14 @@ effects.fatso = {
     type = "debuff",
     duration = nil,
     maxAmount = 2,
-    
+
     onApply = function(player)
-        player.mod.jump.vel.mul = player.mod.jump.vel.mul * 0.8
+        if not player.effectRef.fatso then player.effectRef.fatso = 0 end
+        player.effectRef.fatso = player.effectRef.fatso + 1
     end,
 
     onRemove = function(player)
-        player.mod.jump.vel.mul = player.mod.jump.vel.mul / 0.8
+        player.effectRef.fatso = player.effectRef.fatso - 1
     end,
 }
 
