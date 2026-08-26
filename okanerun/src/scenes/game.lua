@@ -937,6 +937,8 @@ function Scene.update(dt)
                     z = GameState.player.pos.z,
                     sx = GameState.player.visual.sx,
                     sy = GameState.player.visual.sy,
+                    frame = GameState.player.anim.frame,
+                    flipX = GameState.player.anim.flipX,
                     life = 0.3
                 })
             end

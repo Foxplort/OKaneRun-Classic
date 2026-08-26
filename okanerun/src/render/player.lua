@@ -49,7 +49,21 @@ local function drawGhostBody()
     c.ghCol[2] = pc / 1.3
     c.ghCol[3] = pc
     c.ghCol[4] = _ghostAlpha
-    drawPlayerSprite(GameState.player, _after.x, _after.y, _after.z, _after.sx, _after.sy, c.ghCol)
+    
+    local ps = GameState.player
+    local sprite = tostring(_after.frame or ps.anim.frame)
+    local img = fore.assets.getImage(sprite)
+    if not img then return end
+
+    local scale = ps.sprite.scale or 0.35
+    local finalSX = scale * (_after.sx or 1)
+    local finalSY = scale * (_after.sy or 1)
+    if _after.flipX then finalSX = -finalSX end
+
+    local tx = _after.x + ps.stat.body.w / 2 + (ps.sprite.offset.x * (_after.flipX and -1 or 1))
+    local ty = _after.y - _after.z + ps.sprite.offset.y
+
+    fore.draw2d.imageScaled(sprite, tx, ty, finalSX, finalSY, 0, 128, ps.sprite.feetY or 256, c.ghCol)
 end
 
 -- MAIN RENDER INTERFACE
