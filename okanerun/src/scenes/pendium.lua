@@ -9,6 +9,7 @@ local selectedSection = 1
 local selectedIndex = 1
 local verticalScroll = 0
 local animTimer = 0
+local hintText = "ESC: Return"
 
 local function buildSections()
     sections = {}
@@ -50,6 +51,19 @@ function Scene.enter()
     selectedIndex = 1
     verticalScroll = 0
     animTimer = 0
+
+    -- Build hint text once based on input method
+    if fore.save.get("hints") then
+        if fore.input:getMethod() == "touch" then
+            hintText = "TAP: Return"
+        elseif fore.input:getMethod() == "gamepad" then
+            hintText = "B: Return"
+        else
+            hintText = "ESC: Return"
+        end
+    else
+        hintText = ""
+    end
 
     fore.assets.scheduleLoad("missing", "okanerun/assets/images/buffs/missing.png", "nearest")
     for _, sec in ipairs(sections) do
@@ -160,7 +174,11 @@ function Scene.update(dt)
     verticalScroll = fore.math.lerp(verticalScroll, targetScroll, dt * 8)
 
     -- Return to menu
-    if fore.input:pressed("cancel") then
+    local exitPressed = fore.input:pressed("cancel")
+    if not exitPressed and fore.input:getMethod() == "touch" then
+        exitPressed = fore.input:pressed("accept")
+    end
+    if exitPressed then
         fore.transition.start("dither", function()
             fore.scenes:goTo("menu")
         end, nil, 0, 0.5)
@@ -306,7 +324,7 @@ function Scene.draw()
     end
 
     -- Bottom hint
-    fore.text.text("CANCEL: Return", MARGIN_LEFT, H - 25, 0.8, {120, 120, 130})
+    fore.text.text(hintText, MARGIN_LEFT, H - 25, 0.8, {120, 120, 130})
 end
 
 return Scene
