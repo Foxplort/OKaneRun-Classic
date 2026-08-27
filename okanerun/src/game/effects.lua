@@ -333,11 +333,11 @@ effects.zoomed = {
 
     onApply = function(player)
         if not player.effectRef.zoomed then player.effectRef.zoomed = 0 end
-        player.effectRef.zoomed += 1
+        player.effectRef.zoomed = player.effectRef.zoomed + 1
     end,
 
     onRemove = function(player)
-        player.effectRef.zoomed -= 1
+        player.effectRef.zoomed = player.effectRef.zoomed - 1
     end,
 }
 
