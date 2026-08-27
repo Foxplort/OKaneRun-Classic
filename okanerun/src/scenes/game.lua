@@ -718,6 +718,13 @@ function Scene.update(dt)
             end
         end
 
+        -- Tunneling safety
+        if lastZ >= GROUND_SNAP and GameState.player.pos.z < GROUND_SOLID and touchingGround then
+            GameState.player.pos.z = GROUND_SNAP
+            GameState.player.vel.z = 0
+            GameState.player.jump.cons = 0
+        end
+
         local hb = Fx.cl.getPlayerHitbox()
         GameState.player.grounded = touchingGround and GameState.player.pos.z == 0
         local core = getActiveCore(hb)

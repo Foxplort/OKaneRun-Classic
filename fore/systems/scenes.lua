@@ -24,7 +24,7 @@ local SceneManager = {}
 ---@return fore.scenes
 function SceneManager.init(fore)
     local minDT = fore.conf.minDT
-    if minDT == nil or minDT == true then minDT = 1/20
+    if minDT == nil or minDT == true then minDT = 1/5
     elseif minDT == false or minDT == 0 then minDT = nil end
 
     local self = setmetatable({
